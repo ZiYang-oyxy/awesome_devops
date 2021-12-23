@@ -1,0 +1,38 @@
+#!/bin/bash -e
+# Copyright © 2021 Ouyang Xiongyi. All Rights Reserved.
+
+_curdir="`dirname $(readlink -f $0)`"
+FG_PATH=$_curdir/FlameGraph
+
+if [[ $# -lt 2 ]]; then
+    echo "Wrong args!!!"
+    echo "Example1: cpi_ff \"-p <PID>\" svg_file_name"
+    echo "Example2: cpi_ff \"-t <TID>\" svg_file_name"
+    exit 1
+fi
+
+mkdir -p /tmp
+
+set -x
+
+# cpu PMU查询（XEON系列要注意找“Server Events”的表） https://perfmon-events.intel.com/#
+perf record $1 -e cpu/event=0xa2,umask=0x1,name=resource_stalls_any,period=2000003/ -e cpu/event=0x3c,umask=0x0,name=cpu_clk_unhalted_thread_p,period=2000003/ --call-graph dwarf -F 200 -- sleep 5
+
+# !!! perf script一定要按照stackcollapse-perf.pl的使用说明去掉无关的域，否则无法上色，不同的perf/kernel版本用法有出入，自行解决
+#
+#[root@bddwd-sys-rpm02557b0d6.bddwd cpi_ff]#./FlameGraph/stackcollapse-perf.pl -h
+#...
+#[1] perf script must emit both PID and TIDs for these to work; eg, Linux < 4.1:
+#        perf script -f comm,pid,tid,cpu,time,event,ip,sym,dso,trace
+#    for Linux >= 4.1:
+#        perf script -F comm,pid,tid,cpu,time,event,ip,sym,dso,trace
+#    If you save this output add --header on Linux >= 3.14 to include perf info.
+perf script -F comm,pid,tid,time,event,ip,sym,dso > /tmp/out.perf
+
+$FG_PATH/stackcollapse-perf.pl --event-filter=cpu_clk_unhalted_thread_p /tmp/out.perf > /tmp/out.folded.cycles
+$FG_PATH/stackcollapse-perf.pl --event-filter=resource_stalls_any /tmp/out.perf > /tmp/out.folded.stalls
+$FG_PATH/difffolded.pl -n /tmp/out.folded.stalls /tmp/out.folded.cycles | $FG_PATH/flamegraph.pl --title "CPI Flame Graph: blue=stalls, red=instructions" --width=1200 > $2.svg
+
+set +x
+
+echo "Finish. Output file: $2.svg"
