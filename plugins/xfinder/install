@@ -1,0 +1,8 @@
+#!/bin/bash
+
+curdir="`dirname $(readlink -f $0)`"
+source $curdir/../../lib/common.sh
+
+grep -q "source $curdir/xfinder.source" ~/.bashrc || echo "source $curdir/xfinder.source" >> ~/.bashrc
+
+cecho g "find/grep plus ready!"
