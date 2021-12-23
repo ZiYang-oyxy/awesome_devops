@@ -1,0 +1,48 @@
+#!/bin/bash
+# Copyright © 2021 Ouyang Xiongyi. All Rights Reserved.
+# Another AirDrop
+# Install: bash <(curl -s http://10.151.170.16:8890/@aadi@) && source ~/.bashrc
+# TODO
+# 1. 支持mac命令行工具
+# 2. 支持tab completion
+
+curdir="`dirname $(readlink -f $0)`"
+source $curdir/lib/common.sh
+
+_puturl="http://10.151.170.16:8889"
+_geturl="http://10.151.170.16:8890"
+
+put()
+{
+    _name=`basename $1`
+    _r_file=${2:-$_name}
+    curl -T $1 $_puturl/$_r_file > /dev/null
+    if [[ $? -eq 0 ]]; then
+        echo "$_geturl/$_r_file"
+        md5sum $1
+    fi
+}
+
+get()
+{
+    _name=`basename $1`
+    _l_file=${2:-$_name}
+    curl -o $_l_file $_geturl/$_name
+    md5sum $_l_file
+}
+
+upgrade()
+{
+    sh `curdir`/install.sh
+}
+
+if [[ $# -eq 0 ]]; then
+    echo "ad <get|put|upgrade>"
+fi
+
+shift $(($OPTIND-1))
+
+_action=$1
+shift
+
+$_action $@
