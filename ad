@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Awesome Devops (or maybe another AirDrop)
+# Awesome Devops (or yet another AirDrop)
 #
 # TODO
 # 1. 支持mac命令行工具
@@ -41,7 +41,7 @@ usage(){
 
     cat <<__EOF__
 
-⚙ Awesome Devops (or maybe another AirDrop) ⚙
+⚙ Awesome Devops (or yet another AirDrop) ⚙
 
 Install:
 bash <(curl -s $_geturl/@aadi@) && source ~/.bashrc
