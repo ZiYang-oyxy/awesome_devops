@@ -1,13 +1,13 @@
 #!/bin/bash
-# Copyright © 2021 Ouyang Xiongyi. All Rights Reserved.
-# Another AirDrop
-# Install: bash <(curl -s http://10.151.170.16:8890/@aadi@) && source ~/.bashrc
+#
+# Awesome Devops (or maybe another AirDrop)
+#
 # TODO
 # 1. 支持mac命令行工具
-# 2. 支持tab completion
+# 2. 支持bash completion
 
-curdir="`dirname $(readlink -f $0)`"
-source $curdir/lib/common.sh
+_curdir="`dirname $(readlink -f $0)`"
+source $_curdir/lib/common.sh
 
 _puturl="http://10.151.170.16:8889"
 _geturl="http://10.151.170.16:8890"
@@ -18,8 +18,8 @@ put()
     _r_file=${2:-$_name}
     curl -T $1 $_puturl/$_r_file > /dev/null
     if [[ $? -eq 0 ]]; then
-        echo "$_geturl/$_r_file"
         md5sum $1
+        cecho g "$_geturl/$_r_file"
     fi
 }
 
@@ -29,20 +29,67 @@ get()
     _l_file=${2:-$_name}
     curl -o $_l_file $_geturl/$_name
     md5sum $_l_file
+    cecho g "`readlink -f $_l_file`"
 }
 
 upgrade()
 {
-    sh `curdir`/install.sh
+    sh $_curdir/install.sh
 }
 
-if [[ $# -eq 0 ]]; then
-    echo "ad <get|put|upgrade>"
+usage(){
+
+    cat <<__EOF__
+
+⚙ Awesome Devops (or maybe another AirDrop) ⚙
+
+Install:
+bash <(curl -s $_geturl/@aadi@) && source ~/.bashrc
+
+Usage:  ad COMMAND [help]
+
+    COMMANDS:
+        help
+        put
+        get
+        upgrade
+__EOF__
+
+    for i in `ls $_curdir/tools/`; do
+        echo "        ${i##*/}"
+    done
+
+    [ "$_command" == "help" ] && exit 0 || exit 1
+}
+
+_command=$1; shift;
+
+if [[ -z $_command ]]; then
+    usage
+    exit 1
 fi
 
-shift $(($OPTIND-1))
-
-_action=$1
-shift
-
-$_action $@
+case $_command in
+    put)
+        put "$@"
+        ;;
+    get)
+        get "$@"
+        ;;
+    help)
+        usage
+        ;;
+    upgrade)
+        upgrade
+        ;;
+    *)
+        if [[ -f $_curdir/tools/$_command ]]; then
+            $_curdir/tools/$_command "$@"
+        elif [[ -d $_curdir/tools/$_command ]]; then
+            $_curdir/tools/$_command/$_command "$@"
+        else
+            usage
+            exit 1
+        fi
+        ;;
+esac
