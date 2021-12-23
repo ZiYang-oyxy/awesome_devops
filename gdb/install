@@ -1,0 +1,12 @@
+#!/bin/bash
+
+curdir="`dirname $(readlink -f $0)`"
+source $curdir/../lib/common.sh
+
+rm -f ~/.gdbinit
+rm -rf ~/.gdbinit.d
+
+cp $curdir/.gdbinit ~/.gdbinit
+cp -r $curdir/.gdbinit.d  ~/.gdbinit.d
+
+cecho g "gdb plus ready!"

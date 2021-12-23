@@ -1,0 +1,6 @@
+dashboard -layout !assembly expressions !history !memory !registers !threads !stack source !breakpoints variables
+dashboard stack -style compact True
+dashboard stack -style limit 20
+dashboard stack -style arguments False
+#dashboard -output /dev/pts/9
+alias daw = dashboard expressions watch
