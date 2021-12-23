@@ -1,0 +1,11 @@
+#!/bin/bash
+
+curdir="`dirname $(readlink -f $0)`"
+source $curdir/../../lib/common.sh
+
+if ! grep -q "source $curdir/.git-completion.bash" ~/.bashrc; then
+    echo "source $curdir/.git-completion.bash" >> ~/.bashrc
+fi
+
+cecho g "git plus ready!"
+cecho r 'need to run "source ~/.bashrc"'

@@ -9,4 +9,4 @@ rm -rf ~/.gdbinit.d
 cp $curdir/.gdbinit ~/.gdbinit
 cp -r $curdir/.gdbinit.d  ~/.gdbinit.d
 
-cecho g "gdb plus ready!"
+cecho g "gdb pro ready!"
