@@ -46,7 +46,15 @@ usage(){
 Install:
 bash <(curl -s $_geturl/@aadi@) && source ~/.bashrc
 
-Usage:  ad COMMAND [help]
+Usage:  ad [ PLUGIN | COMMAND ] [help]
+
+    PLUGIN deploy:
+__EOF__
+    for i in `ls $_curdir/plugins/`; do
+        echo "        ${i##*/}"
+    done
+
+cat <<__EOF__
 
     COMMANDS:
         help
@@ -54,42 +62,45 @@ Usage:  ad COMMAND [help]
         get
         upgrade
 __EOF__
-
     for i in `ls $_curdir/tools/`; do
         echo "        ${i##*/}"
     done
 
-    [ "$_command" == "help" ] && exit 0 || exit 1
+    [ "$_action" == "help" ] && exit 0 || exit 1
 }
 
-_command=$1; shift;
+_action=$1; shift;
 
-if [[ -z $_command ]]; then
+if [[ -z $_action ]]; then
     usage
     exit 1
 fi
 
-case $_command in
-    put)
-        put "$@"
-        ;;
-    get)
-        get "$@"
-        ;;
-    help)
-        usage
-        ;;
-    upgrade)
-        upgrade
-        ;;
-    *)
-        if [[ -f $_curdir/tools/$_command ]]; then
-            $_curdir/tools/$_command "$@"
-        elif [[ -d $_curdir/tools/$_command ]]; then
-            $_curdir/tools/$_command/$_command "$@"
-        else
+if [[ -d $_curdir/plugins/$_action ]]; then
+    $_curdir/plugins/$_action/install
+else
+    case $_action in
+        put)
+            put "$@"
+            ;;
+        get)
+            get "$@"
+            ;;
+        help)
             usage
-            exit 1
-        fi
-        ;;
-esac
+            ;;
+        upgrade)
+            upgrade
+            ;;
+        *)
+            if [[ -f $_curdir/tools/$_action ]]; then
+                $_curdir/tools/$_action "$@"
+            elif [[ -d $_curdir/tools/$_action ]]; then
+                $_curdir/tools/$_action/$_action "$@"
+            else
+                usage
+                exit 1
+            fi
+            ;;
+    esac
+fi
