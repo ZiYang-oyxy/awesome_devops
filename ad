@@ -15,6 +15,10 @@ _geturl="http://10.145.17.12:8890"
 
 put()
 {
+    if [[ ! -f $1 ]]; then
+        cecho r "No such file"
+        exit 1
+    fi
     _name=`basename $1`
     _r_file=${2:-$_name}
     curl -T $1 $_puturl/$_r_file > /dev/null
@@ -28,7 +32,12 @@ get()
 {
     _name=`basename $1`
     _l_file=${2:-$_name}
-    curl -o $_l_file $_geturl/$_name
+    curl -fo $_l_file $_geturl/$_name
+    if [[ ! $? -eq 0 ]]; then
+        rm -f $_l_file
+        cecho r "No such file"
+        exit 1
+    fi
     md5sum $_l_file
     cecho g "`readlink -f $_l_file`"
 }
