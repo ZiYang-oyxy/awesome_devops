@@ -1,13 +1,13 @@
 #!/bin/bash -e
 
-mkdir -p /tmp/
-curl http://10.151.170.16:8890/@awesome_devops.tgz@ -o /tmp/awesome_devops.tgz
+mkdir -p ~/tmp/
+curl http://10.145.17.12:8890/@awesome_devops.tgz@ -o ~/tmp/awesome_devops.tgz
 if [[ -e ~/.awesome_devops ]]; then
     rm -rf ~/.awesome_devops.bak
     mv ~/.awesome_devops ~/.awesome_devops.bak
 fi
 
-cd /tmp
+cd ~/tmp
 tar xf awesome_devops.tgz
 mv awesome_devops ~/.awesome_devops
 

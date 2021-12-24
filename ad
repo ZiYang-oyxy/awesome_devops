@@ -3,14 +3,15 @@
 # Awesome Devops (or yet another AirDrop)
 #
 # TODO
-# 1. 支持mac命令行工具
-# 2. 支持bash completion
+# - (p1) 支持mac命令行工具
+# - (p0) 支持bash completion
+# - (p2) ad put无法传空文件
 
 _curdir="`dirname $(readlink -f $0)`"
 source $_curdir/lib/common.sh
 
-_puturl="http://10.151.170.16:8889"
-_geturl="http://10.151.170.16:8890"
+_puturl="http://10.145.17.12:8889"
+_geturl="http://10.145.17.12:8890"
 
 put()
 {
@@ -93,10 +94,17 @@ else
             upgrade
             ;;
         *)
+            # 无目录工具，支持直接执行
             if [[ -f $_curdir/tools/$_action ]]; then
                 $_curdir/tools/$_action "$@"
-            elif [[ -d $_curdir/tools/$_action ]]; then
+            # 有目录工具，目录与工具名必须同名，支持直接执行
+            elif [[ -f $_curdir/tools/$_action/$_action ]]; then
                 $_curdir/tools/$_action/$_action "$@"
+            # 有目录工具，目录与工具名不同名，不支持直接执行
+            elif [[ -d $_curdir/tools/$_action ]]; then
+                echo "Tool List:"
+                _list=`find $_curdir/tools/$_action/ -maxdepth 1 -perm -111 -type f`
+                cecho g "$_list"
             else
                 usage
                 exit 1
