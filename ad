@@ -84,10 +84,10 @@ upgrade()
 new_version_detect()
 {
     _old=`cat $_curdir/latest_version`
-    _new=`curl -f $GETURL/'@latest_version@' 2>/dev/null`
+    _new=`curl --connect-timeout 1 -f $GETURL/'@latest_version@' 2>/dev/null`
 
     if [[ ! $? -eq 0 ]]; then
-        return 0
+        cecho gr 'Unable to connect to ad server'
     fi
 
     if [[ $_new -gt $_old ]]; then
@@ -113,8 +113,8 @@ __EOF__
 
     COMMANDS:
         help
-        put
-        get
+        put | dput
+        get | dget
         upgrade
 __EOF__
     for i in `ls $_curdir/tools/`; do
@@ -165,13 +165,13 @@ else
             upgrade
             ;;
         *)
-            # 无目录工具，支持直接执行
+            # 无目录工具，直接执行
             if [[ -f $_curdir/tools/$_action ]]; then
                 $_curdir/tools/$_action "$@"
-            # 有目录工具，目录与工具名必须同名，支持直接执行
+            # 有目录工具，目录与工具名必须同名，直接执行
             elif [[ -f $_curdir/tools/$_action/$_action ]]; then
                 $_curdir/tools/$_action/$_action "$@"
-            # 有目录工具，目录与工具名不同名，不支持直接执行
+            # 有目录工具，目录与工具名不同名，一般是一个工具集，展示命令列表
             elif [[ -d $_curdir/tools/$_action ]]; then
                 echo "Tool List:"
                 _list=`find $_curdir/tools/$_action/ -maxdepth 1 -perm -111 -type f`
