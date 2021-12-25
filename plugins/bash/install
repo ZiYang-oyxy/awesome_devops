@@ -3,11 +3,16 @@
 curdir="`dirname $(readlink -f $0)`"
 source $curdir/../../lib/common.sh
 
-    if ! grep "PS1=.*"'`hostname -i`' ~/.bashrc; then
+if grep -q "^PS1=.*"'`hostname -i`' ~/.bashrc; then
+    # update this line because it's ad's code
+    sed -i '/^PS1=/d' ~/.bashrc
+else
+    sed -ie '/^PS1=/ s/^#*/#/' ~/.bashrc
+fi
+
 cat <<__EOF__ >> ~/.bashrc
 PS1='╔║ \u@\[\033[1;34m\]\`hostname -i\`\[\033[00m\] \[\033[1;35m\]\w\[\033[00m\] \n╚═ \[\033[1;30m\](\D{%F %T})\[\033[00m\] >> '
 __EOF__
-    fi
 
 cecho g "bash plus ready!"
 cecho r 'need to run "source ~/.bashrc"'

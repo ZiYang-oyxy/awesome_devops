@@ -1,3 +1,6 @@
+export PUTURL="http://10.145.17.12:8889"
+export GETURL="http://10.145.17.12:8890"
+
 cecho() {
   local code="\033["
   case "$1" in

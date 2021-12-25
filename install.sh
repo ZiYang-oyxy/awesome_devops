@@ -20,6 +20,7 @@ grep -q "export PATH=~/bin" ~/.bashrc || echo "export PATH=~/bin:\$PATH" >> ~/.b
 rm -f ~/bin/ad
 ln -s `readlink -f ~/.awesome_devops/ad` ~/bin/ad
 
+cat ~/.awesome_devops/changelog.log | awk '{$1=""; print $0}'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 printf "${GREEN}Happy Hacking!${NC}\n"

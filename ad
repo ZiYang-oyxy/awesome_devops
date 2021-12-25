@@ -11,9 +11,6 @@
 _curdir="`dirname $(readlink -f $0)`"
 source $_curdir/lib/common.sh
 
-_puturl="http://10.145.17.12:8889"
-_geturl="http://10.145.17.12:8890"
-
 put()
 {
     if [[ ! -f $1 ]]; then
@@ -22,10 +19,10 @@ put()
     fi
     _name=`basename $1`
     _r_file=${2:-$_name}
-    curl -T $1 $_puturl/$_r_file > /dev/null
+    curl -T $1 $PUTURL/$_r_file > /dev/null
     if [[ $? -eq 0 ]]; then
         md5sum $1
-        cecho g "$_geturl/$_r_file"
+        cecho g "$GETURL/$_r_file"
     fi
 }
 
@@ -44,10 +41,10 @@ dput()
     else
         tar c -C $_parent -zf $_name.tgz $_name
     fi
-    curl -T $_name.tgz $_puturl/$_name.tgz > /dev/null
+    curl -T $_name.tgz $PUTURL/$_name.tgz > /dev/null
     if [[ $? -eq 0 ]]; then
         md5sum $_name.tgz
-        cecho g "$_geturl/$_name.tgz"
+        cecho g "$GETURL/$_name.tgz"
     fi
     rm $_name.tgz
 }
@@ -55,7 +52,7 @@ dput()
 get()
 {
     _l_file=${2:-$1}
-    curl -fo $_l_file $_geturl/$1
+    curl -fo $_l_file $GETURL/$1
     if [[ ! $? -eq 0 ]]; then
         rm -f $_l_file
         cecho r "No such file"
@@ -67,7 +64,7 @@ get()
 
 dget()
 {
-    curl -fo $1.tgz $_geturl/$1.tgz
+    curl -fo $1.tgz $GETURL/$1.tgz
     if [[ ! $? -eq 0 ]]; then
         rm -f $1.tgz
         cecho r "No such directory"
@@ -84,14 +81,25 @@ upgrade()
     sh $_curdir/install.sh
 }
 
+new_version_detect()
+{
+    _old=`cat $_curdir/latest_version`
+    _new=`curl -f $GETURL/'@latest_version@' 2>/dev/null`
+
+    if [[ ! $? -eq 0 ]]; then
+        return 0
+    fi
+
+    if [[ $_new -gt $_old ]]; then
+        cecho gr 'A new version is available! Run "ad upgrade"'
+    fi
+}
+
 usage(){
 
     cat <<__EOF__
 
 ⚙ Awesome Devops (or yet another AirDrop) ⚙
-
-Install:
-bash <(curl -s $_geturl/@aadi@) && source ~/.bashrc
 
 Usage:  ad [ PLUGIN | COMMAND ] [help]
 
@@ -101,7 +109,7 @@ __EOF__
         echo "        ${i##*/}"
     done
 
-cat <<__EOF__
+    cat <<__EOF__
 
     COMMANDS:
         help
@@ -112,6 +120,17 @@ __EOF__
     for i in `ls $_curdir/tools/`; do
         echo "        ${i##*/}"
     done
+
+    cat <<__EOF__
+
+Install or Upgrade:
+bash <(curl -s $GETURL/@aadi@) && source ~/.bashrc
+
+Bug report:
+ruliu to ouyangxiongyi
+__EOF__
+
+    new_version_detect
 
     [ "$_action" == "help" ] && exit 0 || exit 1
 }
