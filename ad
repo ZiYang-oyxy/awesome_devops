@@ -2,10 +2,11 @@
 #
 # Awesome Devops (or yet another AirDrop)
 #
+# Copyright © 2021 Ouyang Xiongyi. All Rights Reserved.
+#
 # TODO
-# - (p1) 支持mac命令行工具
 # - (p0) 支持bash completion
-# - (p2) ad put无法传空文件
+# - (p1) 兼容macOS非gnu版本工具
 
 _curdir="`dirname $(readlink -f $0)`"
 source $_curdir/lib/common.sh
@@ -28,11 +29,33 @@ put()
     fi
 }
 
+# [Comparison of Compression Algorithms]
+# https://linuxreviews.org/Comparison_of_Compression_Algorithms
+dput()
+{
+    if [[ ! -d $1 ]]; then
+        cecho r "No such directory"
+        exit 1
+    fi
+    _name=`basename $1`
+    _parent=`dirname $1`
+    if (type pigz >/dev/null 2>&1); then
+        tar c -C $_parent -f - $_name | pigz > $_name.tgz
+    else
+        tar c -C $_parent -zf $_name.tgz $_name
+    fi
+    curl -T $_name.tgz $_puturl/$_name.tgz > /dev/null
+    if [[ $? -eq 0 ]]; then
+        md5sum $_name.tgz
+        cecho g "$_geturl/$_name.tgz"
+    fi
+    rm $_name.tgz
+}
+
 get()
 {
-    _name=`basename $1`
-    _l_file=${2:-$_name}
-    curl -fo $_l_file $_geturl/$_name
+    _l_file=${2:-$1}
+    curl -fo $_l_file $_geturl/$1
     if [[ ! $? -eq 0 ]]; then
         rm -f $_l_file
         cecho r "No such file"
@@ -40,6 +63,20 @@ get()
     fi
     md5sum $_l_file
     cecho g "`readlink -f $_l_file`"
+}
+
+dget()
+{
+    curl -fo $1.tgz $_geturl/$1.tgz
+    if [[ ! $? -eq 0 ]]; then
+        rm -f $1.tgz
+        cecho r "No such directory"
+        exit 1
+    fi
+    tar xf $1.tgz
+    md5sum $1.tgz
+    cecho g "`readlink -f $1`"
+    rm $1.tgz
 }
 
 upgrade()
@@ -95,6 +132,12 @@ else
             ;;
         get)
             get "$@"
+            ;;
+        dput)
+            dput "$@"
+            ;;
+        dget)
+            dget "$@"
             ;;
         help)
             usage
