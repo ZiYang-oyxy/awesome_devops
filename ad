@@ -37,9 +37,9 @@ dput()
     _name=`basename $1`
     _parent=`dirname $1`
     if (type pigz >/dev/null 2>&1); then
-        tar c -C $_parent -f - $_name | pigz > $_name.tgz
+        tar c -C $_parent --exclude='.git' -f - $_name | pigz > $_name.tgz
     else
-        tar c -C $_parent -zf $_name.tgz $_name
+        tar c -C $_parent --exclude='.git' -zf $_name.tgz $_name
     fi
     curl -T $_name.tgz $PUTURL/$_name.tgz > /dev/null
     if [[ $? -eq 0 ]]; then
