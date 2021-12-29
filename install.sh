@@ -18,7 +18,7 @@ if [[ ! -e ~/.bashrc ]]; then
     echo "export PATH=~/bin:\$PATH" > ~/.bashrc
 fi
 
-grep -q "export PATH=~/bin" ~/.bashrc || echo "export PATH=~/bin:\$PATH" >> ~/.bashrc
+grep -q "export PATH=~/bin" ~/.bashrc || printf "\nexport PATH=~/bin:\$PATH" >> ~/.bashrc
 rm -f ~/bin/ad
 ln -s `readlink -f ~/.awesome_devops/ad` ~/bin/ad
 
