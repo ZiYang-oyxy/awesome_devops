@@ -9,4 +9,6 @@ rm -rf ~/.gdbinit.d
 cp $curdir/.gdbinit ~/.gdbinit
 cp -r $curdir/.gdbinit.d  ~/.gdbinit.d
 
+type yum && yum install -y python-pygments
+
 cecho g "gdb pro ready!"
