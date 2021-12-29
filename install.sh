@@ -1,7 +1,9 @@
-#!/bin/bash -e
+#!/bin/bash
+
+set -e
 
 mkdir -p ~/tmp/
-curl http://10.145.17.12:8890/@awesome_devops.tgz@ -o ~/tmp/awesome_devops.tgz
+curl http://Awesome:Devops@10.145.17.12:8890/@awesome_devops.tgz@ -o ~/tmp/awesome_devops.tgz
 if [[ -e ~/.awesome_devops ]]; then
     rm -rf ~/.awesome_devops.bak
     mv ~/.awesome_devops ~/.awesome_devops.bak
