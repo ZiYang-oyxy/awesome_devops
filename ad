@@ -123,6 +123,9 @@ __EOF__
 
     cat <<__EOF__
 
+Web browser upload link:
+$PUTURL
+
 Install or Upgrade:
 bash <(curl -s $GETURL/@aadi@) && source ~/.bashrc
 
@@ -140,6 +143,12 @@ _action=$1; shift;
 if [[ -z $_action ]]; then
     usage
     exit 1
+fi
+
+# use experimental tool
+if [[ $_action == "ex" ]]; then
+    $_curdir/experimental/$1/install
+    exit 0
 fi
 
 if [[ -d $_curdir/plugins/$_action ]]; then

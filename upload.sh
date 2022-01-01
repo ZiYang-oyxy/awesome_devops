@@ -1,5 +1,11 @@
 #!/bin/bash
 
+_curdir="`dirname $(readlink -f $0)`"
+source $_curdir/lib/common.sh
+
+cd $_curdir
+bash <(curl -s $GETURL/@aadi@) && source ~/.bashrc
+
 echo ". Recent changes:" > changelog.log
 git log -5 --pretty=format:"%ct %cI %s" >> changelog.log
 echo "" >> changelog.log
@@ -10,3 +16,7 @@ tar c -C .. --exclude='dist' --exclude='.git' --exclude='*.swp' -zf dist/awesome
 ./ad put latest_version @latest_version@
 ./ad put install.sh @aadi@
 ./ad put dist/awesome_devops.tgz @awesome_devops.tgz@
+
+cecho y "bash <(curl -s $GETURL/@aadi@) && source ~/.bashrc"
+
+cd -
