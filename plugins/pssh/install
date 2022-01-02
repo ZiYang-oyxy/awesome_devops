@@ -1,0 +1,11 @@
+#!/bin/bash
+
+curdir="`dirname $(readlink -f $0)`"
+source $curdir/../../lib/common.sh
+
+rm -f ~/bin/pssh
+rm -f ~/bin/pscp
+ln -s `readlink -f $curdir/bin/pssh` ~/bin/pssh
+ln -s `readlink -f $curdir/bin/pscp` ~/bin/pscp
+
+cecho g "pssh and pscp install successful"
