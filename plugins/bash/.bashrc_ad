@@ -1,0 +1,19 @@
+RESET="\[\033[0m\]"
+RED="\[\033[01;31m\]"
+GREEN="\[\033[01;32m\]"
+BLUE="\[\033[01;34m\]"
+YELLOW="\[\033[01;33m\]"
+GRAY="\[\033[01;30m\]"
+
+prompt_char() {
+    [ $(id -u) -eq 0 ] && echo "#" || echo "$"
+}
+
+PS_LINE=`printf -- '- %.0s' {1..200}`
+ps_fill() {
+    PS_FILL=${PS_LINE:0:$COLUMNS}
+}
+PS_INFO="$GREEN\u$RESET@$YELLOW\`hostname -i\`$RESET: $BLUE\w$RESET"
+PS_TIME="\[\033[\$((COLUMNS-21))G\] $GRAY[\D{%F %T}]${RESET}"
+PROMPT_COMMAND=ps_fill
+export PS1="\${PS_FILL}\[\033[0G\]${PS_INFO} ${PS_TIME}\n$(prompt_char) "
