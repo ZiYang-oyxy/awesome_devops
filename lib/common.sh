@@ -37,14 +37,14 @@ _cecho() {
 
 cecho_test() {
 	ret="test"
-	cecho bk "$ret"
-	cecho r "$ret"
-	cecho g "$ret"
-	cecho y "$ret"
-	cecho b "$ret"
-	cecho p "$ret"
-	cecho c "$ret"
-	cecho gr "$ret"
+	cecho bk "bk $ret"
+	cecho r "r $ret"
+	cecho g "g $ret"
+	cecho y "y $ret"
+	cecho b "b $ret"
+	cecho p "p $ret"
+	cecho c "c $ret"
+	cecho gr "gr $ret"
 }
 
 curdir(){

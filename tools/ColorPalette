@@ -1,0 +1,179 @@
+#!/bin/bash
+
+# path:   /home/klassiker/.local/share/repos/terminal-colors/terminal_colors.sh
+# author: klassiker [mrdotx]
+# github: https://github.com/mrdotx/terminal-colors
+# date:   2021-06-25T12:00:55+0200
+
+script=$(basename "$0")
+help="$script [-h/--help] -- script to show terminal colors
+  Usage:
+    $script [-n]
+  Settings:
+    [-n] = hide numbers/pattern
+  Example:
+    $script
+    $script -n"
+
+plot() {
+    case "$3" in
+        1)
+            if [ "$1" -eq 7 ] \
+                || [ "$1" -ge "$2" ]; then
+                    color=30
+            else
+                color=37
+            fi
+
+            printf "\033[48;5;%sm\033[1;%sm %3d \033[0m" "$1" "$color" "$1"
+            ;;
+        0)
+            printf "\033[48;5;%sm     \033[0m" "$1"
+            ;;
+    esac
+}
+
+base_color() {
+    start_column=0
+    color_toggle=9
+    end_column=15
+    while [ "$start_column" -le "$end_column" ]; do
+        plot "$start_column" "$color_toggle" "$1"
+        n=$((start_column-7))
+        if [ $((n%8)) -eq 0 ]; then
+                printf "\n"
+            fi
+        start_column=$((start_column+1))
+    done
+}
+
+color() {
+    start_column=16
+    color_toggle=124
+    end_column=231
+    block=$(($(tput cols)/30))
+    if [ "$block" -ge 6 ]; then
+        block=6
+    elif [ "$block" -ge 3 ]; then
+        block=3
+    fi
+    column_num=$((block*6))
+    column_counter=0
+    while [ "$start_column" -le "$end_column" ]; do
+        plot "$start_column" "$color_toggle" "$1"
+        start_column=$((start_column+1))
+        column_counter=$((column_counter+1))
+        if [ "$column_counter" -eq "$column_num" ]; then
+            n=$((start_column-16))
+            if [ $((n%36)) -ne 0 ]; then
+                n=$((block-1))
+                start_column=$((start_column-n*36))
+            fi
+            column_counter=0
+            printf "\n"
+        elif [ $((column_counter%6)) -eq 0 ] \
+            && [ $((start_column+30)) -le "$end_column" ]; then
+                start_column=$((start_column+30))
+        fi
+    done
+}
+
+greyscale() {
+    start_column=232
+    color_toggle=244
+    end_column=255
+    block=$(($(tput cols)/30))
+    if [ "$block" -ge 4 ]; then
+        block=4
+    elif [ "$block" -ge 2 ]; then
+        block=2
+    fi
+    while [ "$start_column" -le "$end_column" ]; do
+        plot "$start_column" "$color_toggle" "$1"
+        n=$((start_column-15))
+        m=$((block*6))
+        if [ $((n%m)) -eq 0 ]; then
+                printf "\n"
+            fi
+        start_column=$((start_column+1))
+    done
+}
+
+true_color() {
+    awk -v pattern="$1" -v column_quantity="$(($(tput cols)*12))" 'BEGIN{
+        for (column = 0; column<column_quantity; column++) {
+            r = 255-(column*255/column_quantity);
+            g = (column*510/column_quantity);
+            b = (column*255/column_quantity);
+            if (g>255) g = 510-g;
+            printf "\033[48;2;%d;%d;%dm", r,g,b;
+            printf "\033[38;2;%d;%d;%dm", 255-r,255-g,255-b;
+            printf "%s\033[0m", substr(pattern,column%length(pattern)+1,1);
+        }
+        printf "\n";
+    }'
+}
+
+output() {
+    printf "%s\n" ":: base colors"
+    base_color "$1"
+    printf "%s\n" ":: color palette"
+    color "$1"
+    printf "%s\n" ":: greyscale"
+    greyscale "$1"
+    printf "%s\n" ":: true colors"
+    true_color "$2"
+}
+
+if [ $# -eq 0 ]; then
+    output "1" "|_|¯"
+else
+    case "$1" in
+        -h | --help)
+            printf "%s\n" "$help"
+            exit 0
+            ;;
+        -n)
+            output "0" " "
+            ;;
+        *)
+            printf "%s\n" "$help"
+            exit 1
+            ;;
+    esac
+fi
+
+
+
+# This file echoes a bunch of color codes to the terminal to demonstrate
+# what's available. Each line is the color code of one forground color,
+# out of 17 (default + 16 escapes), followed by a test use of that color
+# on all nine background colors (default + 8 escapes).
+#
+T='gYw'   # The test text
+echo -e "\n                 40m     41m     42m     43m     44m     45m     46m     47m";
+for FGs in '    m' '   1m' '  30m' '1;30m' '  31m' '1;31m' '  32m' '1;32m' '  33m' '1;33m' '  34m' '1;34m' '  35m' '1;35m' '  36m' '1;36m' '  37m' '1;37m';
+    do FG=${FGs// /}
+    echo -en " $FGs \033[$FG  $T  "
+    for BG in 40m 41m 42m 43m 44m 45m 46m 47m;
+        do echo -en "$EINS \033[$FG\033[$BG  $T \033[0m\033[$BG \033[0m";
+    done
+    echo;
+done
+echo
+
+echo -e ":\033[0mNormal"
+echo -e ":\033[1mBold\033[21m"
+echo -e ":\033[2mDim\033[22m"
+echo -e ":\033[4mUnderlined\033[24m"
+echo -e ":\033[5mBlink\033[25m"
+echo -e ":\033[7minverted\033[27m"
+echo -e ":\033[8mHidden\033[28m"
+
+# cecho test
+echo
+echo "=== cecho test ==="
+_curdir="`dirname $(readlink -f $0)`"
+source $_curdir/../lib/common.sh
+
+cecho_test
