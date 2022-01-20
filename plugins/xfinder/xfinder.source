@@ -55,7 +55,7 @@ alias xfindi="find_ed _xfindi"
 ### grep
 
 FIND='find . -regextype posix-egrep'
-SHELL_FILE_PAT_REV="(.*/(Makefile|makefile)|.*\.(c|h|cpp|S|java|xml|mk|lua|go))"
+SHELL_FILE_PAT_REV="(.*/(Makefile|meson\.build|makefile|CMakeLists\.txt|tags-e|tags|cscope.out|ncscope.out)|.*\.(c|h|cpp|S|java|xml|mk|lua|go))"
 C_FILE_PAT=".*\.(c|cc|cpp|h)"
 MAKE_FILE_PAT="(.*/(Makefile|meson\.build|makefile|CMakeLists\.txt)|.*\.(mk))"
 GO_FILE_PAT=".*\.(go)"
