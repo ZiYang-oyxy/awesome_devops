@@ -55,10 +55,12 @@ alias xfindi="find_ed _xfindi"
 ### grep
 
 FIND='find . -regextype posix-egrep'
-SHELL_FILE_PAT_REV="(.*/(Makefile|meson\.build|makefile|CMakeLists\.txt|tags-e|tags|cscope.out|ncscope.out)|.*\.(c|h|cpp|S|java|xml|mk|lua|go))"
 C_FILE_PAT=".*\.(c|cc|cpp|h)"
+OTHER_SRC_FILE_PAT=".*\.(g|lua|java|xml|S|patch|diff)"
+PY_FILE_PAT=".*\.(py)"
 MAKE_FILE_PAT="(.*/(Makefile|meson\.build|makefile|CMakeLists\.txt)|.*\.(mk))"
-GO_FILE_PAT=".*\.(go)"
+TAGS_FILE_PAT=".*/(tags-e|tags|cscope.out|ncscope.out)"
+SHELL_FILE_PAT_INVERT="$C_FILE_PAT|$MAKE_FILE_PAT|$OTHER_SRC_FILE_PAT|$TAGS_FILE_PAT|.*\.(rst|md)"
 
 grep_ed() {
 	# EXAMPLE:
@@ -122,26 +124,6 @@ function _xgrepi() {
 	$FIND $IGNORE_FILE -o -type f -name "*" -print0 | xargs -0 grep -H -i --color=always -n "$@"
 }
 
-function _jgrep()
-{
-	$FIND $IGNORE_FILE -o  -type f -name "*.java" -print0 | xargs -0 grep -H --color=always -n "$@"
-}
-
-function _jgrepi()
-{
-	$FIND $IGNORE_FILE -o  -type f -name "*.java" -print0 | xargs -0 grep -H -i --color=always -n "$@"
-}
-
-function _lgrep()
-{
-	$FIND $IGNORE_FILE -o -type f -name "*.lua" -print0 | xargs -0 grep -H --color=always -n "$@"
-}
-
-function _lgrepi()
-{
-	$FIND $IGNORE_FILE -o -type f -name "*.lua" -print0 | xargs -0 grep -H -i --color=always -n "$@"
-}
-
 function _cgrep()
 {
 	$FIND $IGNORE_FILE -o -type f -iregex "$C_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@"
@@ -152,34 +134,14 @@ function _cgrepi()
 	$FIND $IGNORE_FILE -o -type f -iregex "$C_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@"
 }
 
-function _gogrep()
-{
-	$FIND $IGNORE_FILE -o -type f -iregex "$GO_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@"
-}
-
-function _gogrepi()
-{
-	$FIND $IGNORE_FILE -o -type f -iregex "$GO_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@"
-}
-
 function _sgrep()
 {
-	$FIND $IGNORE_FILE -o -type f ! -iregex "$SHELL_FILE_PAT_REV" -print0 | xargs -0 grep -H --color=always -n "$@"
+	$FIND $IGNORE_FILE -o -type f ! -iregex "$SHELL_FILE_PAT_INVERT" -print0 | xargs -0 grep -H --color=always -n "$@"
 }
 
 function _sgrepi()
 {
-	$FIND $IGNORE_FILE -o -type f ! -iregex "$SHELL_FILE_PAT_REV" -print0 | xargs -0 grep -H -i --color=always -n "$@"
-}
-
-function _resgrep()
-{
-	for dir in `$FIND $IGNORE_FILE -o -name res -type d`; do $FIND $dir -type f -name '*\.xml' -print0 | xargs -0 grep -H --color=always -n "$@"; done;
-}
-
-function _resgrepi()
-{
-	for dir in `$FIND $IGNORE_FILE -o -name res -type d`; do $FIND $dir -type f -name '*\.xml' -print0 | xargs -0 grep -H -i --color=always -n "$@"; done;
+	$FIND $IGNORE_FILE -o -type f ! -iregex "$SHELL_FILE_PAT_INVERT" -print0 | xargs -0 grep -H -i --color=always -n "$@"
 }
 
 function _mgrep()
@@ -192,4 +154,24 @@ function _mgrepi()
 	$FIND $IGNORE_FILE -o  -type f -iregex "$MAKE_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@"
 }
 
-grep_fact c j l m res s x go
+function _ogrep()
+{
+	$FIND $IGNORE_FILE -o  -type f -name "$OTHER_SRC_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@"
+}
+
+function _ogrepi()
+{
+	$FIND $IGNORE_FILE -o  -type f -name "$OTHER_SRC_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@"
+}
+
+function _pgrep()
+{
+	$FIND $IGNORE_FILE -o  -type f -name "$PY_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@"
+}
+
+function _pgrepi()
+{
+	$FIND $IGNORE_FILE -o  -type f -name "$PY_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@"
+}
+
+grep_fact c o m s x p
