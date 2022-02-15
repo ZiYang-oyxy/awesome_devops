@@ -3,14 +3,14 @@
 set -e
 
 mkdir -p ~/tmp/
-curl http://Awesome:Devops@10.145.17.12:8890/@awesome_devops.tgz@ -o ~/tmp/awesome_devops.tgz
+curl http://Awesome:Devops@10.145.17.12:8890/@awesome_devops.tar@ -o ~/tmp/awesome_devops.tar
 if [[ -e ~/.awesome_devops ]]; then
     rm -rf ~/.awesome_devops.bak
     mv ~/.awesome_devops ~/.awesome_devops.bak
 fi
 
 cd ~/tmp
-tar xf awesome_devops.tgz
+tar xf awesome_devops.tar
 mv awesome_devops ~/.awesome_devops
 
 mkdir -p ~/bin
