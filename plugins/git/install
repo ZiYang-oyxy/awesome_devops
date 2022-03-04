@@ -4,7 +4,7 @@ curdir="`dirname $(readlink -f $0)`"
 source $curdir/../../lib/common.sh
 
 if ! grep -q "source $curdir/.git-completion.bash" ~/.bashrc; then
-    echo "source $curdir/.git-completion.bash" >> ~/.bashrc
+    echo -e "\nsource $curdir/.git-completion.bash" >> ~/.bashrc
 fi
 
 cecho g "git plus ready!"

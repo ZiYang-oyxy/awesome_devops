@@ -56,11 +56,11 @@ alias xfindi="find_ed _xfindi"
 
 FIND='find . -regextype posix-egrep'
 C_FILE_PAT=".*\.(c|cc|cpp|h)"
-OTHER_SRC_FILE_PAT=".*\.(g|lua|java|xml|S|patch|diff)"
+OTHER_SRC_FILE_PAT=".*\.(g|lua|java|xml|S|patch|diff|log|txt)"
 PY_FILE_PAT=".*\.(py)"
 MAKE_FILE_PAT="(.*/(Makefile|meson\.build|makefile|CMakeLists\.txt)|.*\.(mk))"
 TAGS_FILE_PAT=".*/(tags-e|tags|cscope.out|ncscope.out)"
-SHELL_FILE_PAT_INVERT="$C_FILE_PAT|$MAKE_FILE_PAT|$OTHER_SRC_FILE_PAT|$TAGS_FILE_PAT|.*\.(rst|md)"
+SHELL_FILE_PAT_INVERT="$C_FILE_PAT|$MAKE_FILE_PAT|$OTHER_SRC_FILE_PAT|$TAGS_FILE_PAT|$PY_FILE_PAT|.*\.(rst|md)"
 
 grep_ed() {
 	# EXAMPLE:
@@ -156,22 +156,22 @@ function _mgrepi()
 
 function _ogrep()
 {
-	$FIND $IGNORE_FILE -o  -type f -name "$OTHER_SRC_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@"
+	$FIND $IGNORE_FILE -o  -type f -iregex "$OTHER_SRC_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@"
 }
 
 function _ogrepi()
 {
-	$FIND $IGNORE_FILE -o  -type f -name "$OTHER_SRC_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@"
+	$FIND $IGNORE_FILE -o  -type f -iregex "$OTHER_SRC_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@"
 }
 
 function _pgrep()
 {
-	$FIND $IGNORE_FILE -o  -type f -name "$PY_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@"
+	$FIND $IGNORE_FILE -o  -type f -iregex "$PY_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@"
 }
 
 function _pgrepi()
 {
-	$FIND $IGNORE_FILE -o  -type f -name "$PY_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@"
+	$FIND $IGNORE_FILE -o  -type f -iregex "$PY_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@"
 }
 
 grep_fact c o m s x p
