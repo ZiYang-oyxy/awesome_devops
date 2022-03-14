@@ -6,6 +6,7 @@
 #
 # TODO
 # - (p0) 支持bash completion
+# - (p0) 搞定rsync
 # - (p1) 兼容macOS非gnu版本工具
 
 _curdir="`dirname $(readlink -f $0)`"
@@ -51,6 +52,23 @@ dput()
         cecho p "ad dget $_name"
     fi
     rm $_name.tgz
+}
+
+tput()
+{
+    if [[ ! -f $1 ]]; then
+        cecho r "No such file"
+        exit 1
+    fi
+    _name=`basename $1`
+    _r_file=`date --iso-8601=seconds`_${2:-$_name}
+    curl -T $1 $PUTURL/$_r_file > /dev/null
+    if [[ $? -eq 0 ]]; then
+        _res=(`md5sum $1`)
+        cecho y "${_res[0]}"
+        cecho g "$GETURL/$_r_file"
+        cecho p "ad get $_r_file"
+    fi
 }
 
 get()
@@ -119,7 +137,7 @@ __EOF__
 
     COMMANDS:
         help
-        put | dput
+        put | dput | tput
         get | dget
         upgrade
 __EOF__
@@ -161,17 +179,8 @@ if [[ -d $_curdir/plugins/$_action ]]; then
     $_curdir/plugins/$_action/install
 else
     case $_action in
-        put)
-            put "$@"
-            ;;
-        get)
-            get "$@"
-            ;;
-        dput)
-            dput "$@"
-            ;;
-        dget)
-            dget "$@"
+        put | get | dput | dget | tput)
+            $_action "$@"
             ;;
         help)
             usage
