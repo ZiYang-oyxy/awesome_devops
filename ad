@@ -33,6 +33,11 @@ put()
 # https://linuxreviews.org/Comparison_of_Compression_Algorithms
 dput()
 {
+    # “:”会被tar认为是远程服务器
+    if [[ $1 =~ .*:.* ]]; then
+        cecho r "not allow directory contain \":\""
+        exit 1
+    fi
     if [[ ! -d $1 ]]; then
         cecho r "No such directory"
         exit 1
@@ -40,9 +45,9 @@ dput()
     _name=`basename $1`
     _parent=`dirname $1`
     if (type pigz >/dev/null 2>&1); then
-        tar c -C $_parent --exclude='.git' --force-local -f - $_name | pigz > $_name.tgz
+        tar c -C $_parent --exclude='.git' -f - $_name | pigz > $_name.tgz
     else
-        tar c -C $_parent --exclude='.git' -z --force-local -f $_name.tgz $_name
+        tar c -C $_parent --exclude='.git' -z -f $_name.tgz $_name
     fi
     curl -T $_name.tgz $PUTURL/$_name.tgz > /dev/null
     if [[ $? -eq 0 ]]; then
@@ -87,13 +92,18 @@ get()
 
 dget()
 {
+    # “:”会被tar认为是远程服务器
+    if [[ $1 =~ .*:.* ]]; then
+        cecho r "not allow directory contain \":\""
+        exit 1
+    fi
     curl -fo $1.tgz $GETURL/$1.tgz
     if [[ ! $? -eq 0 ]]; then
         rm -f $1.tgz
         cecho r "No such directory"
         exit 1
     fi
-    tar x --force-local -f $1.tgz
+    tar x -f $1.tgz
     _res=(`md5sum $1.tgz`)
     cecho y "${_res[0]}"
     cecho g "`readlink -f $1`"
