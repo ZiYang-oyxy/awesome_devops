@@ -1,3 +1,5 @@
+#!/bin/bash
+
 export PUTURL="http://Awesome:Devops@10.145.17.12:8889"
 export GETURL="http://Awesome:Devops@10.145.17.12:8890"
 
@@ -49,4 +51,34 @@ cecho_test() {
 
 curdir(){
     dirname $(readlink -f $0)
+}
+
+# Log the given message at the given level. All logs are written to stderr with a timestamp.
+function log {
+  local -r level="$1"
+  local -r message="$2"
+  local -r timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+  echo -e "${timestamp}|${level}|${BASH_SOURCE[2]}:${BASH_LINENO[1]}|${message}"
+}
+
+# Log the given message at INFO level. All logs are written to stderr with a timestamp.
+function log_info {
+  local -r message="$1"
+  log "INFO" "$message"
+}
+
+# Log the given message at WARN level. All logs are written to stderr with a timestamp.
+function log_warn {
+  local -r message="$1"
+  log "WARN" "$message"
+}
+
+# Log the given message at ERROR level. All logs are written to stderr with a timestamp.
+function log_error {
+  local -r message="$1"
+  log "ERROR" "$message"
+}
+
+function ssh_retry {
+    ssh -v -o ConnectTimeout=5 -o ConnectionAttempts=6 "$@"
 }
