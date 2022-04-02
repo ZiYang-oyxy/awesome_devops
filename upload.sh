@@ -13,6 +13,14 @@ git log -1 --pretty=format:"%ct" > latest_version
 
 tar c -C .. --exclude='dist' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
 
+# 打包一些外部工具
+if [[ -d $_curdir/../ad_external ]]; then
+    rm -rf dist/awesome_devops
+    tar x -C dist -f dist/awesome_devops.tar
+    rsync --filter=":- .gitignore" -avzP $_curdir/../ad_external/ dist/awesome_devops
+    tar c -C dist --exclude='dist' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
+fi
+
 ./ad put latest_version @latest_version@
 ./ad put install.sh @aadi@
 ./ad put dist/awesome_devops.tar @awesome_devops.tar@
