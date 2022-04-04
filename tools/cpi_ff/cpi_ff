@@ -27,13 +27,13 @@ intel_ff()
 
     # !!! perf script一定要按照stackcollapse-perf.pl的使用说明去掉无关的域，否则无法上色，不同的perf/kernel版本用法有出入，自行解决
     #
-    #[root@bddwd-sys-rpm02557b0d6.bddwd cpi_ff]#./FlameGraph/stackcollapse-perf.pl -h
-    #...
-    #[1] perf script must emit both PID and TIDs for these to work; eg, Linux < 4.1:
-    #        perf script -f comm,pid,tid,cpu,time,event,ip,sym,dso,trace
-    #    for Linux >= 4.1:
-    #        perf script -F comm,pid,tid,cpu,time,event,ip,sym,dso,trace
-    #    If you save this output add --header on Linux >= 3.14 to include perf info.
+    # $./FlameGraph/stackcollapse-perf.pl -h
+    # ...
+    # [1] perf script must emit both PID and TIDs for these to work; eg, Linux < 4.1:
+    #         perf script -f comm,pid,tid,cpu,time,event,ip,sym,dso,trace
+    #     for Linux >= 4.1:
+    #         perf script -F comm,pid,tid,cpu,time,event,ip,sym,dso,trace
+    #     If you save this output add --header on Linux >= 3.14 to include perf info.
     perf script -F comm,pid,tid,time,event,ip,sym,dso > /tmp/out.perf
 
     $FG_PATH/stackcollapse-perf.pl --event-filter=cpu_clk_unhalted_thread_p /tmp/out.perf > /tmp/out.folded.cycles
