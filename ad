@@ -4,10 +4,6 @@
 #
 # Copyright © 2021 Ouyang Xiongyi. All Rights Reserved.
 #
-# TODO
-# - (p0) 支持bash completion
-# - (p0) 搞定rsync
-# - (p1) 兼容macOS非gnu版本工具
 
 _curdir="`dirname $(readlink -f $0)`"
 source $_curdir/lib/common.sh
@@ -115,6 +111,11 @@ upgrade()
     sh $_curdir/install.sh
 }
 
+ad_tree()
+{
+    tree -C $_curdir
+}
+
 new_version_detect()
 {
     _old=`cat $_curdir/latest_version`
@@ -135,24 +136,35 @@ usage(){
 
 ⚙ Awesome Devops (or yet another AirDrop) ⚙
 
-Usage:  ad [ PLUGIN | COMMAND ] [help]
+Usage:  ad [ COMMAND | TOOL | PLUGIN ] [ ARGUMENT ]
 
-    PLUGIN deploy:
+    BASIC COMMAND:
+        help     # this message
+        upgrade  # upgrade to latest version
+        tree     # prints out ad directory in a tree-like display
+        [ put | tput | get ] <file>
+        [ dput | dget ] <directory>
+
+    TOOL:
 __EOF__
-    for i in `ls $_curdir/plugins/`; do
+    for i in `ls $_curdir/tools/`; do
         echo "        ${i##*/}"
     done
 
     cat <<__EOF__
 
-    COMMANDS:
-        help
-        put | dput | tput
-        get | dget
-        upgrade
+    EXTERNAL TOOL:
 __EOF__
-    for i in `ls $_curdir/tools/`; do
+    for i in `ls $_curdir/ext_tools/`; do
         echo "        ${i##*/}"
+    done
+
+    cat <<__EOF__
+
+    PLUGIN install:
+__EOF__
+    for i in `ls $_curdir/plugins/`; do
+        echo "        deploy ${i##*/}"
     done
 
     cat <<__EOF__
@@ -179,41 +191,66 @@ if [[ -z $_action ]]; then
     exit 1
 fi
 
-# use experimental tool
-if [[ $_action == "ex" ]]; then
-    $_curdir/experimental/$1/install
-    exit 0
-fi
-
-if [[ -d $_curdir/plugins/$_action ]]; then
-    $_curdir/plugins/$_action/install
-else
-    case $_action in
-        put | get | dput | dget | tput)
-            $_action "$@"
-            ;;
-        help)
-            usage
-            ;;
-        upgrade)
-            upgrade
-            ;;
-        *)
-            # 无目录工具，直接执行
-            if [[ -f $_curdir/tools/$_action ]]; then
-                $_curdir/tools/$_action "$@"
-            # 有目录工具，目录与工具名必须同名，直接执行
-            elif [[ -f $_curdir/tools/$_action/$_action ]]; then
-                $_curdir/tools/$_action/$_action "$@"
-            # 有目录工具，目录与工具名不同名，一般是一个工具集，展示命令列表
-            elif [[ -d $_curdir/tools/$_action ]]; then
+case $_action in
+    put | get | dput | dget | tput | upgrade)
+        $_action "$@"
+        ;;
+    help)
+        usage
+        ;;
+    tree)
+        ad_tree
+        ;;
+    deploy)
+        _plugin=$1
+        if [[ -z $_plugin ]]; then
+            cecho r "no plugin is specified! Select one:"
+            for i in `ls $_curdir/plugins/`; do
+                echo "${i##*/}"
+            done
+            exit 1
+        fi
+        $_curdir/plugins/$_plugin/install
+        ;;
+    ex)
+        # install my experimental tool, will not be displayed in usage
+        $_curdir/experimental/$1/install
+        ;;
+    *)
+        # 无目录工具，直接执行
+        if [[ -f $_curdir/tools/$_action ]]; then
+            $_curdir/tools/$_action "$@"
+        elif [[ -f $_curdir/ext_tools/$_action ]]; then
+            $_curdir/ext_tools/$_action "$@"
+        # 有目录工具，目录与工具名必须同名，直接执行
+        elif [[ -f $_curdir/tools/$_action/$_action ]]; then
+            $_curdir/tools/$_action/$_action "$@"
+        elif [[ -f $_curdir/ext_tools/$_action/$_action ]]; then
+            $_curdir/ext_tools/$_action/$_action "$@"
+        # 有目录工具，目录与工具名不同名，一般是一个工具集，展示命令列表，或直接执行
+        elif [[ -d $_curdir/tools/$_action ]]; then
+            _tool=$1
+            if [[ -z $_tool ]]; then
                 echo "Tool List:"
                 _list=`find $_curdir/tools/$_action/ -maxdepth 1 -perm -111 -type f`
                 cecho g "$_list"
             else
-                usage
-                exit 1
+                shift
+                $_curdir/tools/$_action/$_tool "$@"
             fi
-            ;;
-    esac
-fi
+        elif [[ -d $_curdir/ext_tools/$_action ]]; then
+            _tool=$1
+            if [[ -z $_tool ]]; then
+                echo "Tool List:"
+                _list=`find $_curdir/ext_tools/$_action/ -maxdepth 1 -perm -111 -type f`
+                cecho g "$_list"
+            else
+                shift
+                $_curdir/ext_tools/$_action/$_tool "$@"
+            fi
+        else
+            usage
+            exit 1
+        fi
+        ;;
+esac

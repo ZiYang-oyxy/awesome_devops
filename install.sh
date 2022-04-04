@@ -19,6 +19,7 @@ if [[ ! -e ~/.bashrc ]]; then
 fi
 
 grep -q "export PATH=~/bin" ~/.bashrc || printf "\nexport PATH=~/bin:\$PATH\n" >> ~/.bashrc
+grep -q "source ~/.awesome_devops/ad-completion.bash" ~/.bashrc || printf "\nsource ~/.awesome_devops/ad-completion.bash\n" >> ~/.bashrc
 rm -f ~/bin/ad
 ln -s `readlink -f ~/.awesome_devops/ad` ~/bin/ad
 
