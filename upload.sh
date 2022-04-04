@@ -25,6 +25,8 @@ fi
 ./ad put install.sh @aadi@
 ./ad put dist/awesome_devops.tar @awesome_devops.tar@
 
+echo
+echo "install link:"
 cecho y "bash <(curl -s $GETURL/@aadi@) && source ~/.bashrc"
 
-cd -
+cd - > /dev/null

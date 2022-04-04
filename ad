@@ -108,7 +108,7 @@ dget()
 
 upgrade()
 {
-    sh $_curdir/install.sh
+    bash <(curl -s $GETURL/@aadi@)
 }
 
 ad_tree()
