@@ -1,7 +1,9 @@
 #!/bin/bash
 
-export PUTURL="http://Awesome:Devops@10.145.17.12:8889"
-export GETURL="http://Awesome:Devops@10.145.17.12:8890"
+export SERVEFILE_PUT_ADDR=
+export SERVEFILE_GET_ADDR=
+export PUTURL="http://Awesome:Devops@$SERVEFILE_PUT_ADDR"
+export GETURL="http://Awesome:Devops@$SERVEFILE_GET_ADDR"
 
 cecho() {
   local code="\033["

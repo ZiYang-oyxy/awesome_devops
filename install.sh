@@ -3,7 +3,7 @@
 set -e
 
 mkdir -p ~/tmp/
-curl http://Awesome:Devops@10.145.17.12:8890/@awesome_devops.tar@ -o ~/tmp/awesome_devops.tar
+curl http://Awesome:Devops@SERVEFILE_GET_ADDR/@awesome_devops.tar@ -o ~/tmp/awesome_devops.tar
 if [[ -e ~/.awesome_devops ]]; then
     rm -rf ~/.awesome_devops.bak
     mv ~/.awesome_devops ~/.awesome_devops.bak
