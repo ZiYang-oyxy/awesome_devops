@@ -113,7 +113,7 @@ upgrade()
 
 ad_tree()
 {
-    tree -C $_curdir
+    tree -C $_curdir -I '.git'
 }
 
 ad_vim()
@@ -154,7 +154,11 @@ Usage:  ad [ COMMAND | TOOL | PLUGIN ] [ ARGUMENT ]
     TOOL:
 __EOF__
     for i in `ls $_curdir/tools/`; do
-        echo "        ${i##*/}"
+        if [[ -d $_curdir/tools/$i ]]; then
+            echo "        $i/"
+        else
+            echo "        $i"
+        fi
     done
 
     cat <<__EOF__
@@ -162,7 +166,11 @@ __EOF__
     EXTERNAL TOOL:
 __EOF__
     for i in `ls $_curdir/ext_tools/`; do
-        echo "        ${i##*/}"
+        if [[ -d $_curdir/ext_tools/$i ]]; then
+            echo "        $i/"
+        else
+            echo "        $i"
+        fi
     done
 
     cat <<__EOF__

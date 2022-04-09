@@ -23,8 +23,29 @@ _ad()
             ;;
         2)
             case ${COMP_WORDS[1]} in
+                deploy)
+                    plugins=`ls ~/.awesome_devops/plugins`
+                    COMPREPLY=($(compgen -W "$plugins" "${COMP_WORDS[2]}"))
+                    ;;
                 *)
-                    COMPREPLY=($(_mycmd_compgen_filenames "${COMP_WORDS[2]}"))
+                    # 有目录工具，目录与工具名必须同名，直接执行
+                    if [[ -f ~/.awesome_devops/tools/${COMP_WORDS[1]}/${COMP_WORDS[1]} ]]; then
+                        COMPREPLY=($(_mycmd_compgen_filenames "${COMP_WORDS[2]}"))
+                    elif [[ -f ~/.awesome_devops/ext_tools/${COMP_WORDS[1]}/${COMP_WORDS[1]} ]]; then
+                        COMPREPLY=($(_mycmd_compgen_filenames "${COMP_WORDS[2]}"))
+                    # 有目录工具，目录与工具名不同名，一般是一个工具集，展示命令列表，或直接执行
+                    elif [[ -d ~/.awesome_devops/tools/${COMP_WORDS[1]} ]]; then
+                        executable=`(cd ~/.awesome_devops/tools/${COMP_WORDS[1]}; \
+                            find ./ -maxdepth 1 -executable -type f -printf '%f\n')`
+                        COMPREPLY=($(compgen -W "$executable" "${COMP_WORDS[2]}"))
+                    elif [[ -d ~/.awesome_devops/ext_tools/${COMP_WORDS[1]} ]]; then
+                        executable=`(cd ~/.awesome_devops/ext_tools/${COMP_WORDS[1]}; \
+                            find ./ -maxdepth 1 -executable -type f -printf '%f\n')`
+                        COMPREPLY=($(compgen -W "$executable" "${COMP_WORDS[2]}"))
+                    else
+                        # 其他工具，直接执行
+                        COMPREPLY=($(_mycmd_compgen_filenames "${COMP_WORDS[2]}"))
+                    fi
                     ;;
             esac
             ;;
