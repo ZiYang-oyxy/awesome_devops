@@ -80,7 +80,3 @@ function log_error {
   local -r message="$1"
   log "ERROR" "$message"
 }
-
-function ssh_retry {
-    ssh -v -o ConnectTimeout=5 -o ConnectionAttempts=6 "$@"
-}
