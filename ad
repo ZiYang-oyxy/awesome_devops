@@ -116,6 +116,11 @@ ad_tree()
     tree -C $_curdir
 }
 
+ad_vim()
+{
+    vim -u $_curdir/vim/.vimrc "$@"
+}
+
 new_version_detect()
 {
     _old=`cat $_curdir/latest_version`
@@ -141,6 +146,7 @@ Usage:  ad [ COMMAND | TOOL | PLUGIN ] [ ARGUMENT ]
     BASIC COMMAND:
         help     # this message
         upgrade  # upgrade to latest version
+        vim      # my vim
         tree     # prints out ad directory in a tree-like display
         [ put | tput | get ] <file>
         [ dput | dget ] <directory>
@@ -200,6 +206,9 @@ case $_action in
         ;;
     tree)
         ad_tree
+        ;;
+    vim)
+        ad_vim "$@"
         ;;
     deploy)
         _plugin=$1

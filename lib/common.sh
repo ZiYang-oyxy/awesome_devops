@@ -80,3 +80,11 @@ function log_error {
   local -r message="$1"
   log "ERROR" "$message"
 }
+
+_ln(){
+    if [[ -e $2 ]]; then
+        rm -rf $2.bak
+        mv -f $2 $2.bak
+    fi
+    ln -sf $1 $2
+}
