@@ -113,7 +113,7 @@ upgrade()
 
 ad_tree()
 {
-    tree -C $_curdir -I '.git'
+    tree -C $_curdir -I '.git|vim' -L 3
 }
 
 ad_vim()

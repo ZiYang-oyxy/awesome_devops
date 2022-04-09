@@ -21,6 +21,9 @@ if [[ -d $_curdir/../ad_external ]]; then
     rm -rf dist/awesome_devops
     tar x -C dist -f dist/awesome_devops.tar
     rsync --filter=":- .gitignore" -avzP $_curdir/../ad_external/awesome_devops/ dist/awesome_devops
+
+    # 让本地也能用
+    rsync --filter=":- .gitignore" -avzP $_curdir/../ad_external/awesome_devops/ $_curdir
 fi
 
 if [[ $OSTYPE == 'darwin'* ]]; then
