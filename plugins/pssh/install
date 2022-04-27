@@ -3,6 +3,7 @@
 curdir="`dirname $(readlink -f $0)`"
 source $curdir/../../lib/common.sh
 
-python $curdir/setup.py  install
+cd $curdir/
+python ./setup.py  install
 
 cecho g "pssh and pscp install successful"
