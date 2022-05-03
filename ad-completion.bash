@@ -1,5 +1,7 @@
 #!/bin/bash
-# refer to https://github.com/iridakos/bash-completion-tutorial
+# refer to
+# 1. https://github.com/iridakos/bash-completion-tutorial
+# 2. https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion-Builtins.html#Programmable-Completion-Builtins
 
 _mycmd_compgen_filenames() {
     local cur="$1"
@@ -50,9 +52,14 @@ _ad()
             esac
             ;;
         *)
-            return
+            COMPREPLY=($(_mycmd_compgen_filenames "${COMP_WORDS[$COMP_CWORD]}"))
             ;;
     esac
+
+    # macos默认的bash版本太老，不支持compopt
+    if type compopt > /dev/null 2>&1 && [[ $COMPREPLY == */ ]]; then
+        compopt -o nospace
+    fi
 }
 
 complete -F _ad ad
