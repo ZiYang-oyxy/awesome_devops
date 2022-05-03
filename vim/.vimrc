@@ -15,7 +15,13 @@ let g:mapleader = "\ "
 " update
 "curl -fLo ~/.awesome_devops/vim/autoload/plug.vim --create-dirs \
 "    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-call plug#begin('~/.awesome_devops/vim/plugged')
+let g:gitgutter_git_executable = get(g:, 'gitgutter_git_executable', 'git')
+if !executable(g:gitgutter_git_executable)
+    let g:gitgutter_git_executable='true'
+    silent! call plug#begin('~/.awesome_devops/vim/plugged')
+else
+    call plug#begin('~/.awesome_devops/vim/plugged')
+endif
 
 "###########################
 "# main screen
