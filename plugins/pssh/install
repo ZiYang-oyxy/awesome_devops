@@ -6,4 +6,4 @@ source $curdir/../../lib/common.sh
 cd $curdir/
 python ./setup.py  install
 
-cecho g "pssh and pscp install successful"
+cecho -G "pssh and pscp install successful"

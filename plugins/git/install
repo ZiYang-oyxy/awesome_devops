@@ -7,5 +7,5 @@ if ! grep -q "source $curdir/.git-completion.bash" ~/.bashrc; then
     echo -e "\nsource $curdir/.git-completion.bash" >> ~/.bashrc
 fi
 
-cecho g "git plus ready!"
-cecho r 'need to run "source ~/.bashrc"'
+cecho -G "git plus ready!"
+cecho -R 'need to run "source ~/.bashrc"'

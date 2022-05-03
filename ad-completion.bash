@@ -63,3 +63,8 @@ _ad()
 }
 
 complete -F _ad ad
+
+# 让bash命令行直接能使用cecho，不需要额外带上ad
+cecho(){
+    ~/.awesome_devops/tools/cecho "$@"
+}

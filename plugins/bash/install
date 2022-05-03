@@ -5,5 +5,5 @@ source $curdir/../../lib/common.sh
 
 grep -q "source $curdir/.bashrc_ad" ~/.bashrc || echo -e "\nsource $curdir/.bashrc_ad" >> ~/.bashrc
 
-cecho g "bashrc install succeeded"
-cecho r 'need to run "source ~/.bashrc"'
+cecho -G "bashrc install succeeded"
+cecho -R 'need to run "source ~/.bashrc"'

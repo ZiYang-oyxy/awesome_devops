@@ -11,7 +11,7 @@ source $_curdir/lib/common.sh
 put()
 {
     if [[ ! -f $1 ]]; then
-        cecho r "No such file"
+        cecho -R "No such file"
         exit 1
     fi
     _name=`basename $1`
@@ -19,9 +19,9 @@ put()
     curl -T $1 $PUTURL/$_r_file > /dev/null
     if [[ $? -eq 0 ]]; then
         _res=(`md5sum $1`)
-        cecho y "${_res[0]}"
-        cecho g "$GETURL/$_r_file"
-        cecho p "ad get $_r_file"
+        cecho -Y "${_res[0]}"
+        cecho -G "$GETURL/$_r_file"
+        cecho -M "ad get $_r_file"
     fi
 }
 
@@ -31,11 +31,11 @@ dput()
 {
     # “:”会被tar认为是远程服务器
     if [[ $1 =~ .*:.* ]]; then
-        cecho r "not allow directory contain \":\""
+        cecho -R "not allow directory contain \":\""
         exit 1
     fi
     if [[ ! -d $1 ]]; then
-        cecho r "No such directory"
+        cecho -R "No such directory"
         exit 1
     fi
     _name=`basename $1`
@@ -48,9 +48,9 @@ dput()
     curl -T $_name.tgz $PUTURL/$_name.tgz > /dev/null
     if [[ $? -eq 0 ]]; then
         _res=(`md5sum $_name.tgz`)
-        cecho y "${_res[0]}"
-        cecho g "$GETURL/$_name.tgz"
-        cecho p "ad dget $_name"
+        cecho -Y "${_res[0]}"
+        cecho -G "$GETURL/$_name.tgz"
+        cecho -M "ad dget $_name"
     fi
     rm $_name.tgz
 }
@@ -58,7 +58,7 @@ dput()
 tput()
 {
     if [[ ! -f $1 ]]; then
-        cecho r "No such file"
+        cecho -R "No such file"
         exit 1
     fi
     _name=`basename $1`
@@ -66,9 +66,9 @@ tput()
     curl -T $1 $PUTURL/$_r_file > /dev/null
     if [[ $? -eq 0 ]]; then
         _res=(`md5sum $1`)
-        cecho y "${_res[0]}"
-        cecho g "$GETURL/$_r_file"
-        cecho p "ad get $_r_file"
+        cecho -Y "${_res[0]}"
+        cecho -G "$GETURL/$_r_file"
+        cecho -M "ad get $_r_file"
     fi
 }
 
@@ -78,31 +78,31 @@ get()
     curl -fo $_l_file $GETURL/$1
     if [[ ! $? -eq 0 ]]; then
         rm -f $_l_file
-        cecho r "No such file"
+        cecho -R "No such file"
         exit 1
     fi
     _res=(`md5sum $_l_file`)
-    cecho y "${_res[0]}"
-    cecho g "`readlink -f $_l_file`"
+    cecho -Y "${_res[0]}"
+    cecho -G "`readlink -f $_l_file`"
 }
 
 dget()
 {
     # “:”会被tar认为是远程服务器
     if [[ $1 =~ .*:.* ]]; then
-        cecho r "not allow directory contain \":\""
+        cecho -R "not allow directory contain \":\""
         exit 1
     fi
     curl -fo $1.tgz $GETURL/$1.tgz
     if [[ ! $? -eq 0 ]]; then
         rm -f $1.tgz
-        cecho r "No such directory"
+        cecho -R "No such directory"
         exit 1
     fi
     tar x -f $1.tgz
     _res=(`md5sum $1.tgz`)
-    cecho y "${_res[0]}"
-    cecho g "`readlink -f $1`"
+    cecho -Y "${_res[0]}"
+    cecho -G "`readlink -f $1`"
     rm $1.tgz
 }
 
@@ -127,11 +127,11 @@ new_version_detect()
     _new=`curl --connect-timeout 1 -f $GETURL/'@latest_version@' 2>/dev/null`
 
     if [[ ! $? -eq 0 ]]; then
-        cecho gr 'Unable to connect to ad server'
+        cecho -Gy 'Unable to connect to ad server'
     fi
 
     if [[ $_new -gt $_old ]]; then
-        cecho gr 'A new version is available! Run "ad upgrade"'
+        cecho -Gy 'A new version is available! Run "ad upgrade"'
     fi
 }
 
@@ -221,7 +221,7 @@ case $_action in
     deploy)
         _plugin=$1
         if [[ -z $_plugin ]]; then
-            cecho r "no plugin is specified! Select one:"
+            cecho -R "no plugin is specified! Select one:"
             for i in `ls $_curdir/plugins/`; do
                 echo "${i##*/}"
             done
@@ -250,7 +250,7 @@ case $_action in
             if [[ -z $_tool ]]; then
                 echo "Tool List:"
                 _list=`find $_curdir/tools/$_action/ -maxdepth 1 -perm -111 -type f`
-                cecho g "$_list"
+                cecho -G "$_list"
             else
                 shift
                 $_curdir/tools/$_action/$_tool "$@"
@@ -260,7 +260,7 @@ case $_action in
             if [[ -z $_tool ]]; then
                 echo "Tool List:"
                 _list=`find $_curdir/ext_tools/$_action/ -maxdepth 1 -perm -111 -type f`
-                cecho g "$_list"
+                cecho -G "$_list"
             else
                 shift
                 $_curdir/ext_tools/$_action/$_tool "$@"

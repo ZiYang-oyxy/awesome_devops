@@ -62,4 +62,4 @@ esac
 
 set +x
 
-cecho g "Finish. Output file: $2.svg"
+cecho -G "Finish. Output file: $2.svg"

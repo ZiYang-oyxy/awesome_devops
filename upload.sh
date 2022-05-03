@@ -54,7 +54,7 @@ cat changelog.log
 
 echo
 echo "Install link:"
-cecho y "bash <(curl -s $GETURL/@aadi"$VERSION_STR"@) && source ~/.bashrc"
+ad cecho -Y "bash <(curl -s $GETURL/@aadi"$VERSION_STR"@) && source ~/.bashrc"
 
 cp -f .common.sh $_curdir/lib/common.sh
 rm -f .common.sh

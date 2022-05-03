@@ -4,7 +4,7 @@ _curdir="`dirname $(readlink -f $0)`"
 source $_curdir/../lib/common.sh
 
 if [[ $# != 2 ]]; then
-    cecho r "Wrong args!!!"
+    cecho -R "Wrong args!!!"
     echo 'Usage: login_free <host file> <unified password>'
     exit 1
 fi
@@ -12,13 +12,13 @@ fi
 hostfile=$1
 passwd=$2
 if [[ ! -f $hostfile ]]; then
-    cecho r "$hostfile is not a regular file!"
+    cecho -R "$hostfile is not a regular file!"
     exit 1
 fi
 
 type expect >/dev/null 2>&1 || sudo yum install -y expect
 if ! type expect >/dev/null 2>&1; then
-    cecho r "expect tool is not found!"
+    cecho -R "expect tool is not found!"
     exit 1
 fi
 
@@ -28,7 +28,7 @@ fi
 id_rsa_pub=`cat ~/.ssh/id_rsa.pub`
 
 for _nc in `cat $hostfile | awk '!/^#/'`; do
-    cecho g "\n[$_nc] ..."
+    cecho -G "\n[$_nc] ..."
 expect <<EOF
     set timeout 5
     spawn ssh $_nc "mkdir -p ~/.ssh; echo $id_rsa_pub >> ~/.ssh/authorized_keys"

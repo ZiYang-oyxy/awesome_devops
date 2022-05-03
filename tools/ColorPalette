@@ -169,11 +169,3 @@ echo -e ":\033[4mUnderlined\033[24m"
 echo -e ":\033[5mBlink\033[25m"
 echo -e ":\033[7minverted\033[27m"
 echo -e ":\033[8mHidden\033[28m"
-
-# cecho test
-echo
-echo "=== cecho test ==="
-_curdir="`dirname $(readlink -f $0)`"
-source $_curdir/../lib/common.sh
-
-cecho_test
