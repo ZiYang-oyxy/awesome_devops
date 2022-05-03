@@ -406,6 +406,7 @@ noremap <C-@>h :call SwitchSourceHeader()<CR>
 "###########################
 "# General
 "###########################
+let g:netrw_dirhistmax=0
 
 " linux下设置长按的按键速率，mac下不需要
 "xset r rate 330 50
