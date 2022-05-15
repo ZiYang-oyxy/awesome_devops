@@ -121,6 +121,11 @@ ad_vim()
     vim -u $_curdir/vim/.vimrc "$@"
 }
 
+ad_vimdiff()
+{
+    vimdiff -u $_curdir/vim/.vimrc "$@"
+}
+
 new_version_detect()
 {
     _old=`cat $_curdir/latest_version`
@@ -217,6 +222,9 @@ case $_action in
         ;;
     vim)
         ad_vim "$@"
+        ;;
+    vimdiff)
+        ad_vimdiff "$@"
         ;;
     deploy)
         _plugin=$1
