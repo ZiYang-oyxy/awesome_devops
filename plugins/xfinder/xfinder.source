@@ -5,16 +5,16 @@ SOURCE_PATH="~/.awesome_devops/plugins/xfinder/xfinder.source"
 
 ### find
 
-IGNORE_FILE="-name \".repo\" -prune -o -name \".git\" -prune"
+IGNORE_FILE=(-name ".repo" -prune -o -name ".git" -prune)
 
 function _xfind()
 {
-	find . $IGNORE_FILE -o -name "*$@*"
+	find . "${IGNORE_FILE[@]}" -o -name "*$@*" -print
 }
 
 function _xfindi()
 {
-	find . $IGNORE_FILE -o -iname "*$@*"
+	find . "${IGNORE_FILE[@]}" -o -iname "*$@*" -print
 }
 
 find_ed() {
@@ -117,61 +117,61 @@ grep_fact() {
 }
 
 function _xgrep() {
-	$FIND $IGNORE_FILE -o -type f -name "*" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o -type f -name "*" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
 }
 
 function _xgrepi() {
-	$FIND $IGNORE_FILE -o -type f -name "*" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o -type f -name "*" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
 }
 
 function _cgrep()
 {
-	$FIND $IGNORE_FILE -o -type f -iregex "$C_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o -type f -iregex "$C_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
 }
 
 function _cgrepi()
 {
-	$FIND $IGNORE_FILE -o -type f -iregex "$C_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o -type f -iregex "$C_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
 }
 
 function _sgrep()
 {
-	$FIND $IGNORE_FILE -o -type f ! -iregex "$SHELL_FILE_PAT_INVERT" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o -type f ! -iregex "$SHELL_FILE_PAT_INVERT" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
 }
 
 function _sgrepi()
 {
-	$FIND $IGNORE_FILE -o -type f ! -iregex "$SHELL_FILE_PAT_INVERT" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o -type f ! -iregex "$SHELL_FILE_PAT_INVERT" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
 }
 
 function _mgrep()
 {
-	$FIND $IGNORE_FILE -o  -type f -iregex "$MAKE_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o  -type f -iregex "$MAKE_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
 }
 
 function _mgrepi()
 {
-	$FIND $IGNORE_FILE -o  -type f -iregex "$MAKE_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o  -type f -iregex "$MAKE_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
 }
 
 function _ogrep()
 {
-	$FIND $IGNORE_FILE -o  -type f -iregex "$OTHER_SRC_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o  -type f -iregex "$OTHER_SRC_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
 }
 
 function _ogrepi()
 {
-	$FIND $IGNORE_FILE -o  -type f -iregex "$OTHER_SRC_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o  -type f -iregex "$OTHER_SRC_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
 }
 
 function _pgrep()
 {
-	$FIND $IGNORE_FILE -o  -type f -iregex "$PY_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o  -type f -iregex "$PY_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
 }
 
 function _pgrepi()
 {
-	$FIND $IGNORE_FILE -o  -type f -iregex "$PY_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o  -type f -iregex "$PY_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
 }
 
 grep_fact c o m s x p
