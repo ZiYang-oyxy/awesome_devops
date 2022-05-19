@@ -15,11 +15,12 @@ mv awesome_devops ~/.awesome_devops
 
 mkdir -p ~/bin
 if [[ ! -e ~/.bashrc ]]; then
-    echo "export PATH=~/bin:\$PATH" > ~/.bashrc
+    printf "\nsource ~/.awesome_devops/ad-completion.bash\n" > ~/.bashrc
+else
+    grep -q "source ~/.awesome_devops/ad-completion.bash" ~/.bashrc || \
+        printf "\nsource ~/.awesome_devops/ad-completion.bash\n" >> ~/.bashrc
 fi
 
-grep -q "export PATH=~/bin" ~/.bashrc || printf "\nexport PATH=~/bin:\$PATH\n" >> ~/.bashrc
-grep -q "source ~/.awesome_devops/ad-completion.bash" ~/.bashrc || printf "\nsource ~/.awesome_devops/ad-completion.bash\n" >> ~/.bashrc
 rm -f ~/bin/ad
 ln -s `readlink -f ~/.awesome_devops/ad` ~/bin/ad
 

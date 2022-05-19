@@ -126,6 +126,15 @@ ad_vimdiff()
     vimdiff -u $_curdir/vim/.vimrc "$@"
 }
 
+uninstall()
+{
+    rm -f ~/tmp/awesome_devops.tar ~/bin/ad
+    rm -rf ~/.awesome_devops ~/.awesome_devops.bak
+    sed -i '/ad-completion.bash/d' ~/.bashrc
+    sed -i '/@ad_plugins@/d' ~/.bashrc
+    echo "uninstall success"
+}
+
 new_version_detect()
 {
     _old=`cat $_curdir/latest_version`
@@ -149,10 +158,11 @@ usage(){
 Usage:  ad [ COMMAND | TOOL | PLUGIN ] [ ARGUMENT ]
 
     BASIC COMMAND:
-        help     # this message
-        upgrade  # upgrade to latest version
-        vim      # my vim
-        tree     # prints out ad directory in a tree-like display
+        help      # this message
+        upgrade   # upgrade to latest version
+        uninstall # leave no trace
+        vim       # my vim
+        tree      # prints out ad directory in a tree-like display
         [ put | tput | get ] <file>
         [ dput | dget ] <directory>
 
@@ -211,7 +221,7 @@ if [[ -z $_action ]]; then
 fi
 
 case $_action in
-    put | get | dput | dget | tput | upgrade)
+    put | get | dput | dget | tput | upgrade | uninstall)
         $_action "$@"
         ;;
     help)

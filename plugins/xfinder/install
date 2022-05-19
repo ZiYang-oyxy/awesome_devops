@@ -3,7 +3,7 @@
 curdir="`dirname $(readlink -f $0)`"
 source $curdir/../../lib/common.sh
 
-grep -q "source $curdir/xfinder.source" ~/.bashrc || echo -e "\nsource $curdir/xfinder.source" >> ~/.bashrc
+grep -q "source $curdir/xfinder.source" ~/.bashrc || echo -e "\nsource $curdir/xfinder.source #@ad_plugins@" >> ~/.bashrc
 
 cecho -G "find/grep plus ready!"
 cecho -R 'need to run "source ~/.bashrc"'

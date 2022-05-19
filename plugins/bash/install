@@ -3,7 +3,7 @@
 curdir="`dirname $(readlink -f $0)`"
 source $curdir/../../lib/common.sh
 
-grep -q "source $curdir/.bashrc_ad" ~/.bashrc || echo -e "\nsource $curdir/.bashrc_ad" >> ~/.bashrc
+grep -q "source $curdir/.bashrc_ad" ~/.bashrc || echo -e "\nsource $curdir/.bashrc_ad #@ad_plugins@" >> ~/.bashrc
 
 cecho -G "bashrc install succeeded"
 cecho -R 'need to run "source ~/.bashrc"'
