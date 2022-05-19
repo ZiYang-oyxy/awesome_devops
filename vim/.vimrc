@@ -15,18 +15,15 @@ let g:mapleader = "\ "
 " update
 "curl -fLo ~/.awesome_devops/vim/autoload/plug.vim --create-dirs \
 "    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-let g:gitgutter_git_executable = get(g:, 'gitgutter_git_executable', 'git')
-if !executable(g:gitgutter_git_executable)
-    let g:gitgutter_git_executable='true'
-    silent! call plug#begin('~/.awesome_devops/vim/plugged')
-else
+if executable('git')
     call plug#begin('~/.awesome_devops/vim/plugged')
+else
+    silent! call plug#begin('~/.awesome_devops/vim/plugged')
 endif
 
 "###########################
 "# main screen
 "###########################
-"sudo apt-get install exuberant-ctags
 Plug 'majutsushi/tagbar'
 map <silent> <F7> :TagbarToggle<CR>
 set updatetime=500
@@ -161,6 +158,8 @@ let g:airline_right_sep = '⮂'
 let g:airline_right_alt_sep = '⮃'
 "let g:airline#extensions#tagbar#flags = 'p'
 let g:airline#extensions#whitespace#enabled = 0
+let g:airline#extensions#ale#enabled = 1
+let g:airline#extensions#gutentags#enabled = 1
 let g:airline_mode_map = {
   \ '__' : '-',
   \ 'n'  : 'N',
@@ -223,12 +222,14 @@ let g:snipMate = { 'snippet_version' : 0 }
 "let g:UltiSnipsEditSplit="vertical"
 
 " Git
-Plug 'tpope/vim-fugitive'
-Plug 'airblade/vim-gitgutter'
-let g:gitgutter_max_signs = 2000
-Plug 'gregsexton/gitv'
-let g:Gitv_OpenHorizontal = 1
-let g:Gitv_DoNotMapCtrlKey = 1
+if executable('git')
+    Plug 'tpope/vim-fugitive'
+    Plug 'airblade/vim-gitgutter'
+    let g:gitgutter_max_signs = 2000
+    Plug 'gregsexton/gitv'
+    let g:Gitv_OpenHorizontal = 1
+    let g:Gitv_DoNotMapCtrlKey = 1
+endif
 
 Plug 'Lokaltog/vim-easymotion'
 let g:EasyMotion_leader_key = '<Leader>'
@@ -302,29 +303,35 @@ let g:go_auto_type_info = 1
 "###########################
 Plug 'octol/vim-cpp-enhanced-highlight'
 
-"###########################
-"# ALE
-"###########################
-" brew install cppcheck shellcheck
-Plug 'w0rp/ale'
-let g:ale_linters = {
-\   'c': ['cppcheck'],
-\   'cpp': ['cppcheck'],
-\   'h': ['cppcheck'],
-\   'hh': ['cppcheck'],
-\}
-let g:ale_echo_delay = 20
-let g:ale_lint_delay = 500
-let g:ale_echo_msg_format = '[%linter%] %code: %%s'
-let g:ale_lint_on_text_changed = 'normal'
-let g:ale_lint_on_insert_leave = 1
-let g:airline#extensions#ale#enabled = 1
-let g:airline#extensions#gutentags#enabled = 1
-let g:ale_c_cppcheck_options = ''
-let g:ale_cpp_cppcheck_options = ''
+" "###########################
+" "# ALE
+" "###########################
+" " brew install cppcheck shellcheck
+" Plug 'w0rp/ale'
+" let g:ale_linters = {
+" \   'c': ['cppcheck'],
+" \   'cpp': ['cppcheck'],
+" \   'h': ['cppcheck'],
+" \   'hh': ['cppcheck'],
+" \}
+" let g:ale_echo_delay = 20
+" let g:ale_lint_delay = 500
+" let g:ale_echo_msg_format = '[%linter%] %code: %%s'
+" let g:ale_lint_on_text_changed = 'normal'
+" let g:ale_lint_on_insert_leave = 1
 
 "###########################
 "# Code helper
+"###########################
+Plug 'MattesGroeger/vim-bookmarks'
+let g:bookmark_location_list = 0
+let g:bookmark_disable_ctrlp = 0
+highlight BookmarkSign ctermbg=NONE ctermfg=160
+let g:bookmark_sign = '♥'
+"let g:bookmark_highlight_lines = 1
+
+"###########################
+"# tags
 "###########################
 Plug 'inkarkat/vim-ingo-library'
 Plug 'ZiYang-oyxy/vim-mark'
@@ -343,71 +350,83 @@ nmap <Leader>7 <Plug>MarkSearchGroup7Next
 nmap <Leader>8 <Plug>MarkSearchGroup8Next
 nmap <Leader>9 <Plug>MarkSearchGroup9Next
 
-Plug 'hari-rangarajan/CCTree'
-let g:CCTreeUsePerl = 1
-let g:CCTreeKeyToggleWindow = '<F10>'
-let g:CCTreeKeyTraceReverseTree = '<leader>t'
-let g:CCTreeDisplayMode=2
-let g:CCTreeHilightCallTree=0
-let g:CCTreeWindowWidth = -1
-let g:CCTreeRecursiveDepth = 20
-let g:CCTreeMinVisibleDepth = 20
+" "切换到头文件
+" function! SwitchSourceHeader()
+"     cs find f %:t:r.h
+" endfunction
+" noremap <C-@>h :call SwitchSourceHeader()<CR>
 
-Plug 'MattesGroeger/vim-bookmarks'
-let g:bookmark_location_list = 0
-let g:bookmark_disable_ctrlp = 0
-highlight BookmarkSign ctermbg=NONE ctermfg=160
-let g:bookmark_sign = '♥'
-"let g:bookmark_highlight_lines = 1
-
-"###########################
-"# Cscope
-"###########################
-" sudo apt-get install cscope
-" Update cscope db dynamically
-Plug 'ZiYang-oyxy/cscope_dynamic'
-let g:cscopedb_big_file = "cscope.out"
-let g:cscopedb_auto_files = 0
-let g:cscopedb_extra_files = "cscope.files"
-let g:cscopedb_big_min_interval = 60
-let g:statusline_cscope_flag = ""
-
-if has("cscope")
-    set csto=1
-    set cst
-    set nocsverb
-    if filereadable("cscope.out")
-        cs add cscope.out
-    endif
-    set csverb
-    set cscopequickfix=s-,g-,c-,t-,e-,f-,i-,d-
+" brew install global
+" brew install universal-ctags
+if !(has('job') || (has('nvim') && exists('*jobwait')))
+else
+    Plug 'ludovicchabant/vim-gutentags'
+    Plug 'skywind3000/gutentags_plus'
 endif
-"s: Find this C symbol
-"g: Find this definition
-"c: Find functions calling this function
-"t: Find this text string
-"d: Find functions called by this function
-"	*gd* will be more helpful without cscope database
-"e: Find this egrep pattern
-"f: Find this file
-"	*gf* will be more helpful without cscope database
-"i: Find files #including this file
-noremap <C-@>s :cs find s <C-R>=expand("<cword>")<CR><CR>
-noremap <C-@>g :cs find g <C-R>=expand("<cword>")<CR><CR>
-noremap <C-@>c :cs find c <C-R>=expand("<cword>")<CR><CR>
-noremap <C-@>t :cs find t <C-R>=expand("<cword>")<CR><CR>
-noremap <C-@>d :cs find d <C-R>=expand("<cword>")<CR><CR>
-noremap <C-@>e :cs find e <C-R>=expand("<cword>")<CR><CR>
-noremap <C-@>f :cs find f <C-R>=expand("<cfile>")<CR><CR>
-noremap <C-@>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
-map <F6> :cs find g<space>
-map <leader><F5> :!gentags<CR>:cs reset<CR>
-map <leader><F12> <Plug>CscopeDBInit
-"切换到头文件
-function! SwitchSourceHeader()
-    cs find f %:t:r.h
+let g:gutentags_plus_nomap = 1
+let g:gutentags_define_advanced_commands = 1
+
+noremap <silent> <C-@>s :GscopeFind s <C-R><C-W><cr>
+noremap <silent> <C-@>g :GscopeFind g <C-R><C-W><cr>
+noremap <silent> <C-@>c :GscopeFind c <C-R><C-W><cr>
+noremap <silent> <C-@>t :GscopeFind t <C-R><C-W><cr>
+noremap <silent> <C-@>d :GscopeFind d <C-R><C-W><cr>
+noremap <silent> <C-@>e :GscopeFind e <C-R><C-W><cr>
+noremap <silent> <C-@>f :GscopeFind f <C-R>=expand("<cfile>")<cr><cr>
+noremap <silent> <C-@>i :GscopeFind i <C-R>=expand("<cfile>")<cr><cr>
+noremap <silent> <C-@>a :GscopeFind a <C-R><C-W><cr>
+noremap <silent> <C-@>z :GscopeFind z <C-R><C-W><cr>
+
+" enable gtags module
+let g:gutentags_modules = ['ctags', 'gtags_cscope']
+
+" config project root markers.
+let g:gutentags_project_root = ['.root']
+
+" generate datebases in my cache directory, prevent gtags files polluting my project
+let g:gutentags_cache_dir = expand('~/.awesome_devops/vim/cache/tags')
+
+" change focus to quickfix window after search (optional).
+let g:gutentags_plus_switch = 1
+set statusline+=%{gutentags#statusline()}
+
+" Useful debug
+"let g:gutentags_trace = 1
+
+Plug 'skywind3000/vim-preview'
+nnoremap <silent> \ :PreviewTag<CR>
+nnoremap <silent> <leader>\ :PreviewClose<CR>
+autocmd FileType qf nnoremap <silent><buffer> \ :PreviewQuickfix<cr>
+autocmd FileType qf nnoremap <silent><buffer> <leader>\ :PreviewClose<cr>
+
+"###########################
+"# COC
+"###########################
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+" Use K to show documentation in preview window.
+nnoremap <silent> K :call ShowDocumentation()<CR>
+function! ShowDocumentation()
+  if CocAction('hasProvider', 'hover')
+    call CocActionAsync('doHover')
+  else
+    call feedkeys('K', 'in')
+  endif
 endfunction
-noremap <C-@>h :call SwitchSourceHeader()<CR>
+
+"" Use tab for trigger completion with characters ahead and navigate.
+"" NOTE: Use command ':verbose imap <tab>' to make sure tab is not mapped by
+"" other plugin before putting this into your config.
+"inoremap <silent><expr> <TAB>
+"      \ pumvisible() ? "\<C-n>" :
+"      \ CheckBackspace() ? "\<TAB>" :
+"      \ coc#refresh()
+"inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
+"
+"function! CheckBackspace() abort
+"  let col = col('.') - 1
+"  return !col || getline('.')[col - 1]  =~# '\s'
+"endfunction
 
 "###########################
 "# General
@@ -480,11 +499,23 @@ map <leader><CR> :MarkClear<CR>:noh<CR>
 map <leader>a A
 map <leader>q :qa!<CR>
 
+fun! TrimWhitespace()
+    let l:save = winsaveview()
+    keeppatterns %s/\s\+$//e
+    call winrestview(l:save)
+endfun
+
+fun! TrimM()
+    let l:save = winsaveview()
+    keeppatterns %s/\+$//e
+    call winrestview(l:save)
+endfun
+
 " Remove the Windows ^M - when the encodings gets messed up
-noremap <Leader>fm mmHmt:%s/<C-V><cr>//ge<cr>'tzt'm
+noremap <Leader>fm :call TrimM()<CR>
 
 " Strip space, and fix some bug at the same time
-map <leader>fs mmHmt:%s/ *$//ge<CR>'tzt'm:noh<CR>
+noremap <Leader>fs :call TrimWhitespace()<CR>
 
 " Use four spaces to replace a tab
 map <leader>ft :retab<CR>
@@ -492,9 +523,6 @@ map <leader>ft :retab<CR>
 " Copy to CLIPBOARD, and use 'y' to copy to the PRIMARY
 map <leader>y "+y
 map <leader>p "+p
-
-" Reload cscope
-map <leader>rl <Plug>CscopeDBload
 
 " When you press <leader>r you can search and replace the selected text
 " append /g to the end to replace all

@@ -9,6 +9,7 @@ ccglue.out
 .ignore
 
 dist/
+vim/cache
 changelog.log
 latest_version
 config
