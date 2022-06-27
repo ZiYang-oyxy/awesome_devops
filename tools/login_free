@@ -30,8 +30,8 @@ id_rsa_pub=`cat ~/.ssh/id_rsa.pub`
 for _nc in `cat $hostfile | awk '!/^#/'`; do
     cecho -G "\n[$_nc] ..."
 expect <<EOF
-    set timeout 5
-    spawn ssh $_nc "mkdir -p ~/.ssh; echo $id_rsa_pub >> ~/.ssh/authorized_keys"
+    set timeout 10
+    spawn ad ssh_retry $_nc "mkdir -p ~/.ssh; echo $id_rsa_pub >> ~/.ssh/authorized_keys"
     expect {
         "*(yes/no)*" { send "yes\r"; exp_continue }
         "*password:" { send "$passwd\r" }
