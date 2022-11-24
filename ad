@@ -99,7 +99,7 @@ dget()
         cecho -R "No such directory"
         exit 1
     fi
-    tar x -f $1.tgz
+    tar x -o -f $1.tgz
     _res=(`md5sum $1.tgz`)
     cecho -Y "${_res[0]}"
     cecho -G "`readlink -f $1`"
