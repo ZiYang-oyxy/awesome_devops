@@ -1,0 +1,21 @@
+#!/bin/bash -e
+
+if [[ $# -eq 0 ]]; then
+    ad cecho -R "Need a command. Abort!"
+    exit 1
+else
+    ad cecho -Y "Command: $*"
+fi
+
+type tmux > /dev/null || sudo yum install -y tmux
+
+tmux new-session -s ad_bg -d || {
+    ad cecho -R "kill old tmux server"
+    tmux kill-server
+    tmux new-session -s ad_bg -d
+}
+
+LOGF="`pwd`/ad_bg_`date '+%Y-%m-%d_%H-%M-%S'`.log"
+tmux send -t ad_bg "$* | tee $LOGF" C-m
+
+ad cecho -G "log file: $LOGF"
