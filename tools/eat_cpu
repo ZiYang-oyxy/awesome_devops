@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ -z $1 ]; then
+    echo "Usage: $0 <CPU_LIST e.g. 0,3,7-11>"
+    exit 1
+fi
+
+if ! type stress > /dev/null 2>&1; then
+    yum install -y stress || {
+        ad cecho -R "ERROR: Not found \"stress\" command"
+        exit 1
+    }
+fi
+
+taskset -c $1 stress -c `nproc --all`
