@@ -55,6 +55,36 @@ dput()
     rm $_name.tgz
 }
 
+# [Comparison of Compression Algorithms]
+# https://linuxreviews.org/Comparison_of_Compression_Algorithms
+dgput()
+{
+    # “:”会被tar认为是远程服务器
+    if [[ $1 =~ .*:.* ]]; then
+        cecho -R "not allow directory contain \":\""
+        exit 1
+    fi
+    if [[ ! -d $1 ]]; then
+        cecho -R "No such directory"
+        exit 1
+    fi
+    _name=`basename $1`
+    _parent=`dirname $1`
+    if (type pigz >/dev/null 2>&1); then
+        tar c -C $_parent -f - $_name | pigz > $_name.tgz
+    else
+        tar c -C $_parent -z -f $_name.tgz $_name
+    fi
+    curl -T $_name.tgz $PUTURL/$_name.tgz > /dev/null
+    if [[ $? -eq 0 ]]; then
+        _res=(`md5sum $_name.tgz`)
+        cecho -Y "${_res[0]}"
+        cecho -G "$GETURL/$_name.tgz"
+        cecho -M "ad dget $_name"
+    fi
+    rm $_name.tgz
+}
+
 tput()
 {
     if [[ ! -f $1 ]]; then
@@ -62,7 +92,7 @@ tput()
         exit 1
     fi
     _name=`basename $1`
-    _r_file=`date --iso-8601=seconds`_${2:-$_name}
+    _r_file=`date '+%Y-%m-%d_%H-%M-%S'`_${2:-$_name}
     curl -T $1 $PUTURL/$_r_file > /dev/null
     if [[ $? -eq 0 ]]; then
         _res=(`md5sum $1`)
@@ -164,7 +194,7 @@ Usage:  ad [ COMMAND | TOOL | PLUGIN ] [ ARGUMENT ]
         vim       # my vim
         tree      # prints out ad directory in a tree-like display
         [ put | tput | get ] <file>
-        [ dput | dget ] <directory>
+        [ dput | dgput | dget ] <directory>
 
     TOOL:
 __EOF__
@@ -221,7 +251,7 @@ if [[ -z $_action ]]; then
 fi
 
 case $_action in
-    put | get | dput | dget | tput | upgrade | uninstall)
+    put | get | dput | dgput | dget | tput | upgrade | uninstall)
         $_action "$@"
         ;;
     help)
