@@ -1,0 +1,4 @@
+#!/bin/bash
+
+systemd-analyze plot > startup_time.svg
+ad put startup_time.svg
