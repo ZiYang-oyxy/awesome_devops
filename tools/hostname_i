@@ -1,0 +1,4 @@
+#!/bin/bash
+
+IFACE=`ip route list | awk ' /^default/ {print $5}'`
+ifconfig $IFACE | awk '/inet /{print $2}'
