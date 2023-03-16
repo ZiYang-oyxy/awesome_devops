@@ -228,14 +228,14 @@ __EOF__
 
     cat <<__EOF__
 
-Web browser upload link:
+Upload link:
 $PUTURL
 
 Install or Upgrade:
 bash <(curl -s $GETURL/@aadi@) && source ~/.bashrc
 
-Bug report:
-ruliu to ouyangxiongyi
+Home page:
+http://ad.baidu-int.com
 __EOF__
 
     new_version_detect

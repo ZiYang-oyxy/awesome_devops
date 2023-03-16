@@ -13,6 +13,17 @@ cd ~/tmp
 tar xf awesome_devops.tar
 mv awesome_devops ~/.awesome_devops
 
+if ! readlink -f ~ > /dev/null 2>&1; then
+    if ! type brew > /dev/null 2>&1; then
+        echo "Unsupported system !"
+        exit 1
+    else
+        # macos需要安装gnu版本工具
+        brew install coreutils findutils grep
+        source ~/.awesome_devops/ad-completion.bash
+    fi
+fi
+
 mkdir -p ~/bin
 if [[ ! -e ~/.bashrc ]]; then
     printf "\nsource ~/.awesome_devops/ad-completion.bash\n" > ~/.bashrc
