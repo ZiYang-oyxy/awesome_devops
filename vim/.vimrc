@@ -421,7 +421,9 @@ autocmd FileType qf nnoremap <silent><buffer> <leader>\ :PreviewClose<cr>
 "###########################
 "# COC
 "###########################
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
+if executable('node')
+    Plug 'neoclide/coc.nvim', {'branch': 'release'}
+endif
 
 " Use K to show documentation in preview window.
 nnoremap <silent> K :call ShowDocumentation()<CR>

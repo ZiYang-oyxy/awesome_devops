@@ -146,11 +146,12 @@ ad_tree()
     tree -C $_curdir -I '.git|vim' -L 3
 }
 
-vim_dl()
+vim_init()
 {
+    ad cecho -g "ad vim initialize ..."
     cd $_curdir/
-    ad get @vim_bundle.tar@
-    tar xf @vim_bundle.tar@
+    ad get @vim_bundle.tgz@
+    tar xf @vim_bundle.tgz@
     _vim_ver=`vim --version | awk '/Vi IMproved / {print $5}'`
     # 非arm（macos），并且支持版本很低，这使用预制vim
     if [[ $(echo "$_vim_ver < 9.0" | bc -l) ]] && [[ ! $(vim --version | grep -q arm64) ]]; then
@@ -158,13 +159,19 @@ vim_dl()
         chmod +x vim/vim
         ad get @vimdiff9.0_x86@ vim/vimdiff
         chmod +x vim/vimdiff
+        # 从 /usr/local/share/vim/vim90 中获得
+        ad get @vim90_x86.tgz@
+        tar xf @vim90_x86.tgz@
+        mv vim90 vim/vim90
+        echo "export VIMRUNTIME=~/.awesome_devops/vim/vim90" > vim/.env
     fi
-    touch vim/.dl
+    touch vim/.env
 }
 
 ad_vim()
 {
-    [ ! -f $_curdir/vim/.dl ] && vim_dl
+    [ ! -f $_curdir/vim/.env ] && vim_init
+    source $_curdir/vim/.env
     if [ -f $_curdir/vim/vim ]; then
         $_curdir/vim/vim -u $_curdir/vim/.vimrc "$@"
     else
@@ -174,8 +181,9 @@ ad_vim()
 
 ad_vimdiff()
 {
-    [ ! -f $_curdir/vim/.dl ] && vim_dl
-    if [ -f $_curdir/vim/vim ]; then
+    [ ! -f $_curdir/vim/.env ] && vim_init
+    source $_curdir/vim/.env
+    if [ -f $_curdir/vim/vimdiff ]; then
         $_curdir/vim/vimdiff -u $_curdir/vim/.vimrc "$@"
     else
         vimdiff -u $_curdir/vim/.vimrc "$@"

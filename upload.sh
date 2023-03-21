@@ -55,8 +55,8 @@ tar c -C dist --exclude='dist' --exclude='.git' --exclude='*.swp' -f dist/awesom
 ./ad put dist/awesome_devops/install.sh @aadi"$VERSION_STR"@
 ./ad put latest_version @latest_version"$VERSION_STR"@
 
-tar c --exclude='vim/undodir/%*' --exclude='vim/cache' --exclude='.git' --exclude='*.swp' -f dist/vim.tar vim
-./ad put dist/vim.tar @vim_bundle.tar@
+tar cz --exclude='vim/undodir/%*' --exclude='vim/cache' --exclude='.git' --exclude='*.swp' -f dist/vim.tgz vim
+./ad put dist/vim.tgz @vim_bundle.tgz@
 
 echo
 cat changelog.log
