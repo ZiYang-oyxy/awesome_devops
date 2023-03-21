@@ -15,11 +15,13 @@ let g:mapleader = "\ "
 " update
 "curl -fLo ~/.awesome_devops/vim/autoload/plug.vim --create-dirs \
 "    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-if executable('git')
-    call plug#begin('~/.awesome_devops/vim/plugged')
-else
-    silent! call plug#begin('~/.awesome_devops/vim/plugged')
-endif
+
+" 修改这个路径，能决定是否在ad中真正安装这些插件，供后续打包上传
+silent! call plug#begin('~/.awesome_devops/vim/plugged')
+
+"Plug 'yuttie/comfortable-motion.vim'
+noremap <silent> <ScrollWheelDown> :call comfortable_motion#flick(40)<CR>
+noremap <silent> <ScrollWheelUp>   :call comfortable_motion#flick(-40)<CR>
 
 "###########################
 "# main screen
@@ -49,7 +51,10 @@ let NERDTreeShowBookmarks=1
 let NERDTreeWinPos='right'
 let NERDTreeWinSize=45
 let NERDTreeShowLineNumbers=0
-let NERDTreeIgnore=['^cscope.out.in$', '^cscope.out$', '^cscope.files$', '^cscope.out.po$', '^tags$', '^.swp$']
+let NERDTreeIgnore=[
+    \ '^cscope.out.in$', '^cscope.out$', '^cscope.files$', '^cscope.out.po$',
+    \ '^tags$', '^.swp$', '^GPATH$', '^GRTAGS$', '^GTAGS$', 'tags.lock', 'tags.temp',
+    \ '^gtags.conf$']
 let NERDTreeMapToggleZoom='z'
 let NERDTreeMinimalUI=1
 Plug 'Xuyuanp/nerdtree-git-plugin', { 'on': 'NERDTreeToggle' }
@@ -184,7 +189,7 @@ Plug 'osyo-manga/vim-over'
 Plug 'scrooloose/nerdcommenter'
 
 "" colorscheme
-syntax enable
+silent! syntax enable
 if &term =~ '256color'
   " disable Background Color Erase (BCE) so that color schemes
   " render properly when inside 256-color tmux and GNU screen.
@@ -254,8 +259,6 @@ Plug 'vim-scripts/DrawIt'
 Plug 'vim-scripts/matrix.vim--Yang'
 Plug 'vim-scripts/IndexedSearch'
 Plug 'katonori/binedit'
-"Plug 'yonchu/accelerated-smooth-scroll'
-"Plug 'yuttie/comfortable-motion.vim'
 
 Plug 'will133/vim-dirdiff'
 let g:DirDiffExcludes = "CVS,*.class,*.exe,.*.swp,cscope.out.in,cscope.out,cscope.files,cscope.out.po,tags"
@@ -265,8 +268,12 @@ autocmd BufReadPost,FileReadPost,BufNewFile * call system("tmux rename-window " 
 "###########################
 "# Python lang
 "###########################
-"Plug 'python-mode/python-mode', { 'branch': 'develop' }
-"Plug 'davidhalter/jedi-vim'
+Plug 'python-mode/python-mode', { 'branch': 'develop' }
+let g:pymode_rope_goto_definition_bind = '<leader>g'
+Plug 'davidhalter/jedi-vim'
+"Plug 'tell-k/vim-autopep8'
+"let g:autopep8_max_line_length=79
+"let g:autopep8_disable_show_diff=1
 
 "###########################
 "# Go lang
@@ -303,23 +310,6 @@ let g:go_auto_type_info = 1
 "###########################
 Plug 'octol/vim-cpp-enhanced-highlight'
 
-" "###########################
-" "# ALE
-" "###########################
-" " brew install cppcheck shellcheck
-" Plug 'w0rp/ale'
-" let g:ale_linters = {
-" \   'c': ['cppcheck'],
-" \   'cpp': ['cppcheck'],
-" \   'h': ['cppcheck'],
-" \   'hh': ['cppcheck'],
-" \}
-" let g:ale_echo_delay = 20
-" let g:ale_lint_delay = 500
-" let g:ale_echo_msg_format = '[%linter%] %code: %%s'
-" let g:ale_lint_on_text_changed = 'normal'
-" let g:ale_lint_on_insert_leave = 1
-
 "###########################
 "# Code helper
 "###########################
@@ -350,48 +340,77 @@ nmap <Leader>7 <Plug>MarkSearchGroup7Next
 nmap <Leader>8 <Plug>MarkSearchGroup8Next
 nmap <Leader>9 <Plug>MarkSearchGroup9Next
 
-" "切换到头文件
-" function! SwitchSourceHeader()
-"     cs find f %:t:r.h
-" endfunction
-" noremap <C-@>h :call SwitchSourceHeader()<CR>
+"###########################
+"# cscope
+"###########################
 
-" brew install global
-" brew install universal-ctags
-if !(has('job') || (has('nvim') && exists('*jobwait')))
-else
-    Plug 'ludovicchabant/vim-gutentags'
-    Plug 'skywind3000/gutentags_plus'
+" " ================= use gtags_cscope ========================
+" " brew install global
+" " brew install universal-ctags
+" if !(has('job') || (has('nvim') && exists('*jobwait')))
+" else
+"     Plug 'ludovicchabant/vim-gutentags'
+" endif
+" 
+" " enable gtags module
+" let g:gutentags
+" let g:gutentags_modules = ['ctags', 'gtags_cscope']
+" 
+" " config project root markers.
+" let g:gutentags_add_default_project_roots=0
+" let g:gutentags_project_root = ['.root', '.git']
+" let g:gutentags_generate_on_empty_buffer=1
+" 
+" "" generate datebases in my cache directory, prevent gtags files polluting my project
+" "let g:gutentags_cache_dir = expand('~/.awesome_devops/vim/cache/tags')
+" 
+" set statusline+=%{gutentags#statusline()}
+" 
+" " Useful debug
+" "let g:gutentags_trace = 1
+" 
+" let g:gutentags_ctags_exclude = [
+"     \ '*/freebsd/*',
+"     \ '*/windows/*'
+" \]
+
+" ================= use dynamic cscope ========================
+Plug 'ZiYang1989/cscope_dynamic'
+let g:cscopedb_big_file = "cscope.out"
+let g:cscopedb_auto_files = 0
+let g:cscopedb_extra_files = "cscope.files"
+let g:cscopedb_big_min_interval = 60
+let g:statusline_cscope_flag = ""
+
+" ================= cscope common config ========================
+if has("cscope")
+    set csto=1
+    set cst
+    set nocsverb
+    set csverb
+    set cscopequickfix=s-,g-,c-,t-,e-,f-,i-,d-
 endif
-let g:gutentags_plus_nomap = 1
-let g:gutentags_define_advanced_commands = 1
-
-noremap <silent> <C-@>s :GscopeFind s <C-R><C-W><cr>
-noremap <silent> <C-@>g :GscopeFind g <C-R><C-W><cr>
-noremap <silent> <C-@>c :GscopeFind c <C-R><C-W><cr>
-noremap <silent> <C-@>t :GscopeFind t <C-R><C-W><cr>
-noremap <silent> <C-@>d :GscopeFind d <C-R><C-W><cr>
-noremap <silent> <C-@>e :GscopeFind e <C-R><C-W><cr>
-noremap <silent> <C-@>f :GscopeFind f <C-R>=expand("<cfile>")<cr><cr>
-noremap <silent> <C-@>i :GscopeFind i <C-R>=expand("<cfile>")<cr><cr>
-noremap <silent> <C-@>a :GscopeFind a <C-R><C-W><cr>
-noremap <silent> <C-@>z :GscopeFind z <C-R><C-W><cr>
-
-" enable gtags module
-let g:gutentags_modules = ['ctags', 'gtags_cscope']
-
-" config project root markers.
-let g:gutentags_project_root = ['.root']
-
-" generate datebases in my cache directory, prevent gtags files polluting my project
-let g:gutentags_cache_dir = expand('~/.awesome_devops/vim/cache/tags')
-
-" change focus to quickfix window after search (optional).
-let g:gutentags_plus_switch = 1
-set statusline+=%{gutentags#statusline()}
-
-" Useful debug
-"let g:gutentags_trace = 1
+"s: Find this C symbol
+"g: Find this definition
+"c: Find functions calling this function
+"t: Find this text string
+"d: Find functions called by this function
+"e: Find this egrep pattern
+"f: Find this file
+"i: Find files #including this file
+noremap <C-@>s :cs find s <C-R>=expand("<cword>")<CR><CR>
+noremap <C-@>g :cs find g <C-R>=expand("<cword>")<CR><CR>
+noremap <C-@>c :cs find c <C-R>=expand("<cword>")<CR><CR>
+noremap <C-@>t :cs find t <C-R>=expand("<cword>")<CR><CR>
+noremap <C-@>d :cs find d <C-R>=expand("<cword>")<CR><CR>
+noremap <C-@>e :cs find e <C-R>=expand("<cword>")<CR><CR>
+noremap <C-@>f :cs find f <C-R>=expand("<cfile>")<CR><CR>
+noremap <C-@>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
+function! SwitchSourceHeader()
+    cs find f %:t:r.h
+endfunction
+noremap <C-@>h :call SwitchSourceHeader()<CR>
+map <F6> :cs find g<space>
 
 Plug 'skywind3000/vim-preview'
 nnoremap <silent> \ :PreviewTag<CR>
@@ -457,8 +476,8 @@ set lcs=tab:>-,trail:-
 set list
 
 "set noexpandtab
-"set tabstop=8
-"set shiftwidth=8
+"set tabstop=4
+"set shiftwidth=4
 
 set expandtab
 set tabstop=4
@@ -535,7 +554,7 @@ map <leader>tc :tabclose<cr>
 map <leader>tm :tabmove
 
 " save all files
-noremap W :wa<CR>
+noremap S :wa<CR>
 
 " Move between windows
 map <C-j> <C-w>j
@@ -554,24 +573,29 @@ noremap q <Nop>
 noremap Q q
 
 " Open a fully width quickfix window at the bottom of vim
-map <F9> :botright cwindow<CR>
+Plug 'milkypostman/vim-togglelist'
+let g:toggle_list_no_mappings=1
+nmap <script> <silent> <F9> :call ToggleQuickfixList()<CR>
+
+" if you want to load the quickfix item into the previously used window.
+silent! set switchbuf+=uselast
 
 map <F3> :cp<CR>
 map <F4> :cn<CR>
 
 " Look up dictionary, cover IndexedSearch's map
-autocmd! VimEnter * :nnoremap ? :!youdao <C-R>=expand("<cword>")<CR><CR>
-vmap ? y:!youdao <C-R>0<CR>
+autocmd! VimEnter * :nnoremap ? :!~/.awesome_devops/tools/youdao <C-R>=expand("<cword>")<CR><CR>
+vmap ? y:!~/.awesome_devops/tools/youdao <C-R>0<CR>
 
 " pretty format json string
-vmap <leader>jp :!jp<CR>
+vmap <leader>fj :!python3 -m json.tool<CR>
 
 " pretty format c code
-vmap <leader>cf :!clang-format -style=file<CR>
-nmap <leader>cf ggvG<leader>cf<C-o><C-o>
+vmap <leader>fc :!clang-format -style=file<CR>
+nmap <leader>fc ggvG<leader>cf<C-o><C-o>
 
 " pretty format python code
-map <leader>pf :PymodeLintAuto<CR>
+map <leader>fp :PymodeLintAuto<CR>
 
 " Auto convert a word to a shell variable
 imap <C-h> <ESC>bi"$<ESC>ea"

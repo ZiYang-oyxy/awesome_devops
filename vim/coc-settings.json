@@ -28,6 +28,9 @@
             ],
             "filetypes": [
                 "sh"
+            ],
+            "ignoredRootPaths": [
+                "~"
             ]
         }
     },
