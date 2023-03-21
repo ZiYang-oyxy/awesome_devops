@@ -1,0 +1,4 @@
+#!/bin/bash
+
+_curdir="`dirname $(readlink -f $0)`"
+$_curdir/watchall -d -n 2 "`echo $@`"
