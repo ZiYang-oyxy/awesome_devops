@@ -19,7 +19,8 @@ git log -1 --pretty=format:"%ct" > latest_version
 
 rm -rf dist
 mkdir -p dist
-tar c -C .. --exclude='vim/undodir/%*' --exclude='vim/cache' --exclude='dist' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
+#tar c -C .. --exclude='vim/undodir/%*' --exclude='vim/cache' --exclude='dist' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
+tar c -C .. --exclude='vim' --exclude='dist' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
 
 # 打包一些外部工具
 if [[ -d $_curdir/../ad_external ]]; then
@@ -53,6 +54,9 @@ tar c -C dist --exclude='dist' --exclude='.git' --exclude='*.swp' -f dist/awesom
 ./ad put dist/awesome_devops.tar @awesome_devops"$VERSION_STR".tar@
 ./ad put dist/awesome_devops/install.sh @aadi"$VERSION_STR"@
 ./ad put latest_version @latest_version"$VERSION_STR"@
+
+tar c --exclude='vim/undodir/%*' --exclude='vim/cache' --exclude='.git' --exclude='*.swp' -f dist/vim.tar vim
+./ad put dist/vim.tar @vim_bundle.tar@
 
 echo
 cat changelog.log

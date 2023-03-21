@@ -146,14 +146,40 @@ ad_tree()
     tree -C $_curdir -I '.git|vim' -L 3
 }
 
+vim_dl()
+{
+    cd $_curdir/
+    ad get @vim_bundle.tar@
+    tar xf @vim_bundle.tar@
+    _vim_ver=`vim --version | awk '/Vi IMproved / {print $5}'`
+    # 非arm（macos），并且支持版本很低，这使用预制vim
+    if [[ $(echo "$_vim_ver < 9.0" | bc -l) ]] && [[ ! $(vim --version | grep -q arm64) ]]; then
+        ad get @vim9.0_x86@ vim/vim
+        chmod +x vim/vim
+        ad get @vimdiff9.0_x86@ vim/vimdiff
+        chmod +x vim/vimdiff
+    fi
+    touch vim/.dl
+}
+
 ad_vim()
 {
-    vim -u $_curdir/vim/.vimrc "$@"
+    [ ! -f $_curdir/vim/.dl ] && vim_dl
+    if [ -f $_curdir/vim/vim ]; then
+        $_curdir/vim/vim -u $_curdir/vim/.vimrc "$@"
+    else
+        vim -u $_curdir/vim/.vimrc "$@"
+    fi
 }
 
 ad_vimdiff()
 {
-    vimdiff -u $_curdir/vim/.vimrc "$@"
+    [ ! -f $_curdir/vim/.dl ] && vim_dl
+    if [ -f $_curdir/vim/vim ]; then
+        $_curdir/vim/vimdiff -u $_curdir/vim/.vimrc "$@"
+    else
+        vimdiff -u $_curdir/vim/.vimrc "$@"
+    fi
 }
 
 uninstall()
