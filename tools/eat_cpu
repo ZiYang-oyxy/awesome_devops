@@ -6,7 +6,7 @@ if [ -z $1 ]; then
 fi
 
 if ! type stress > /dev/null 2>&1; then
-    yum install -y stress || {
+    sudo yum install -y stress || {
         ad cecho -R "ERROR: Not found \"stress\" command"
         exit 1
     }
