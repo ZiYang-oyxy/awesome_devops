@@ -7,6 +7,11 @@ VERSION_STR=$1
 source $_curdir/config
 cd $_curdir
 
+curl --connect-timeout 1 -f http://Awesome:Devops@$SERVEFILE_PUT_ADDR/@latest_version@ > /dev/null || {
+    ad cecho -R "Unable to connect to ad server"
+    exit 1
+}
+
 echo ". Recent changes:" > changelog.log
 git log -5 --pretty=format:"%ct %cI %s" >> changelog.log
 echo "" >> changelog.log

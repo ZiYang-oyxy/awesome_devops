@@ -235,7 +235,7 @@ Install or Upgrade:
 bash <(curl -s $GETURL/@aadi@) && source ~/.bashrc
 
 Home page:
-http://ad.baidu-int.com
+$SERVEFILE_URL
 __EOF__
 
     new_version_detect

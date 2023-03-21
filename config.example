@@ -1,0 +1,3 @@
+SERVEFILE_URL=ad-example.com
+SERVEFILE_PUT_ADDR=ad-example.com:8889
+SERVEFILE_GET_ADDR=ad-example.com:8890
