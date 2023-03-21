@@ -201,7 +201,7 @@ new_version_detect()
     fi
 
     if [[ $_new -gt $_old ]]; then
-        cecho -Gy 'A new version is available! Run "ad upgrade"'
+        cecho -g 'A new version is available! Run "ad upgrade"'
     fi
 }
 
