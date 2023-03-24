@@ -1,0 +1,33 @@
+#!/usr/bin/env python3
+
+import asyncio
+import httpx
+
+async def credit_summary(api_key=None):
+    """Get the credit summary for the API key."""
+    url = "https://api.openai.com/dashboard/billing/credit_grants"
+    async with httpx.AsyncClient() as client:
+        headers = {}
+        if api_key is not None:
+            headers = {"Authorization": f"Bearer {api_key}"}
+        response = await client.get(
+            url,
+            headers=headers,
+            timeout=60,
+        )
+        return response.json()
+
+async def main():
+    # Set default API key here
+    api_key = "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"
+
+    # Try to get the API key from command line arguments
+    import sys
+    if len(sys.argv) > 1:
+        api_key = sys.argv[1]
+
+    result = await credit_summary(api_key)
+    print(result)
+
+if __name__ == "__main__":
+    asyncio.run(main())
