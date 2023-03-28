@@ -148,6 +148,9 @@ ad_tree()
 
 vim_init()
 {
+    if [ -d $_curdir/.git ]; then
+        return
+    fi
     ad cecho -g "ad vim initialize ..."
     cd $_curdir/
     ad get @vim_bundle.tgz@
@@ -171,7 +174,7 @@ vim_init()
 ad_vim()
 {
     [ ! -f $_curdir/vim/.env ] && vim_init
-    source $_curdir/vim/.env
+    [ ! -f $_curdir/vim/.env ] || source $_curdir/vim/.env
     if [ -f $_curdir/vim/vim ]; then
         $_curdir/vim/vim -u $_curdir/vim/.vimrc "$@"
     else
@@ -182,7 +185,7 @@ ad_vim()
 ad_vimdiff()
 {
     [ ! -f $_curdir/vim/.env ] && vim_init
-    source $_curdir/vim/.env
+    [ ! -f $_curdir/vim/.env ] || source $_curdir/vim/.env
     if [ -f $_curdir/vim/vimdiff ]; then
         $_curdir/vim/vimdiff -u $_curdir/vim/.vimrc "$@"
     else
