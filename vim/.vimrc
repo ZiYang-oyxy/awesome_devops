@@ -16,6 +16,9 @@ let g:mapleader = "\ "
 "curl -fLo ~/.awesome_devops/vim/autoload/plug.vim --create-dirs \
 "    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
+if !executable('git')
+  echo "Warning: Git is not installed. vim-"
+endif
 " 修改这个路径，能决定是否在ad中真正安装这些插件，供后续打包上传
 silent! call plug#begin('~/.awesome_devops/vim/plugged')
 
