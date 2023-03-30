@@ -319,6 +319,8 @@ let g:bookmark_disable_ctrlp = 0
 highlight BookmarkSign ctermbg=NONE ctermfg=160
 let g:bookmark_sign = '♥'
 "let g:bookmark_highlight_lines = 1
+Plug 'github/copilot.vim'
+Plug 'Yggdroot/indentLine'
 
 "###########################
 "# tags
@@ -477,13 +479,9 @@ set lcs=tab:>-,trail:-
 "set nonumber
 set list
 
-"set noexpandtab
-"set tabstop=4
-"set shiftwidth=4
-
-set expandtab
 set tabstop=4
 set shiftwidth=4
+nnoremap <F2> :set invexpandtab<CR>
 
 set fileformats=unix,dos
 set autoindent
