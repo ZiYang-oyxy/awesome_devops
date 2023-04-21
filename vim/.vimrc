@@ -323,6 +323,8 @@ highlight BookmarkSign ctermbg=NONE ctermfg=160
 let g:bookmark_sign = '♥'
 "let g:bookmark_highlight_lines = 1
 Plug 'github/copilot.vim'
+imap <silent><script><expr> <C-L> copilot#Accept("\<CR>")
+let g:copilot_no_tab_map = v:true
 Plug 'Yggdroot/indentLine'
 
 "###########################
@@ -482,6 +484,7 @@ set lcs=tab:>-,trail:-
 "set nonumber
 set list
 
+set expandtab
 set tabstop=4
 set shiftwidth=4
 nnoremap <F2> :set invexpandtab<CR>
@@ -595,7 +598,7 @@ vmap <leader>fj :!python3 -m json.tool<CR>
 
 " pretty format c code
 vmap <leader>fc :!clang-format -style=file<CR>
-nmap <leader>fc ggvG<leader>cf<C-o><C-o>
+nmap <leader>fc ggvG<leader>fc<C-o><C-o>
 
 " pretty format python code
 map <leader>fp :PymodeLintAuto<CR>
