@@ -1,0 +1,43 @@
+#!/bin/bash -e
+
+curdir="`dirname $(readlink -f $0)`"
+source $curdir/../../lib/common.sh
+dir=$(basename $curdir)
+
+deploy_pdir=${1:-~/tmp}
+cp -r $curdir/ $deploy_pdir
+cd $deploy_pdir/$dir
+
+mkdir -p grafana_volume/dashboards
+mkdir -p prometheus_volume
+chmod -R 777 *_volume
+
+ad get @prometheus.tgz@
+tar xf @prometheus.tgz@
+rm @prometheus.tgz@
+
+# NOTE: The node_exporter is designed to monitor the host system.
+# It's not recommended to deploy it as a Docker container because it requires access to the host system.
+# refer to https://github.com/prometheus/node_exporter
+killall node_exporter
+log_info "Starting node_exporter"
+nohup ./prometheus/node_exporter 2>&1 > node_exporter.log &
+
+log_info "Starting prometheus"
+docker run --name prometheus -d --network=host \
+    -v $PWD/cfg:/etc/prometheus/cfg \
+    -v $PWD/prometheus_volume:/prometheus \
+    prom/prometheus \
+    --config.file=/etc/prometheus/cfg/prometheus.yml \
+    --storage.tsdb.path=/prometheus \
+    --web.console.libraries=/usr/share/prometheus/console_libraries \
+    --web.console.templates=/usr/share/prometheus/consoles \
+    --web.enable-lifecycle \
+    --log.level=debug
+
+log_info "Starting grafana"
+docker run -d --name=grafana --network=host \
+    -v $PWD/grafana_volume:/var/lib/grafana \
+    -v $PWD/provisioning:/etc/grafana/provisioning \
+    -v $PWD/grafana.ini:/usr/share/grafana/conf/defaults.ini \
+    grafana/grafana

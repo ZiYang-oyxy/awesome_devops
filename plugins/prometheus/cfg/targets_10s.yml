@@ -1,0 +1,10 @@
+- targets:
+  - localhost:9100
+  labels:
+    job: ad-node
+#- targets:
+#  - my-app-1:8080
+#  - my-app-2:8080
+#  labels:
+#    environment: staging
+#    job: my-app
