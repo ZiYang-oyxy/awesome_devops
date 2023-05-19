@@ -312,7 +312,8 @@ case $_action in
             done
             exit 1
         fi
-        $_curdir/plugins/$_plugin/install
+        shift
+        $_curdir/plugins/$_plugin/install $@
         ;;
     ex)
         # install my experimental tool, will not be displayed in usage
