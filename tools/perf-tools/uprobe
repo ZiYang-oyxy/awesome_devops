@@ -95,6 +95,7 @@ function usage {
 	       # trace sleep() calls in all running libc shared libraries:
 	           uprobe p:libc:sleep
 	       # trace sleep() with register %di (x86):
+	       # args1~6: %di %si %dx %cx %r8 %r9
 	           uprobe 'p:libc:sleep %di'
 	       # trace this address (use caution: must be instruction aligned):
 	           uprobe p:libc:0xbf130
