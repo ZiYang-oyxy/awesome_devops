@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if ! type lstopo > /dev/null 2>&1; then
+    sudo yum install -y hwloc-gui || {
+        ad cecho -R "ERROR: Not found \"lstopo\" command"
+        exit 1
+    }
+fi
+
+SVG_FILE=`hostname`_topo.svg
+lstopo --output-format svg > $SVG_FILE
+ad tput $SVG_FILE
