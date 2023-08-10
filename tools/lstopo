@@ -8,5 +8,6 @@ if ! type lstopo > /dev/null 2>&1; then
 fi
 
 SVG_FILE=`hostname`_topo.svg
-lstopo --output-format svg > $SVG_FILE
+lstopo --of ascii --whole-io
+lstopo --of svg --whole-io > $SVG_FILE
 ad tput $SVG_FILE
