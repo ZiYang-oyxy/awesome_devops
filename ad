@@ -169,6 +169,7 @@ vim_init()
         echo "export VIMRUNTIME=~/.awesome_devops/vim/vim90" > vim/.env
     fi
     touch vim/.env
+    cd -
 }
 
 ad_vim()
