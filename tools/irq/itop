@@ -1,0 +1,360 @@
+#!/usr/bin/perl
+#
+#    Interrupts 'top-like' utility for Linux
+#
+#    Show the interrupts per second/per IRQ per CPU and TOTAL
+#
+use IO::File;
+use Term::Cap;
+use Getopt::Long;
+use Pod::Usage;
+
+=head1 SYNOPSIS
+
+    itop [OPTIONS]
+
+=head1 OPTIONS
+
+    -a|--all                 : force display ALL CPUs (caution if you have many CPUs and a narrow screen) + TOTAL
+    -c|--cpufilter <string>  : display only specifed CPUs (e.g. 0,1,4-6) + TOTAL
+    -f|--filter <string>     : only show interrupts that match on the specified string
+    -h|--help                : print this help messages
+    -i|--interval <interval> : sample every <interval> seconds. Can be fractional.
+    -t|--total               : DON'T display ALL CPUs, just the TOTAL
+    -m|--max                 : Show MAX number of interrupts per IRQ
+    -T|--transpose           : Transpose the display
+
+    Default: display ALL CPUs + TOTAL (unless CPUs > 8, then just display the TOTAL)
+
+=cut
+
+sub mycriteria {
+    if (($a =~ /(\d+)/) and ($b =~ /(\d+)/)) {
+        $a <=> $b;
+    } else {
+        lc $a cmp lc $b;
+    }
+}
+
+sub count_cpu {
+    my $r = 0;
+    for (@_) {
+        $r++ if ($_);
+    }
+    return $r;
+}
+
+sub make_cpumap {
+    my ($spec, $maxcpu) = @_;
+    my @cpuset = ();
+    my $last;
+    my $range = 0;
+
+    while ($spec =~ /^([0-9]+|,|-)/) {
+        if ($1 eq ',') {
+            if (defined ($last)) {
+                push @cpuset, $last;
+                $last = undef;
+            }
+            $range = 0;
+        } elsif ($1 eq '-') {
+            $range = 1;
+        } elsif ($range) {
+            $range = 0;
+            for ((defined ($last)? $last: 0)..$1) {
+                push @cpuset, $_;
+            }
+            $last = undef;
+        } else {
+            $last = $1;
+        }
+        $spec = $';
+    }
+
+    if ($range) {
+        for ((defined ($last)? $last: 0)..$maxcpu) {
+            push @cpuset, $_;
+        }
+    } elsif (defined ($last)) {
+        push @cpuset, $last;
+    }
+
+    my @cpumap;
+    foreach (sort {$a <=> $b} @cpuset) {
+        @cpumap[$_] = 1 if ($_ <= $maxcpu);
+    }
+    return @cpumap;
+}
+
+sub make_print_context {
+    my ($expand, $interval, $displaymax, $transpose) = @_;
+    my $ctx = {
+        'interval' => $interval,
+        'displaymax' => $displaymax,
+        'transpose' => $transpose,
+    };
+
+    if (!$transpose) {
+        $ctx->{'cols'}  = 10 + $expand;
+        $ctx->{'cols2'} =  4 + $expand;
+    }
+
+    return $ctx;
+}
+
+sub print_meta_header {
+    my ($pctx, $cpumap) = @_;
+    my $cols = $pctx->{'cols'};
+
+    printf("%${cols}s%". (count_cpu(@$cpumap) + 1) * 10 . "s", "", "IRQs/Second\n");
+}
+
+sub print_header {
+    my ($pctx, $cpumap, $cpus) = @_;
+    my $cols2 = $pctx->{'cols2'};
+    my $displaymax = $pctx->{'displaymax'};
+
+    printf("%${cols2}s (%3s)  ", "Device", "IRQ");
+    foreach ($cpu = 0; $cpu < $cpus; $cpu++) {
+        printf('%9s ', 'CPU' . $cpu) if ($cpumap->[$cpu]);
+    }
+    printf("%9s", "TOTAL");
+    if ($displaymax ne '') {
+        printf("%9s\n", "MAX");
+    } else {
+        printf("\n");
+    }
+}
+
+sub print_lines {
+    my ($pctx, $cpumap, $cpus, $irqs, $irq_device, $last, $max) = @_;
+    my $cols2 = $pctx->{'cols2'};
+    my $interval = $pctx->{"interval"};
+    my $displaymax = $pctx->{'displaymax'};
+
+    foreach $irq (sort mycriteria keys %$irqs) {
+        printf("%${cols2}s (%3s): ", substr($irq_device->{$irq}, 0, $cols2), $irq);
+
+        my $total = 0;
+        for ($cpu = 0; $cpu < $cpus; $cpu++) {
+            printf("%9.0f ", ($irqs->{$irq}[$cpu] - $last{$irq}[$cpu]) / $interval) if ($cpumap->[$cpu]);
+            $total += $irqs->{$irq}[$cpu] - $last->{$irq}[$cpu];
+            if ($displaymax ne '') {
+                if ($total > $max->{$irq}) {
+                    $max->{$irq} = $total
+                }
+            }
+        }
+        printf("%9.0f", $total / $interval);
+        if ($displaymax ne '') {
+            printf("%9.0f\n", $max->{$irq});
+        } else {
+            printf("\n");
+        }
+    }
+}
+
+sub print_meta_header_tr {
+    my ($pctx, $irqs, $irq_device) = @_;
+    my $cols = 0;
+
+    # length("TOTAL") == 5
+    $pctx->{'cols_tr'} = 5;
+    $cols += $pctx->{'cols_tr'};
+
+    my @sorted_irqs = sort mycriteria keys %$irqs;
+    $pctx->{'sorted_irqs'} = \@sorted_irqs;
+
+    foreach $irq (@sorted_irqs) {
+        my $base = length($irq_device->{$irq});
+        # " (${irq})"
+        #  ^^      ^ => characters
+        my $extra = 3 + length ($irq);
+        # 9 comes from printf ("%9.0f"...) in the original non-transposed code.
+        if ($base + $extra < 9) {
+            $base += 9 - ($base + $extra);
+        }
+        # 4 is for space between columns
+        $base += 4;
+        $pctx->{'cols2_base_tr'}[$irq] = $base;
+        $pctx->{'cols2_full_tr'}[$irq] = $base + $extra;
+        $cols += $pctx->{'cols2_full_tr'}[$irq];
+    }
+
+    printf("%${cols}s", "IRQs/Second\n");
+}
+
+sub print_header_tr {
+    my ($pctx, $cpus, $irqs, $irq_device) = @_;
+    my $cols_tr = $pctx->{'cols_tr'};
+    my $sorted_irqs = $pctx->{'sorted_irqs'};
+
+    printf("%${cols_tr}s", "CPU#");
+    foreach $irq (@$sorted_irqs) {
+        my $base = $pctx->{'cols2_base_tr'}[$irq];
+        printf("%${base}s (%s)", $irq_device->{$irq}, $irq);
+    }
+    printf("\n");
+}
+
+sub print_lines_tr {
+    my ($pctx, $cpumap, $cpus, $irqs, $irq_device, $last, $max) = @_;
+    my $interval = $pctx->{"interval"};
+    my $displaymax = $pctx->{'displaymax'};
+    my $cols_tr = $pctx->{'cols_tr'};
+    my $cols2_full_tr = $pctx->{'cols2_full_tr'};
+    my $sorted_irqs = $pctx->{'sorted_irqs'};
+
+    foreach $irq (@$sorted_irqs) {
+        $total[$irq] = 0;
+    }
+
+    for ($cpu = 0; $cpu < $cpus; $cpu++) {
+        next if (!$cpumap->[$cpu]);
+        printf("%${cols_tr}d", $cpu);
+        foreach $irq (@$sorted_irqs) {
+            my $cols = $pctx->{'cols2_full_tr'}[$irq];
+            printf("%${cols}.0f", ($irqs->{$irq}[$cpu] - $last{$irq}[$cpu]) / $interval);
+            $total[$irq] += $irqs->{$irq}[$cpu] - $last->{$irq}[$cpu];
+            if ($displaymax ne '' && ($total[$irq] > $max->{$irq})) {
+                $max->{$irq} = $total[$irq];
+            }
+        }
+        printf("\n");
+    }
+
+    printf("%${cols_tr}s", "TOTAL");
+    foreach $irq (@$sorted_irqs) {
+        my $cols = $pctx->{'cols2_full_tr'}[$irq];
+        printf("%${cols}.0f", ($total[$irq]) / $interval);
+    }
+    printf("\n");
+
+    if ($displaymax ne '') {
+        printf("%${cols_tr}s", "MAX");
+        foreach $irq (@$sorted_irqs) {
+            my $cols = $pctx->{'cols2_full_tr'}[$irq];
+            printf("%${cols}.0f", $max->{$irq});
+        }
+        printf("\n");
+    }
+}
+
+sub print_table {
+    my ($pctx, $cpumap, $cpus, $irqs, $irq_device, $last, $max) = @_;
+
+    if ($pctx->{'transpose'}) {
+        print_meta_header_tr($pctx, $irqs, $irq_device);
+        print_header_tr($pctx, $cpus, $irqs, $irq_device);
+        print_lines_tr($pctx, $cpumap, $cpus, $irqs, $irq_device, $last, $max);
+    } else {
+        print_meta_header($pctx, $cpumap);
+        print_header($pctx, $cpumap, $cpus);
+        print_lines($pctx, $cpumap, $cpus, $irqs, $irq_device, $last, $max);
+    }
+}
+
+# Command line argument processing
+my $DISPLAYALL='';
+my $DISPLAYTOTAL='';
+my $DISPLAYMAX='';
+# filter MUST have a space or by default we get nothing
+my $FILTER=' ';
+my $INTERVAL = 1.0;
+my $CPUFILTER = '';
+my $TRANSPOSE = 0;
+GetOptions('all' => \$DISPLAYALL,
+       'total' => \$DISPLAYTOTAL,
+       'max' => \$DISPLAYMAX,
+       'filter=s' => \$FILTER,
+       'interval=f' => \$INTERVAL,
+       'cpufilter=s' => \$CPUFILTER,
+       'transpose|T' => \$TRANSPOSE,
+       'help' => \my $help) or pod2usage(0);
+pod2usage(1) if $help;
+
+if (($DISPLAYALL eq 1) and ($DISPLAYTOTAL eq 1)) {
+    die "Invalid options: cannot use both -t and -a.\n";
+}
+
+
+$term = Tgetent Term::Cap;
+print $term->Tputs('cl');
+
+$fh = new IO::File;
+
+if (!$fh->open("</proc/interrupts")) {
+    die "Unable to open /proc/interrupts";
+}
+
+$top = $fh->getpos();
+$first_time = 0;
+my $expand=0;
+my @cpumap;
+while (1) {
+    $expand=0;
+    $fh->setpos($top);
+
+    # Read and parse interrupts
+    $header = <$fh>; # Header line
+    # Count CPUs
+    $cpus = () = $header =~ /CPU/g;
+
+    if ($CPUFILTER ne '') {
+        @cpumap = make_cpumap ($CPUFILTER, $cpus - 1);
+    } elsif (($DISPLAYALL eq 1) or ($cpus < 9 and $DISPLAYTOTAL != 1)) {
+        @cpumap = make_cpumap ("-", $cpus - 1);
+    } elsif (($DISPLAYTOTAL eq 1) or ($cpus > 8)) {
+        @cpumap = make_cpumap ("", $cpus - 1);
+    }
+
+    my %irqs;
+PARSE:  while (<$fh>) {
+        next PARSE if !/$FILTER/;
+        my @array = split(' ',$_);
+        $irq = $array[0];
+        chop($irq);
+        for ($cpu = 0; $cpu < $cpus; $cpu++) {
+            $icount = $array[$cpu+1];
+            $irqs{$irq}[$cpu] = $icount;
+        }
+        if (@array[-1] =~ /_hcd:/) {
+            $item = @array[-1];
+            # remove '_hcd' from usb names
+            $item =~ s/_hcd//;
+            $item =~ tr/,//d;
+            $irq_device{$irq}=$item;
+        } else {
+            $irq_device{$irq} = @array[-1];
+        }
+        # check if there more devices sharing the same IRQ
+        @revarray = reverse(@array);
+        foreach $item (@revarray[1..4]) {
+            if ($item =~ /,/) {
+                # remove '_hcd' from usb names
+                if ($item =~ /hci_hcd:/) {
+                    $item =~ s/_hcd//;
+                    $item =~ tr/,//d;
+                    $irq_device{$irq}=$item.",".$irq_device{$irq};
+                }
+            }
+            # Find biggest irq_device name
+            $cur_expand=length($irq_device{$irq});
+            if ($cur_expand > $expand) {
+                $expand = $cur_expand;
+            }
+        }
+    }
+
+    if ($first_time != 0) {
+        # Prepare sceeen
+        print $term->Tputs('ho');
+        my $pctx = make_print_context($expand, $INTERVAL, $DISPLAYMAX, $TRANSPOSE);
+        print_table($pctx, \@cpumap, $cpus, \%irqs, \%irq_device, \%last, \%max);
+    }
+    $first_time = 1;
+
+
+    %last = %irqs;
+    select undef, undef, undef, $INTERVAL;
+}
