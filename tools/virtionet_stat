@@ -1,0 +1,472 @@
+#!/usr/bin/env python3
+
+import argparse
+import tty
+import sys
+import termios
+import threading
+import subprocess
+import logging
+import time
+import heapq
+import os
+import pdb
+
+
+KEY_EVENT = threading.Event()
+STOP_EVENT = threading.Event()
+
+INCHAR = ''
+ACCEPTABLE_KEYS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'i', 'x']
+TABS = [
+    ["a:all", "all device statistics"],
+    ["0-9:virtioX", "specific device statistics"],
+    ["i:intaff", "interrupt affinity"],
+    ["x:xps/rps", "xps/rps configure"],
+]
+
+
+def is_digit_n(n):
+    try:
+        num = int(n)
+        if num >= 0 and num <= 9:
+            return True
+        else:
+            return False
+    except ValueError:
+        return False
+
+
+def wait_for_input():
+    """Get a single character of input, validate"""
+    global INCHAR
+    global ACCEPTABLE_KEYS
+
+    while True:
+        key = sys.stdin.read(1)
+        if key not in ACCEPTABLE_KEYS:
+            STOP_EVENT.set()
+            break
+        INCHAR = key
+        KEY_EVENT.set()
+
+
+def is_a_virtio_device(iface):
+    try:
+        output_bytes = subprocess.check_output(
+            ['ls', '/sys/class/net/' + iface + '/device/driver/'], stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError:
+        return ''
+
+    output_str = output_bytes.decode().strip()
+    lines = output_str.split('\n')
+    for line in lines:
+        if line.startswith("virtio"):
+            return line
+    return ''
+
+
+def collect_virtio_stats(iface):
+    txqs = {}
+    rxqs = {}
+    try:
+        output_bytes = subprocess.check_output(['ethtool', '-S', iface], stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError:
+        return {}, {}
+
+    output_str = output_bytes.decode().strip()
+    lines = output_str.split('\n')[1:]  # 使用切片去除第一行的处理说明
+
+    for line in lines:
+        key, value = line.lstrip().split(': ')
+        key_parts = key.split('_')
+
+        qtype, qid, qstat = key_parts[0], key_parts[2], key_parts[3]
+        if qtype not in ('rx', 'tx'):
+            logging.error('Unknown qtype: %s' % qtype)
+            continue
+
+        q = rxqs if qtype == 'rx' else txqs
+        qid_dict = q.get(qid, {})
+        qid_dict[qstat] = value
+        q[qid] = qid_dict
+
+    logging.debug("txqs[" + iface + "]: %s" % txqs)
+    logging.debug("rxqs[" + iface + "]: %s" % rxqs)
+    return txqs, rxqs
+
+
+def collect_virtio_info(virtio_stats):
+    def get_output_or_default(args, default='-'):
+        try:
+            output_bytes = subprocess.check_output(args, stderr=subprocess.DEVNULL)
+            return output_bytes.decode().strip()
+        except subprocess.CalledProcessError:
+            return default
+
+    for virtio_name, stat in virtio_stats.items():
+        for qtype, queues in stat.items():
+            if qtype == 'info':
+                continue
+            for idx, q in queues.items():
+                iface = stat['info']['iface']
+                if qtype in ('txqs', 'rxqs'):
+                    # collect xps/rps. e.g.
+                    # /sys/class/net/eth0/queues/rx-0/rps_cpus
+                    # /sys/class/net/eth0/queues/tx-0/xps_cpus
+                    dir_ = 'rx' if qtype == 'rxqs' else 'tx'
+                    type_ = 'xps_cpus' if qtype == 'txqs' else 'rps_cpus'
+                    path = f'/sys/class/net/{iface}/queues/{dir_}-{idx}/{type_}'
+                    q[type_] = get_output_or_default(['cat', path])
+
+                if q['irqnum'] is not None:
+                    # collect irq affinity. e.g.
+                    # /proc/irq/390/smp_affinity_list
+                    path = f'/proc/irq/{q["irqnum"]}/smp_affinity'
+                    q['smp_affinity'] = get_output_or_default(['cat', path])
+
+
+def process_raw_data(irqs, virtio_stats):
+    parse_intr_file(irqs)
+
+    try:
+        output_bytes = subprocess.check_output(['ls', '/sys/class/net/'], stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError:
+        return []
+
+    output_str = output_bytes.decode().strip()
+    output_array = output_str.split('\n')
+
+    for iface in output_array:
+        virtio_name = is_a_virtio_device(iface)
+        if virtio_name == '':
+            continue
+        txqs, rxqs = collect_virtio_stats(iface)
+        update_virtio_stats(iface, virtio_name, virtio_stats, irqs, txqs, rxqs)
+
+    collect_virtio_info(virtio_stats)
+
+
+def get_top_k_with_idx(array, k, top=True):
+    """Get Top K in O(nlogn)"""
+    if k == 0:
+        return list()
+    if top:
+        idx_arr = heapq.nlargest(k, range(len(array)), key=array.__getitem__)
+        return [(i, array[i]) for i in idx_arr]
+    else:
+        idx_arr = heapq.nsmallest(k, range(len(array)), key=array.__getitem__)
+        return [(i, array[i]) for i in idx_arr]
+
+
+def parse_intr_file(irqs):
+    with open("/proc/interrupts", 'r') as f:
+        first_line = f.readline()
+        cpu_headers = []
+        for name in first_line.split():
+            num = name[3:]
+            cpu_headers.append(num)
+
+        for line in f.readlines():
+            vals = line.split()
+            irqnum = vals[0].rstrip(':')
+            irq = {}
+            irq['name'] = ' '.join(vals[len(cpu_headers) + 1:])
+            irq['num'] = irqnum
+            irq['cpus'] = [int(x) for x in vals[1:len(cpu_headers) + 1]]
+            irq['prev_cpus'] = (irqs[irqnum]['cpus'] if irqnum in irqs else [0] * len(cpu_headers))
+            irq['diff_cpus'] = [irq['cpus'][i] - irq['prev_cpus'][i] for i in range(len(irq['cpus']))]
+            irq['topk_cpus'] = [i for (i, v) in get_top_k_with_idx(irq['diff_cpus'], 2, True)]
+            irq['prev_sum'] = irqs[irqnum]['sum'] if irqnum in irqs else 0
+            irq['sum'] = sum(irq['cpus'])
+            irq['diff_sum'] = irq['sum'] - irq['prev_sum']
+            irqs[irqnum] = irq
+            # logging.debug(irq)
+
+
+def update_virtio_stats(iface, virtio_name, virtio_stats, irqs, txqs, rxqs):
+    stat = virtio_stats.get(virtio_name, None)
+    if stat is None:
+        stat = {'txqs': {}, 'rxqs': {}}
+        virtio_stats[virtio_name] = stat
+
+    process_queue(virtio_name, stat, 'txqs', txqs, irqs, '-output.')
+    process_queue(virtio_name, stat, 'rxqs', rxqs, irqs, '-input.')
+
+    stat['txqs'] = txqs
+    stat['rxqs'] = rxqs
+    stat['info'] = {}
+    stat['info']['iface'] = iface
+    logging.debug("stat[" + virtio_name + "]: %s" % virtio_stats)
+
+
+def process_queue(virtio_name, stat, q_name, queues, irqs, irq_suffix):
+    prev_stat = stat.get(q_name, None)
+    if prev_stat is None:
+        prev_stat = {}
+        stat[q_name] = prev_stat
+
+    for idx, q in queues.items():
+        for prop in ['packets', 'bytes', 'kicks']:
+            prev_q = prev_stat.get(idx, {})
+            q[f'diff_{prop}'] = int(q[prop]) - prev_q.get(f'prev_{prop}', 0)
+            if q[f'diff_{prop}'] < 0:
+                logging.error('diff < 0! ' + '{virtio_name}-{q_name}{idx} {prop}: {q[f"diff_{prop}"]}')
+            q[f'prev_{prop}'] = int(q[prop])
+
+        irqname = f'{virtio_name}{irq_suffix}{idx}'
+        for idx2, irq in irqs.items():
+            if irqname in irq['name']:
+                q['irqnum'] = irq['num']
+                q['topk_cpus'] = irq['topk_cpus']
+                q['sum'] = irq['sum']
+                q['diff_sum'] = irq['diff_sum']
+                break
+        else:
+            q['irqnum'] = None
+            logging.error('irqnum is None! ' + '{virtio_name}-{q_name}{idx} irqname: {irqname}')
+
+
+def print_virtio_stats(virtio_stats, irqs, virtio_name, template):
+    fmtstr = ''
+    stat = virtio_stats.get(virtio_name, None)
+    for qtype, queues in stat.items():
+        if qtype == 'info':
+            continue
+        for idx, q in queues.items():
+            irq = irqs.get(q['irqnum'], None)
+            topk1 = q['topk_cpus'][0]
+            topk2 = q['topk_cpus'][1]
+            topk1_str = ('%4s(%3.2d%%)') % (str(topk1), float(
+                irq['diff_cpus'][topk1]) / irq['diff_sum'] * 100 if irq['diff_sum'] != 0 else 0)
+            topk2_str = ('%4s(%3.2d%%)') % (str(topk2), float(
+                irq['diff_cpus'][topk2]) / irq['diff_sum'] * 100 if irq['diff_sum'] != 0 else 0)
+
+            fmtstr += template.format(virtio_name + '-' + ("txq" if qtype == "txqs" else "rxq") + str(idx),
+                                      q['irqnum'],
+                                      q['diff_sum'],
+                                      topk1_str,
+                                      topk2_str,
+                                      q['diff_packets'],
+                                      q['diff_kicks'],
+                                      str(q['diff_bytes'])) + '\n\r'
+    return fmtstr
+
+
+def print_top_irq(rows, topn):
+    """print top n interrupts"""
+    fmtstr = ''
+    template = "{:>13} {:>5} {:>10} {:>10} {:>10} {:>32}"
+    limit = int(topn)
+    for idx, irq in enumerate(rows):
+        if 'virtio' in irq['name']:
+            continue
+        if limit == 0:
+            break
+        limit -= 1
+        if not irq['diff_sum']:
+            fmtstr += "{:>13} {:>71}".format('-', '-') + '\n\r'
+            continue
+
+        topk1 = irq['topk_cpus'][0]
+        topk2 = irq['topk_cpus'][1]
+        topk1_str = ('%4s(%3.2d%%)') % (str(topk1), float(
+            irq['diff_cpus'][topk1]) / irq['diff_sum'] * 100 if irq['diff_sum'] != 0 else 0)
+        topk2_str = ('%4s(%3.2d%%)') % (str(topk2), float(
+            irq['diff_cpus'][topk2]) / irq['diff_sum'] * 100 if irq['diff_sum'] != 0 else 0)
+
+        fmtstr += template.format('*', irq['num'], irq['diff_sum'], topk1_str, topk2_str, irq['name'][-28:]) + '\n\r'
+    return fmtstr
+
+
+def print_tab_line(cur_tab, selected_virtio):
+    global TABS
+    fmtstr = '| '
+    for i, tab in enumerate(TABS):
+        fmtstr += tab[0] if i != cur_tab else '\033[1m' + tab[0] + '\033[0m'
+        fmtstr += ' | ' if i != len(TABS) - 1 else ''
+
+    fmtstr += '\n\r'
+    return fmtstr
+
+
+def get_cur_tab(selected_virtio):
+    new_selected_virtio = selected_virtio
+    if INCHAR == 'a':
+        cur_tab = 0
+        new_selected_virtio = ''
+    elif is_digit_n(INCHAR):
+        cur_tab = 1
+        new_selected_virtio = 'virtio' + INCHAR
+    elif INCHAR == 'i':
+        cur_tab = 2
+    elif INCHAR == 'x':
+        cur_tab = 3
+    return cur_tab, new_selected_virtio
+
+
+def tab_print_intaff(virtio_stats, selected_virtio):
+    template = "{:>13} {:>71}"
+    fmtstr = template.format("QUEUE", "/proc/irq/.../smp_affinity") + '\n\r'
+    for virtio_name, stat in virtio_stats.items():
+        if selected_virtio and virtio_name != selected_virtio:
+            continue
+        for qtype, queues in stat.items():
+            if qtype == 'info':
+                continue
+            for idx, q in queues.items():
+                fmtstr += template.format(virtio_name + '-' + ("txq" if qtype == "txqs" else "rxq") + str(idx),
+                                          q['smp_affinity']) + '\n\r'
+    return fmtstr
+
+
+def tab_print_xpsrps(virtio_stats, selected_virtio):
+    template = "{:>13} {:>71}"
+    fmtstr = template.format("QUEUE", "/sys/class/net/.../queues/<tx|rx>-.../<x|r>ps_cpus") + '\n\r'
+    for virtio_name, stat in virtio_stats.items():
+        if selected_virtio and virtio_name != selected_virtio:
+            continue
+        for qtype, queues in stat.items():
+            if qtype == 'info':
+                continue
+            for idx, q in queues.items():
+                fmtstr += template.format(virtio_name + '-' + ("txq" if qtype == "txqs" else "rxq") + str(idx),
+                                          q['xps_cpus'] if qtype == "txqs" else q['rps_cpus']) + '\n\r'
+    return fmtstr
+
+
+def tab_print_virtio_stat(virtio_stats, irqs, selected_virtio):
+    template = "{:>13} {:>5} {:>10} {:>10} {:>10} {:>9} {:>9} {:>12}"
+    fmtstr = template.format("QUEUE", "INT#", "INCR", "TOPCPU#0", "TOPCPU#1", "PKTS", "KICKS", "BYTES") + '\n\r'
+    if selected_virtio == '':
+        for virtio_name, stat in virtio_stats.items():
+            fmtstr += print_virtio_stats(virtio_stats, irqs, virtio_name, template)
+    else:
+        if selected_virtio in virtio_stats:
+            fmtstr += print_virtio_stats(virtio_stats, irqs, selected_virtio, template)
+    return fmtstr
+
+
+def display_virtionet_stat(args):
+    """Main loop"""
+    interval = int(args.interval)
+    # filter = args.filter
+    topn = args.topn
+    irqs = {}
+    virtio_stats = {}
+    loop_cnt = 0
+    selected_virtio = ''
+    cur_tab = 0
+
+    while not STOP_EVENT.is_set():
+        process_raw_data(irqs, virtio_stats)
+
+        def sort_func(val):
+            return val['diff_sum']
+        rows = sorted(irqs.values(), key=sort_func, reverse=True)
+
+        # calculate the delta value between the two collections
+        if loop_cnt == 0:
+            loop_cnt += 1
+            continue
+        loop_cnt += 1
+
+        if not args.history:
+            os.system('clear')
+
+        if KEY_EVENT.is_set():
+            KEY_EVENT.clear()
+            cur_tab, selected_virtio = get_cur_tab(selected_virtio)
+
+        # e.g.
+        # [Thu Aug 31 03:12:54 2023] interval=1s
+        # | a:all | 0-9:virtioX | i:intaff | x:xps/rps
+        #         QUEUE  INT#       INCR   TOPCPU#0   TOPCPU#1      PKTS     KICKS        BYTES
+        #  virtio1-txq0   730      12983    2(100%)    0( 00%)     13238     13238      7480428
+        #  virtio1-txq1   732          0    0( 00%)    1( 00%)         0         0            0
+        #  virtio1-txq2   734        147   92(100%)    0( 00%)       139       139       152278
+        #  virtio1-txq3   736          0    0( 00%)    1( 00%)         0         0            0
+        #  virtio1-rxq0   729      13160    1(100%)    0( 00%)     13377       405      7632194
+        #  virtio1-rxq1   731          0    0( 00%)    1( 00%)         0         0            0
+        #  virtio1-rxq2   733          0    0( 00%)    1( 00%)         0         0            0
+        #  virtio1-rxq3   735          0    0( 00%)    1( 00%)         0         0            0
+        #  virtio0-txq0   739          2   89(100%)    0( 00%)         2         2         1548
+        #  virtio0-rxq0   738          2   88(100%)    0( 00%)         2         0          132
+        #             *   LOC        638   74( 42%)   77( 19%)           Local timer interrupts
+        #             *   TLB          7  110( 57%)  122( 42%)                   TLB shootdowns
+        #             *     9          2    1(100%)    0( 00%)        IR-IO-APIC 9-fasteoi acpi
+
+        # print separator line
+        fmtstr = "\033[47;30m"
+        fmtstr += "[" + time.ctime() + "] interval=" + str(interval) + "s"
+        if selected_virtio:
+            fmtstr += ' --- ' + selected_virtio + ' selected'
+        fmtstr += "\033[0m\n\r"
+
+        # print tab title
+        fmtstr += print_tab_line(cur_tab, selected_virtio)
+
+        # print tab page
+        if cur_tab == 0 or cur_tab == 1:
+            fmtstr += tab_print_virtio_stat(virtio_stats, irqs, selected_virtio)
+            fmtstr += print_top_irq(rows, topn)
+        elif cur_tab == 2:
+            fmtstr += tab_print_intaff(virtio_stats, selected_virtio)
+        elif cur_tab == 3:
+            fmtstr += tab_print_xpsrps(virtio_stats, selected_virtio)
+
+        logging.info(fmtstr + '\r')
+        if loop_cnt == 2 and args.oneshot:
+            break
+
+        time.sleep(interval)
+
+
+def main():
+    """Parse arguments, call main loop"""
+    parser = argparse.ArgumentParser(description='Display virtio-net statistics')
+
+    parser.add_argument(
+        '-l',
+        '--loglevel',
+        choices=[
+            'DEBUG',
+            'INFO',
+            'WARNING',
+            'ERROR',
+            'CRITICAL'],
+        default='INFO',
+        help='Specify the log level')
+    parser.add_argument("-i", "--interval", default="1", help="Update interval in seconds")
+    # TODO
+    # parser.add_argument("-f", "--filter", default="", help="Only show lines that match on the specified string")
+    parser.add_argument("-H", "--history", dest="history", action="store_true", default=False, help="Show history data")
+    parser.add_argument("-n", "--topn", default="3", help="Show top n interrupts")
+    parser.add_argument("-o", "--oneshot", dest="oneshot", help="Run once and exit")
+    args = parser.parse_args()
+
+    loglevel = getattr(logging, args.loglevel)
+    # logging.basicConfig(level=loglevel, format='\r%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=loglevel, format='%(message)s\r')
+
+    out = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(out)
+    tty.setraw(sys.stdin.fileno())
+
+    thread = threading.Thread(target=wait_for_input)
+    thread.start()
+
+    try:
+        display_virtionet_stat(args)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        termios.tcsetattr(out, termios.TCSADRAIN, old_settings)
+
+    thread.join()
+    logging.info('\r')
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
