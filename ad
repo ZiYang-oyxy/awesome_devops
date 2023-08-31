@@ -105,35 +105,50 @@ tput()
 get()
 {
     _l_file=${2:-$1}
-    curl -fo $_l_file $GETURL/$1
-    if [[ ! $? -eq 0 ]]; then
-        rm -f $_l_file
-        cecho -R "No such file"
+    temp_file="${_l_file}.download"
+    if ! curl -fo "$temp_file" "$GETURL/$1"; then
+        rm -f "$temp_file"
+        cecho -R "Download failed"
         exit 1
     fi
-    _res=(`md5sum $_l_file`)
+
+    owner=""
+    if [ -f "$_l_file" ]; then
+        owner=$(stat -c "%U:%G" "$_l_file")
+        permissions=$(stat -c "%a" "$_l_file")
+    fi
+    mv -f "$temp_file" "$_l_file"
+    if [[ -n $owner ]]; then
+        chown "$owner" "$_l_file"
+        chmod "$permissions" "$_l_file"
+    fi
+    _res=(`md5sum "$_l_file"`)
     cecho -Y "${_res[0]}"
-    cecho -G "`readlink -f $_l_file`"
+    cecho -G "$(readlink -f "$_l_file")"
 }
 
 dget()
 {
     # “:”会被tar认为是远程服务器
-    if [[ $1 =~ .*:.* ]]; then
-        cecho -R "not allow directory contain \":\""
+    if [[ "$1" == *":"* ]]; then
+        cecho -R 'filename must not contain ":"'
         exit 1
     fi
-    curl -fo $1.tgz $GETURL/$1.tgz
-    if [[ ! $? -eq 0 ]]; then
-        rm -f $1.tgz
-        cecho -R "No such directory"
+
+    _file_path="$1.tgz"
+    _temp_file_path="${_file_path}.download"
+
+    if curl -fo "$_temp_file_path" "$GETURL/$_file_path"; then
+        mv "$_temp_file_path" "$_file_path"
+        tar -x -o -f "$_file_path"
+        cecho -Y "$(md5sum "$_file_path" | awk '{print $1}')"
+        cecho -G "$(readlink -f "$1")"
+        rm "$_file_path"
+    else
+        rm -f "$_temp_file_path"
+        cecho -R "Download failed"
         exit 1
     fi
-    tar x -o -f $1.tgz
-    _res=(`md5sum $1.tgz`)
-    cecho -Y "${_res[0]}"
-    cecho -G "`readlink -f $1`"
-    rm $1.tgz
 }
 
 upgrade()
