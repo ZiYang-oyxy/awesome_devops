@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import argparse
 import tty
@@ -11,6 +11,7 @@ import time
 import heapq
 import os
 import pdb
+import re
 
 
 KEY_EVENT = threading.Event()
@@ -24,6 +25,9 @@ TABS = [
     ["i:intaff", "interrupt affinity"],
     ["x:xps/rps", "xps/rps configure"],
 ]
+ARGS = None
+FILTER_PATTERN = None
+LOOP_CNT = -1
 
 
 def is_digit_n(n):
@@ -53,8 +57,10 @@ def wait_for_input():
 
 def is_a_virtio_device(iface):
     try:
-        output_bytes = subprocess.check_output(
-            ['ls', '/sys/class/net/' + iface + '/device/driver/'], stderr=subprocess.DEVNULL)
+        with open(os.devnull, 'w') as DEVNULL:
+            output_bytes = subprocess.check_output(
+                ['ls', '/sys/class/net/' + iface + '/device/driver/'],
+                stderr=DEVNULL)
     except subprocess.CalledProcessError:
         return ''
 
@@ -70,12 +76,13 @@ def collect_virtio_stats(iface):
     txqs = {}
     rxqs = {}
     try:
-        output_bytes = subprocess.check_output(['ethtool', '-S', iface], stderr=subprocess.DEVNULL)
+        with open(os.devnull, 'w') as DEVNULL:
+            output_bytes = subprocess.check_output(['ethtool', '-S', iface], stderr=DEVNULL)
     except subprocess.CalledProcessError:
         return {}, {}
 
     output_str = output_bytes.decode().strip()
-    lines = output_str.split('\n')[1:]  # 使用切片去除第一行的处理说明
+    lines = output_str.split('\n')[1:]
 
     for line in lines:
         key, value = line.lstrip().split(': ')
@@ -99,7 +106,8 @@ def collect_virtio_stats(iface):
 def collect_virtio_info(virtio_stats):
     def get_output_or_default(args, default='-'):
         try:
-            output_bytes = subprocess.check_output(args, stderr=subprocess.DEVNULL)
+            with open(os.devnull, 'w') as DEVNULL:
+                output_bytes = subprocess.check_output(args, stderr=DEVNULL)
             return output_bytes.decode().strip()
         except subprocess.CalledProcessError:
             return default
@@ -116,21 +124,22 @@ def collect_virtio_info(virtio_stats):
                     # /sys/class/net/eth0/queues/tx-0/xps_cpus
                     dir_ = 'rx' if qtype == 'rxqs' else 'tx'
                     type_ = 'xps_cpus' if qtype == 'txqs' else 'rps_cpus'
-                    path = f'/sys/class/net/{iface}/queues/{dir_}-{idx}/{type_}'
+                    path = '/sys/class/net/{}/queues/{}-{}/{}'.format(iface, dir_, idx, type_)
                     q[type_] = get_output_or_default(['cat', path])
 
                 if q['irqnum'] is not None:
                     # collect irq affinity. e.g.
                     # /proc/irq/390/smp_affinity_list
-                    path = f'/proc/irq/{q["irqnum"]}/smp_affinity'
+                    path = '/proc/irq/{}/smp_affinity'.format(q["irqnum"])
                     q['smp_affinity'] = get_output_or_default(['cat', path])
 
 
 def process_raw_data(irqs, virtio_stats):
-    parse_intr_file(irqs)
+    collect_irq_stats(irqs)
 
     try:
-        output_bytes = subprocess.check_output(['ls', '/sys/class/net/'], stderr=subprocess.DEVNULL)
+        with open(os.devnull, 'w') as DEVNULL:
+            output_bytes = subprocess.check_output(['ls', '/sys/class/net/'], stderr=DEVNULL)
     except subprocess.CalledProcessError:
         return []
 
@@ -159,7 +168,9 @@ def get_top_k_with_idx(array, k, top=True):
         return [(i, array[i]) for i in idx_arr]
 
 
-def parse_intr_file(irqs):
+def collect_irq_stats(irqs):
+    global ARGS
+    global LOOP_CNT
     with open("/proc/interrupts", 'r') as f:
         first_line = f.readline()
         cpu_headers = []
@@ -174,11 +185,29 @@ def parse_intr_file(irqs):
             irq['name'] = ' '.join(vals[len(cpu_headers) + 1:])
             irq['num'] = irqnum
             irq['cpus'] = [int(x) for x in vals[1:len(cpu_headers) + 1]]
-            irq['prev_cpus'] = (irqs[irqnum]['cpus'] if irqnum in irqs else [0] * len(cpu_headers))
-            irq['diff_cpus'] = [irq['cpus'][i] - irq['prev_cpus'][i] for i in range(len(irq['cpus']))]
-            irq['topk_cpus'] = [i for (i, v) in get_top_k_with_idx(irq['diff_cpus'], 2, True)]
-            irq['prev_sum'] = irqs[irqnum]['sum'] if irqnum in irqs else 0
             irq['sum'] = sum(irq['cpus'])
+
+            if ARGS.mode == 'hc':
+                irq['prev_cpus'] = [0] * len(cpu_headers)
+                irq['prev_sum'] = 0
+            elif ARGS.mode == 'cc':
+                # record only once
+                if LOOP_CNT == -1:
+                    irq['prev_cpus'] = irq['cpus']
+                    irq['prev_sum'] = irq['sum']
+                else:
+                    irq['prev_cpus'] = irqs[irqnum]['prev_cpus']
+                    irq['prev_sum'] = irqs[irqnum]['prev_sum']
+            else:
+                # diff mode
+                irq['prev_cpus'] = (
+                    irqs[irqnum]['cpus'] if irqnum in irqs else [0] *
+                    len(cpu_headers))
+                irq['prev_sum'] = irqs[irqnum]['sum'] if irqnum in irqs else 0
+
+            irq['diff_cpus'] = [irq['cpus'][i] - irq['prev_cpus'][i]
+                                for i in range(len(irq['cpus']))]
+            irq['topk_cpus'] = [i for (i, v) in get_top_k_with_idx(irq['diff_cpus'], 2, True)]
             irq['diff_sum'] = irq['sum'] - irq['prev_sum']
             irqs[irqnum] = irq
             # logging.debug(irq)
@@ -193,14 +222,14 @@ def update_virtio_stats(iface, virtio_name, virtio_stats, irqs, txqs, rxqs):
     process_queue(virtio_name, stat, 'txqs', txqs, irqs, '-output.')
     process_queue(virtio_name, stat, 'rxqs', rxqs, irqs, '-input.')
 
-    stat['txqs'] = txqs
-    stat['rxqs'] = rxqs
     stat['info'] = {}
     stat['info']['iface'] = iface
     logging.debug("stat[" + virtio_name + "]: %s" % virtio_stats)
 
 
 def process_queue(virtio_name, stat, q_name, queues, irqs, irq_suffix):
+    global ARGS
+    global LOOP_CNT
     prev_stat = stat.get(q_name, None)
     if prev_stat is None:
         prev_stat = {}
@@ -209,12 +238,24 @@ def process_queue(virtio_name, stat, q_name, queues, irqs, irq_suffix):
     for idx, q in queues.items():
         for prop in ['packets', 'bytes', 'kicks']:
             prev_q = prev_stat.get(idx, {})
-            q[f'diff_{prop}'] = int(q[prop]) - prev_q.get(f'prev_{prop}', 0)
-            if q[f'diff_{prop}'] < 0:
-                logging.error('diff < 0! ' + '{virtio_name}-{q_name}{idx} {prop}: {q[f"diff_{prop}"]}')
-            q[f'prev_{prop}'] = int(q[prop])
+            if ARGS.mode == 'hc':
+                q['prev_{}'.format(prop)] = 0
+            elif ARGS.mode == 'cc':
+                # record only once
+                if LOOP_CNT == -1:
+                    q['prev_{}'.format(prop)] = int(q[prop])
+                else:
+                    q['prev_{}'.format(prop)] = int(prev_q.get('prev_{}'.format(prop), 0))
+            else:
+                # diff mode
+                q['prev_{}'.format(prop)] = int(prev_q.get('{}'.format(prop), 0))
 
-        irqname = f'{virtio_name}{irq_suffix}{idx}'
+            q['diff_{}'.format(prop)] = int(q[prop]) - q['prev_{}'.format(prop)]
+            if q['diff_{}'.format(prop)] < 0:
+                logging.error('diff < 0! {}-{}{} {}: {}'.format(virtio_name,
+                              q_name, idx, prop, q["diff_{}".format(prop)]))
+
+        irqname = '{}{}{}'.format(virtio_name, irq_suffix, idx)
         for idx2, irq in irqs.items():
             if irqname in irq['name']:
                 q['irqnum'] = irq['num']
@@ -225,6 +266,15 @@ def process_queue(virtio_name, stat, q_name, queues, irqs, irq_suffix):
         else:
             q['irqnum'] = None
             logging.error('irqnum is None! ' + '{virtio_name}-{q_name}{idx} irqname: {irqname}')
+
+        stat[q_name][idx] = q
+
+
+def match_filter(virtio_name):
+    global FILTER_PATTERN
+    if FILTER_PATTERN and not FILTER_PATTERN.search(virtio_name):
+        return False
+    return True
 
 
 def print_virtio_stats(virtio_stats, irqs, virtio_name, template):
@@ -237,19 +287,21 @@ def print_virtio_stats(virtio_stats, irqs, virtio_name, template):
             irq = irqs.get(q['irqnum'], None)
             topk1 = q['topk_cpus'][0]
             topk2 = q['topk_cpus'][1]
-            topk1_str = ('%4s(%3.2d%%)') % (str(topk1), float(
+            topk1_str = ('%4s(%3d%%)') % (str(topk1), float(
                 irq['diff_cpus'][topk1]) / irq['diff_sum'] * 100 if irq['diff_sum'] != 0 else 0)
-            topk2_str = ('%4s(%3.2d%%)') % (str(topk2), float(
+            topk2_str = ('%4s(%3d%%)') % (str(topk2), float(
                 irq['diff_cpus'][topk2]) / irq['diff_sum'] * 100 if irq['diff_sum'] != 0 else 0)
 
-            fmtstr += template.format(virtio_name + '-' + ("txq" if qtype == "txqs" else "rxq") + str(idx),
-                                      q['irqnum'],
+            vq_name = virtio_name + '-' + ("txq" if qtype == "txqs" else "rxq") + str(idx)
+            if not match_filter(vq_name):
+                continue
+
+            fmtstr += template.format(vq_name, q['irqnum'],
                                       q['diff_sum'],
-                                      topk1_str,
-                                      topk2_str,
-                                      q['diff_packets'],
+                                      topk1_str, topk2_str, q['diff_packets'],
                                       q['diff_kicks'],
                                       str(q['diff_bytes'])) + '\n\r'
+
     return fmtstr
 
 
@@ -270,12 +322,17 @@ def print_top_irq(rows, topn):
 
         topk1 = irq['topk_cpus'][0]
         topk2 = irq['topk_cpus'][1]
-        topk1_str = ('%4s(%3.2d%%)') % (str(topk1), float(
+        topk1_str = ('%4s(%3d%%)') % (str(topk1), float(
             irq['diff_cpus'][topk1]) / irq['diff_sum'] * 100 if irq['diff_sum'] != 0 else 0)
-        topk2_str = ('%4s(%3.2d%%)') % (str(topk2), float(
+        topk2_str = ('%4s(%3d%%)') % (str(topk2), float(
             irq['diff_cpus'][topk2]) / irq['diff_sum'] * 100 if irq['diff_sum'] != 0 else 0)
 
-        fmtstr += template.format('*', irq['num'], irq['diff_sum'], topk1_str, topk2_str, irq['name'][-28:]) + '\n\r'
+        fmtstr += template.format('*',
+                                  irq['num'],
+                                  irq['diff_sum'],
+                                  topk1_str,
+                                  topk2_str,
+                                  irq['name'][-28:]) + '\n\r'
     return fmtstr
 
 
@@ -315,8 +372,11 @@ def tab_print_intaff(virtio_stats, selected_virtio):
             if qtype == 'info':
                 continue
             for idx, q in queues.items():
-                fmtstr += template.format(virtio_name + '-' + ("txq" if qtype == "txqs" else "rxq") + str(idx),
-                                          q['smp_affinity']) + '\n\r'
+                vq_name = virtio_name + '-' + ("txq" if qtype == "txqs" else "rxq") + str(idx)
+                if not match_filter(vq_name):
+                    continue
+
+                fmtstr += template.format(vq_name, q['smp_affinity']) + '\n\r'
     return fmtstr
 
 
@@ -330,14 +390,25 @@ def tab_print_xpsrps(virtio_stats, selected_virtio):
             if qtype == 'info':
                 continue
             for idx, q in queues.items():
-                fmtstr += template.format(virtio_name + '-' + ("txq" if qtype == "txqs" else "rxq") + str(idx),
-                                          q['xps_cpus'] if qtype == "txqs" else q['rps_cpus']) + '\n\r'
+                vq_name = virtio_name + '-' + ("txq" if qtype == "txqs" else "rxq") + str(idx)
+                if not match_filter(vq_name):
+                    continue
+                fmtstr += template.format(vq_name, q['xps_cpus']
+                                          if qtype == "txqs" else q['rps_cpus']) + '\n\r'
     return fmtstr
 
 
 def tab_print_virtio_stat(virtio_stats, irqs, selected_virtio):
     template = "{:>13} {:>5} {:>10} {:>10} {:>10} {:>9} {:>9} {:>12}"
-    fmtstr = template.format("QUEUE", "INT#", "INCR", "TOPCPU#0", "TOPCPU#1", "PKTS", "KICKS", "BYTES") + '\n\r'
+    fmtstr = template.format(
+        "QUEUE",
+        "INT#",
+        "INCR",
+        "TOPCPU#0",
+        "TOPCPU#1",
+        "PKTS",
+        "KICKS",
+        "BYTES") + '\n\r'
     if selected_virtio == '':
         for virtio_name, stat in virtio_stats.items():
             fmtstr += print_virtio_stats(virtio_stats, irqs, virtio_name, template)
@@ -347,14 +418,14 @@ def tab_print_virtio_stat(virtio_stats, irqs, selected_virtio):
     return fmtstr
 
 
-def display_virtionet_stat(args):
+def display_virtionet_stat():
     """Main loop"""
-    interval = int(args.interval)
-    # filter = args.filter
-    topn = args.topn
+    global LOOP_CNT
+    global ARGS
+    interval = int(ARGS.interval)
+    topn = ARGS.topn
     irqs = {}
     virtio_stats = {}
-    loop_cnt = 0
     selected_virtio = ''
     cur_tab = 0
 
@@ -366,12 +437,13 @@ def display_virtionet_stat(args):
         rows = sorted(irqs.values(), key=sort_func, reverse=True)
 
         # calculate the delta value between the two collections
-        if loop_cnt == 0:
-            loop_cnt += 1
+        if LOOP_CNT == -1:
+            LOOP_CNT = 0
+            time.sleep(interval)
             continue
-        loop_cnt += 1
+        LOOP_CNT += 1
 
-        if not args.history:
+        if not ARGS.batch:
             os.system('clear')
 
         if KEY_EVENT.is_set():
@@ -397,8 +469,8 @@ def display_virtionet_stat(args):
         #             *     9          2    1(100%)    0( 00%)        IR-IO-APIC 9-fasteoi acpi
 
         # print separator line
-        fmtstr = "\033[47;30m"
-        fmtstr += "[" + time.ctime() + "] interval=" + str(interval) + "s"
+        fmtstr = "\033[47;30m[{}] interval={}s mode={} n=({}/{}) ".format(
+            time.ctime(), interval, ARGS.mode, LOOP_CNT, ARGS.number)
         if selected_virtio:
             fmtstr += ' --- ' + selected_virtio + ' selected'
         fmtstr += "\033[0m\n\r"
@@ -415,8 +487,8 @@ def display_virtionet_stat(args):
         elif cur_tab == 3:
             fmtstr += tab_print_xpsrps(virtio_stats, selected_virtio)
 
-        logging.info(fmtstr + '\r')
-        if loop_cnt == 2 and args.oneshot:
+        logging.info(fmtstr)
+        if LOOP_CNT == int(ARGS.number):
             break
 
         time.sleep(interval)
@@ -424,7 +496,9 @@ def display_virtionet_stat(args):
 
 def main():
     """Parse arguments, call main loop"""
-    parser = argparse.ArgumentParser(description='Display virtio-net statistics')
+    parser = argparse.ArgumentParser(
+        description='Display virtio-net statistics',
+        formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument(
         '-l',
@@ -438,33 +512,66 @@ def main():
         default='INFO',
         help='Specify the log level')
     parser.add_argument("-i", "--interval", default="1", help="Update interval in seconds")
-    # TODO
-    # parser.add_argument("-f", "--filter", default="", help="Only show lines that match on the specified string")
-    parser.add_argument("-H", "--history", dest="history", action="store_true", default=False, help="Show history data")
-    parser.add_argument("-n", "--topn", default="3", help="Show top n interrupts")
-    parser.add_argument("-o", "--oneshot", dest="oneshot", help="Run once and exit")
-    args = parser.parse_args()
+    parser.add_argument(
+        "-f",
+        "--filter",
+        default=None,
+        help="Only show lines that match on the specified string")
+    parser.add_argument(
+        '-m',
+        '--mode',
+        choices=[
+            'diff',
+            'hc',
+            'cc'],
+        default='diff',
+        help='''diff: show the diff value between the two collections
+hc: show the Historical Cumulative sum
+cc: show the Current Cumulative sum
+''')
+    parser.add_argument(
+        "-b",
+        "--batch-mode",
+        dest="batch",
+        action="store_true",
+        default=False,
+        help='''Is very similar to top -b
+Starts in Batch mode, which could be useful for sending output from top to other
+programs or to a file.  In this mode, top will not accept input
+''')
+    parser.add_argument("-T", "--topn", default="3", help="Show top n interrupts")
+    parser.add_argument(
+        "-n",
+        "--number",
+        default="0",
+        help="Number of iterations before exiting. 0 means infinite")
 
-    loglevel = getattr(logging, args.loglevel)
-    # logging.basicConfig(level=loglevel, format='\r%(asctime)s - %(levelname)s - %(message)s')
+    global ARGS
+    ARGS = parser.parse_args()
+
+    loglevel = getattr(logging, ARGS.loglevel)
     logging.basicConfig(level=loglevel, format='%(message)s\r')
+
+    global FILTER_PATTERN
+    if ARGS.filter is not None:
+        FILTER_PATTERN = re.compile(ARGS.filter)
 
     out = sys.stdin.fileno()
     old_settings = termios.tcgetattr(out)
     tty.setraw(sys.stdin.fileno())
 
     thread = threading.Thread(target=wait_for_input)
+    thread.daemon = True
     thread.start()
 
     try:
-        display_virtionet_stat(args)
+        display_virtionet_stat()
     except KeyboardInterrupt:
         pass
     finally:
         termios.tcsetattr(out, termios.TCSADRAIN, old_settings)
 
-    thread.join()
-    logging.info('\r')
+    logging.info("exit...")
     return 0
 
 
