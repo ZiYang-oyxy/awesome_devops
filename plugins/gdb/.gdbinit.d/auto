@@ -1,4 +1,4 @@
-dashboard -layout !assembly expressions variables !history !memory !registers !threads !stack source !breakpoints
+dashboard -layout !assembly expressions variables history !memory !registers !threads !stack source !breakpoints
 dashboard source -style height 30
 dashboard stack -style compact True
 dashboard stack -style limit 20
