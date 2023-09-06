@@ -280,10 +280,10 @@ def match_filter(virtio_name):
 def print_virtio_stats(virtio_stats, irqs, virtio_name, template):
     fmtstr = ''
     stat = virtio_stats.get(virtio_name, None)
-    for qtype, queues in stat.items():
+    for qtype, queues in sorted(stat.items()):
         if qtype == 'info':
             continue
-        for idx, q in queues.items():
+        for idx, q in sorted(queues.items(), key=lambda x: int(x[0])):
             irq = irqs.get(q['irqnum'], None)
             topk1 = q['topk_cpus'][0]
             topk2 = q['topk_cpus'][1]
