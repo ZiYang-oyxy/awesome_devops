@@ -256,8 +256,9 @@ def process_queue(virtio_name, stat, q_name, queues, irqs, irq_suffix):
                               q_name, idx, prop, q["diff_{}".format(prop)]))
 
         irqname = '{}{}{}'.format(virtio_name, irq_suffix, idx)
+        pattern = re.compile(r'\b{}\b'.format(re.escape(irqname)))
         for idx2, irq in irqs.items():
-            if irqname in irq['name']:
+            if pattern.search(irq['name']):
                 q['irqnum'] = irq['num']
                 q['topk_cpus'] = irq['topk_cpus']
                 q['sum'] = irq['sum']
@@ -516,7 +517,8 @@ def main():
         "-f",
         "--filter",
         default=None,
-        help="Only show lines that match on the specified string")
+        help='''Only show lines that match on the specified string.
+e.g. -f "virtio1-txq[0,1,2]\\b"''')
     parser.add_argument(
         '-m',
         '--mode',
