@@ -13,7 +13,7 @@ PS_LINE=`printf -- '- %.0s' {1..200}`
 ps_fill() {
     PS_FILL=${PS_LINE:0:$COLUMNS}
 }
-PS_INFO="$GREEN\u$RESET@$YELLOW\H$RESET [\`hostname -i\`]: $BLUE\w$RESET"
+PS_INFO="$GREEN\u$RESET@$YELLOW\H$RESET [\`ad hostname_i\`]: $BLUE\w$RESET"
 PS_TIME="\[\033[\$((COLUMNS-21))G\] $GRAY[\D{%F %T}]${RESET}"
 PROMPT_COMMAND=ps_fill
 export PS1="\${PS_FILL}\[\033[0G\]${PS_INFO} ${PS_TIME}\n$(prompt_char) "
