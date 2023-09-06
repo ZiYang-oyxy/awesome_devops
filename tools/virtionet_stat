@@ -285,6 +285,12 @@ def print_virtio_stats(virtio_stats, irqs, virtio_name, template):
         if qtype == 'info':
             continue
         for idx, q in sorted(queues.items(), key=lambda x: int(x[0])):
+            if ARGS.ignore and q['diff_sum'] == 0 and \
+                    q['diff_packets'] == 0 and \
+                    q['diff_kicks'] == 0 and \
+                    q['diff_bytes'] == 0:
+                continue
+
             irq = irqs.get(q['irqnum'], None)
             topk1 = q['topk_cpus'][0]
             topk2 = q['topk_cpus'][1]
@@ -369,10 +375,10 @@ def tab_print_intaff(virtio_stats, selected_virtio):
     for virtio_name, stat in virtio_stats.items():
         if selected_virtio and virtio_name != selected_virtio:
             continue
-        for qtype, queues in stat.items():
+        for qtype, queues in sorted(stat.items()):
             if qtype == 'info':
                 continue
-            for idx, q in queues.items():
+            for idx, q in sorted(queues.items(), key=lambda x: int(x[0])):
                 vq_name = virtio_name + '-' + ("txq" if qtype == "txqs" else "rxq") + str(idx)
                 if not match_filter(vq_name):
                     continue
@@ -387,10 +393,10 @@ def tab_print_xpsrps(virtio_stats, selected_virtio):
     for virtio_name, stat in virtio_stats.items():
         if selected_virtio and virtio_name != selected_virtio:
             continue
-        for qtype, queues in stat.items():
+        for qtype, queues in sorted(stat.items()):
             if qtype == 'info':
                 continue
-            for idx, q in queues.items():
+            for idx, q in sorted(queues.items(), key=lambda x: int(x[0])):
                 vq_name = virtio_name + '-' + ("txq" if qtype == "txqs" else "rxq") + str(idx)
                 if not match_filter(vq_name):
                     continue
@@ -547,6 +553,13 @@ programs or to a file.  In this mode, top will not accept input
         "--number",
         default="0",
         help="Number of iterations before exiting. 0 means infinite")
+    parser.add_argument(
+        "-I",
+        "--ignore",
+        dest="ignore",
+        action="store_true",
+        default=False,
+        help="ignore queues with no traffic")
 
     global ARGS
     ARGS = parser.parse_args()
