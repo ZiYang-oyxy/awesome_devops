@@ -1,4 +1,5 @@
 #!/bin/bash
 
-systemd-analyze plot > startup_time.svg
-ad put startup_time.svg
+SVG_FILE=`hostname`_startup_time.svg
+systemd-analyze plot > $SVG_FILE
+ad tput $SVG_FILE
