@@ -2,10 +2,14 @@
 
 _curdir="`dirname $(readlink -f $0)`"
 
-VERSION_STR=$1
+VERSION_STR=${VERSION_STR:-}
 
 source $_curdir/config
 cd $_curdir
+
+if [[ $1 = "fast" ]]; then
+    FAST_EXCLUDE_STR="--exclude=not_in_ad_tar"
+fi
 
 curl --connect-timeout 1 -f http://Awesome:Devops@$SERVEFILE_PUT_ADDR/@latest_version@ > /dev/null || {
     ad cecho -R "Unable to connect to ad server"
@@ -25,10 +29,10 @@ tar c -C .. --exclude='awesome_devops/vim' --exclude='awesome_devops/not_in_ad_t
 if [[ -d $_curdir/../ad_external ]]; then
     rm -rf dist/awesome_devops
     tar x -C dist -f dist/awesome_devops.tar
-    rsync --filter=":- .gitignore" -avzP $_curdir/../ad_external/awesome_devops/ dist/awesome_devops
+    rsync --filter=":- .gitignore" -avzP $FAST_EXCLUDE_STR $_curdir/../ad_external/awesome_devops/ dist/awesome_devops
 
     # 让本地也能用
-    rsync --filter=":- .gitignore" -avzP $_curdir/../ad_external/awesome_devops/ $_curdir
+    rsync --filter=":- .gitignore" -avzP $FAST_EXCLUDE_STR $_curdir/../ad_external/awesome_devops/ $_curdir
 fi
 
 if [[ $OSTYPE == 'darwin'* ]]; then
@@ -58,15 +62,19 @@ tar c -C dist --exclude='dist' --exclude='not_in_ad_tar' --exclude='.git' --excl
 tar cz --exclude='vim/undodir/%*' --exclude='vim/cache' --exclude='.git' --exclude='*.swp' -f dist/vim.tgz vim
 ./ad put dist/vim.tgz @vim_bundle.tgz@
 
-cd not_in_ad_tar
-for folder in */
-do
-    tgz_file=@${folder%/}.tgz@
-    tar -czvf "$tgz_file" "$folder"
-    ../ad put $tgz_file
-    rm $tgz_file
-done
-cd -
+if [[ $1 = "fast" ]]; then
+    ad cecho -C "skip not_in_ad_tar routine"
+else
+    cd not_in_ad_tar
+    for folder in */
+    do
+        tgz_file=@${folder%/}.tgz@
+        tar -czvf "$tgz_file" "$folder"
+        ../ad put $tgz_file
+        rm $tgz_file
+    done
+    cd -
+fi
 
 cat changelog.log
 
