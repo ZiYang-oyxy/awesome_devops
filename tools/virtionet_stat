@@ -18,12 +18,13 @@ KEY_EVENT = threading.Event()
 STOP_EVENT = threading.Event()
 
 INCHAR = ''
-ACCEPTABLE_KEYS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'i', 'x']
+ACCEPTABLE_KEYS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'i', 'x', 'q']
 TABS = [
     ["a:all", "all device statistics"],
     ["0-9:virtioX", "specific device statistics"],
     ["i:intaff", "interrupt affinity"],
     ["x:xps/rps", "xps/rps configure"],
+    ["q:quit", "quit"],
 ]
 ARGS = None
 FILTER_PATTERN = None
@@ -48,9 +49,15 @@ def wait_for_input():
 
     while True:
         key = sys.stdin.read(1)
+
         if key not in ACCEPTABLE_KEYS:
+            logging.error('Invalid command: %s' % key)
+            continue
+
+        if key == 'q':
             STOP_EVENT.set()
             break
+
         INCHAR = key
         KEY_EVENT.set()
 
@@ -73,6 +80,7 @@ def is_a_virtio_device(iface):
 
 
 def collect_virtio_stats(iface):
+    logging.debug("collect_virtio_stats(" + iface + ")")
     txqs = {}
     rxqs = {}
     try:
@@ -214,6 +222,7 @@ def collect_irq_stats(irqs):
 
 
 def update_virtio_stats(iface, virtio_name, virtio_stats, irqs, txqs, rxqs):
+    logging.debug("update_virtio_stats(" + iface + ")")
     stat = virtio_stats.get(virtio_name, None)
     if stat is None:
         stat = {'txqs': {}, 'rxqs': {}}
@@ -228,6 +237,7 @@ def update_virtio_stats(iface, virtio_name, virtio_stats, irqs, txqs, rxqs):
 
 
 def process_queue(virtio_name, stat, q_name, queues, irqs, irq_suffix):
+    logging.debug("process_queue(" + virtio_name + ", " + q_name + ")")
     global ARGS
     global LOOP_CNT
     prev_stat = stat.get(q_name, None)
@@ -266,7 +276,8 @@ def process_queue(virtio_name, stat, q_name, queues, irqs, irq_suffix):
                 break
         else:
             q['irqnum'] = None
-            logging.error('irqnum is None! ' + '{virtio_name}-{q_name}{idx} irqname: {irqname}')
+            logging.error(
+                'irqnum is None! {}-{}{} irqname: {}'.format(virtio_name, q_name, idx, irqname))
 
         stat[q_name][idx] = q
 
