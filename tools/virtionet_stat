@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import argparse
 import tty
@@ -12,6 +13,7 @@ import heapq
 import os
 import pdb
 import re
+import datetime
 
 
 KEY_EVENT = threading.Event()
@@ -51,7 +53,7 @@ def wait_for_input():
         key = sys.stdin.read(1)
 
         if key not in ACCEPTABLE_KEYS:
-            logging.error('Invalid command: %s' % key)
+            logging.error('Invalid command: %s. To exit, type "q"' % key)
             continue
 
         if key == 'q':
@@ -60,6 +62,50 @@ def wait_for_input():
 
         INCHAR = key
         KEY_EVENT.set()
+
+
+def get_eth_virtio_mapping():
+    """
+    [root@localhost ~] ls /sys/class/net/eth0/device/driver
+    bind  module  uevent  unbind  virtio1  virtio2
+    [root@localhost ~]# ls /sys/class/net/eth0/device/driver/virtio1/net/
+    eth0
+    [root@localhost ~]# ls /sys/class/net/eth0/device/driver/virtio2/net/
+    eth1
+    """
+    mapping = {}
+    driver_path = "/sys/class/net/{}/device/driver"
+    device_path = "/sys/class/net/{}/device/driver/{}/net/"
+
+    # 遍历 /sys/class/net 目录下的所有网络接口
+    for interface in os.listdir("/sys/class/net"):
+        driver_dir = driver_path.format(interface)
+
+        # 检查 driver 目录是否存在
+        if os.path.exists(driver_dir):
+            # 获取 driver 目录下的所有子目录
+            driver_subdirs = os.listdir(driver_dir)
+
+            # 遍历子目录，查找以 "virtio" 开头的目录，通过这个设备就能获得完整的mapping
+            for subdir in driver_subdirs:
+                device_dir = device_path.format(interface, subdir)
+                if subdir.startswith("virtio"):
+                    try:
+                        with open(os.devnull, 'w') as DEVNULL:
+                            output_bytes = subprocess.check_output(
+                                ['ls', device_dir],
+                                stderr=DEVNULL)
+                    except subprocess.CalledProcessError:
+                        return ''
+                    interface2 = output_bytes.decode().split('\n')[0]
+                    mapping[interface2] = subdir
+
+            # 找到一个virio设备，mapping就建立完成，可以退出了
+            if len(mapping) > 0:
+                break
+
+    logging.debug("mapping: %s" % mapping)
+    return mapping
 
 
 def is_a_virtio_device(iface):
@@ -144,6 +190,7 @@ def collect_virtio_info(virtio_stats):
 
 def process_raw_data(irqs, virtio_stats):
     collect_irq_stats(irqs)
+    mapping = get_eth_virtio_mapping()
 
     try:
         with open(os.devnull, 'w') as DEVNULL:
@@ -155,11 +202,10 @@ def process_raw_data(irqs, virtio_stats):
     output_array = output_str.split('\n')
 
     for iface in output_array:
-        virtio_name = is_a_virtio_device(iface)
-        if virtio_name == '':
-            continue
-        txqs, rxqs = collect_virtio_stats(iface)
-        update_virtio_stats(iface, virtio_name, virtio_stats, irqs, txqs, rxqs)
+        if iface in mapping:
+            virtio_name = mapping[iface]
+            txqs, rxqs = collect_virtio_stats(iface)
+            update_virtio_stats(iface, virtio_name, virtio_stats, irqs, txqs, rxqs)
 
     collect_virtio_info(virtio_stats)
 
@@ -448,7 +494,7 @@ def display_virtionet_stat():
     cur_tab = 0
 
     while not STOP_EVENT.is_set():
-        start_time = time.monotonic()
+        start_time = time.time()
 
         process_raw_data(irqs, virtio_stats)
 
@@ -489,8 +535,8 @@ def display_virtionet_stat():
         #             *     9          2    1(100%)    0( 00%)        IR-IO-APIC 9-fasteoi acpi
 
         # print separator line
-        fmtstr = "\033[47;30m[{}] interval={}s mode={} n=({}/{}) ".format(
-            time.ctime(), interval, ARGS.mode, LOOP_CNT, ARGS.number)
+        fmtstr = "\033[47;30m[{}] interval={}s mode={} round=({}/{}) ".format(
+            datetime.datetime.now().isoformat(), interval, ARGS.mode, LOOP_CNT, ARGS.number)
         if selected_virtio:
             fmtstr += ' --- ' + selected_virtio + ' selected'
         fmtstr += "\033[0m\n\r"
@@ -511,7 +557,7 @@ def display_virtionet_stat():
         if LOOP_CNT == int(ARGS.number):
             break
 
-        end_time = time.monotonic()
+        end_time = time.time()
         elapsed_time = end_time - start_time
         if elapsed_time < interval:
             time.sleep(interval - elapsed_time)
