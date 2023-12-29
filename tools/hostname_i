@@ -1,4 +1,7 @@
 #!/bin/bash
 
 IFACE=`ip route list | awk ' /^default/ {print $5}'`
+if [ -z $IFACE ]; then
+    IFACE=`route -n | awk 'NR==3 {print $8}'`
+fi
 ifconfig $IFACE | awk '/inet /{print $2}'

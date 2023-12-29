@@ -1,0 +1,137 @@
+#!/usr/bin/env bpftrace
+
+#include <linux/mm_types_task.h>
+#include <net/sock.h>
+#include <linux/tcp.h>
+#include <linux/uio.h>
+#include <linux/socket.h>
+#include <linux/scatterlist.h>
+#include <net/tcp.h>
+
+BEGIN {
+  if ($1 == 0) {
+    printf("Error: Need a process pid. e.g. tcp_profiling.bt `pidof iperf3`\n");
+    exit();
+  }
+  @start = nsecs;
+  @second = 1;
+}
+
+kprobe:tcp_sendmsg_locked /pid == $1/{
+  @the_sk = arg0;
+  $msg = (struct msghdr *)arg1;
+  @hist_appmsg_size = hist($msg->msg_iter.count);
+  @start_sendmsg[tid] = nsecs;
+}
+
+kr:tcp_sendmsg_locked /@start_sendmsg[tid] != 0 && pid == $1/{
+  $cost_us = (nsecs - @start_sendmsg[tid]) / 1000;
+  @hist_sendmsg_cost = hist($cost_us);
+  delete(@start_sendmsg[tid])
+}
+
+kprobe:tcp_write_xmit {
+  if (@the_sk != arg0) {
+    return;
+  }
+  @hist_tcpseg_nonagle = hist(arg2);
+  @hist_tcpseg_pushone = hist(arg3);
+}
+
+kprobe:__tcp_transmit_skb {
+  if (@the_sk != arg0) {
+    return;
+  }
+  $skb = (struct sk_buff *)arg1;
+  @stats_tcpseg_size = stats($skb->len);
+  @hist_tcpseg_size = hist($skb->len);
+}
+
+kprobe:__ip_queue_xmit {
+  if (@the_sk != arg0) {
+    return;
+  }
+  $skb = (struct sk_buff *)arg1;
+  @hist_ippkt_size = hist($skb->len);
+}
+
+kprobe:virtqueue_add_outbuf {
+  $skb = (struct sk_buff *)arg3;
+  if (@the_sk != $skb->sk) {
+    return;
+  }
+  $nb_sg = (int32)arg2;
+  @stats_drv_buf_size = stats($skb->len);
+  @hist_buf_size = hist($skb->len);
+  @hist_frag_num = hist($nb_sg);
+}
+
+rawtracepoint:tcp_probe {
+  if (@the_sk != arg0) {
+    return;
+  }
+  $tp = (struct tcp_sock *)(arg0);
+  $skb = (struct sk_buff *)arg1;
+  @hist_unack_size = hist($tp->snd_nxt - $tp->snd_una);
+  @hist_rcv_buf_size = hist($skb->len);
+}
+
+kprobe:tcp_rcv_established {
+  if (@the_sk != arg0) {
+    return;
+  }
+
+  @stack_count_tcp_rcv[kstack] = count();
+}
+
+interval:ms:100 {
+  if ((nsecs - @start) > (uint64)@second * 1000000000) {
+    exit();
+  }
+}
+
+END {
+  if ($1 != 0) {
+    printf("\n========= pid %d, tcp statistic in %ds =========\n", $1, @second);
+    printf("\n========= TX: app layer statistic =========\n");
+    print(@hist_sendmsg_cost);
+    print(@hist_appmsg_size);
+
+    printf("\n========= TX: tcp layer statistic =========\n");
+    print(@hist_tcpseg_nonagle);
+    print(@hist_tcpseg_pushone);
+    print(@stats_tcpseg_size);
+    print(@hist_tcpseg_size);
+
+    printf("\n========= TX: ip layer statistic =========\n");
+    print(@hist_ippkt_size);
+
+    printf("\n========= TX: net driver statistic =========\n");
+    print(@stats_drv_buf_size);
+    print(@hist_buf_size);
+    print(@hist_frag_num);
+
+    printf("\n========= RX: tcp layer statistic =========\n");
+    print(@hist_rcv_buf_size);
+    print(@hist_unack_size);
+    print(@stack_count_tcp_rcv);
+
+    clear(@hist_sendmsg_cost);
+    clear(@hist_appmsg_size);
+    clear(@hist_tcpseg_nonagle);
+    clear(@hist_tcpseg_pushone);
+    clear(@stats_tcpseg_size);
+    clear(@hist_tcpseg_size);
+    clear(@hist_ippkt_size);
+    clear(@stats_drv_buf_size);
+    clear(@hist_buf_size);
+    clear(@hist_frag_num);
+    clear(@hist_rcv_buf_size);
+    clear(@hist_unack_size);
+    clear(@stack_count_tcp_rcv);
+    clear(@the_sk);
+    clear(@start);
+    clear(@second);
+    clear(@start_sendmsg);
+  }
+}
