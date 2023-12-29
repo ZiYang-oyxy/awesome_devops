@@ -1,0 +1,30 @@
+#!/usr/bin/env bpftrace
+
+BEGIN {
+}
+
+uprobe:$1:rte_eth_tx_burst /tid == $2/{
+  @this_tx_nb_pkts = arg2;
+  @tx_nb_pkts = hist(arg2);
+}
+
+uretprobe:$1:rte_eth_tx_burst /tid == $2/{
+  if (@this_tx_nb_pkts != 0) {
+    @tx_completed_nb_pkts = hist(retval);
+    @this_tx_completed_nb_pkts = retval;
+    if (retval == 0) {
+      @tx_failed_nb_pkts = hist(@this_tx_nb_pkts);
+    }
+  }
+}
+
+uprobe:$1:rte_eth_rx_burst /tid == $2/{
+  @rx_nb_pkts = hist(arg2);
+}
+
+uretprobe:$1:rte_eth_rx_burst /tid == $2/{
+  @rx_completed_nb_pkts = hist(retval);
+}
+
+END {
+}

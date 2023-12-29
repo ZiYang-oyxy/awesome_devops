@@ -272,8 +272,10 @@ autocmd BufReadPost,FileReadPost,BufNewFile * call system("tmux rename-window " 
 "# Python lang
 "###########################
 Plug 'python-mode/python-mode', { 'branch': 'develop' }
+let g:pymode_options_max_line_length = 100
 let g:pymode_rope_goto_definition_bind = '<leader>g'
 Plug 'davidhalter/jedi-vim'
+let g:jedi#added_sys_path = ["/opt/homebrew/lib/python3.10/site-packages"]
 "Plug 'tell-k/vim-autopep8'
 "let g:autopep8_max_line_length=79
 "let g:autopep8_disable_show_diff=1
@@ -312,6 +314,16 @@ let g:go_auto_type_info = 1
 "# cpp lang
 "###########################
 Plug 'octol/vim-cpp-enhanced-highlight'
+
+"###########################
+"# bash lang
+"###########################
+Plug 'z0mbix/vim-shfmt'
+
+"###########################
+"# bpftrace lang
+"###########################
+Plug 'mmarchini/bpftrace.vim'
 
 "###########################
 "# Code helper
@@ -540,7 +552,7 @@ endfun
 noremap <Leader>fm :call TrimM()<CR>
 
 " Strip space, and fix some bug at the same time
-noremap <Leader>fs :call TrimWhitespace()<CR>
+noremap <Leader>ts :call TrimWhitespace()<CR>
 
 " Use four spaces to replace a tab
 map <leader>ft :retab<CR>
@@ -602,6 +614,9 @@ nmap <leader>fc ggvG<leader>fc<C-o><C-o>
 
 " pretty format python code
 map <leader>fp :PymodeLintAuto<CR>
+
+" pretty format shell code
+map <leader>fs :Shfmt -i 4<CR>
 
 " Auto convert a word to a shell variable
 imap <C-h> <ESC>bi"$<ESC>ea"

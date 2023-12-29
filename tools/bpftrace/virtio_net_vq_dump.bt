@@ -1,0 +1,69 @@
+#!/usr/bin/env bpftrace
+
+#include <linux/mm_types_task.h>
+#include <net/sock.h>
+#include <linux/tcp.h>
+#include <linux/uio.h>
+#include <linux/socket.h>
+#include <linux/scatterlist.h>
+#include <net/tcp.h>
+#include <linux/virtio.h>
+
+BEGIN {
+  if (!$1) {
+    printf("Need specify the qid")
+    exit();
+  }
+  @qnum = $1;
+}
+
+kprobe:virtqueue_add_outbuf {
+  $vq = (struct vring_virtqueue *)arg0;
+  $skb = (struct sk_buff *)arg3;
+  $qnum = $skb->queue_mapping;
+  $offset = offsetof(struct vring_virtqueue, split);
+  $r = (struct vring *)(((int8 *)$vq) + $offset);
+  if ($qnum != $1) {
+    return;
+  } else {
+    printf("TXQ (%d)\n", $qnum);
+    printf("last_used_idx:%d\n", $vq->last_used_idx);
+    printf("vring_num:%d\n", $r->num);
+
+    $i = 0;
+
+    // vq used 打印
+    printf("=== dump used ring\n");
+    printf("used_flags:0x%x\n", $r->used->flags);
+    printf("used_idx:%d\n", $r->used->idx);
+    printf("--- index,id,lenght\n");
+    // 貌似转换成bpf字节码，循环里面的条件不能是变量，否则会变成死循环
+    //while($i < (int32)$r->num) {
+    while($i < 4096) {
+      $elem = (struct vring_used_elem *)((int8 *)($r->used)
+          + offsetof(struct vring_used, ring)
+          + $i * (int32)sizeof(struct vring_used_elem));
+      printf("%d,%d,%d\n", $i, $elem->id, $elem->len);
+      $i++;
+    }
+
+    // vq available 打印
+    printf("=== dump avail ring\n");
+    printf("avail_flags:0x%x\n", $r->avail->flags);
+    printf("avail_idx:%d\n", $r->avail->idx);
+    printf("--- index,id\n");
+    $j = 0;
+    while($j < 4000) {
+      $elem2 = (int16 *)((int8 *)($r->avail)
+          + offsetof(struct vring_avail, ring)
+          + $j * 2);
+      printf("%d,%d\n", $j, *$elem2);
+      $j++;
+    }
+
+    exit();
+  }
+}
+
+END {
+}
