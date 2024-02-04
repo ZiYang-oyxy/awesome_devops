@@ -5,8 +5,14 @@
 # Copyright © 2021 Ouyang Xiongyi. All Rights Reserved.
 #
 
-_curdir="`dirname $(readlink -f $0)`"
-source $_curdir/lib/common.sh
+CURDIR="`dirname $(readlink -f $0)`"
+source $CURDIR/lib/common.sh
+
+if [[ -n "$LR" ]]; then
+    CURL="curl --limit-rate $LR"
+else
+    CURL="curl"
+fi
 
 put()
 {
@@ -16,7 +22,7 @@ put()
     fi
     _name=`basename $1`
     _r_file=${2:-$_name}
-    curl -T $1 $PUTURL/$_r_file > /dev/null
+    $CURL -T $1 $PUTURL/$_r_file > /dev/null
     if [[ $? -eq 0 ]]; then
         _res=(`md5sum $1`)
         cecho -Y "${_res[0]}"
@@ -45,7 +51,7 @@ dput()
     else
         tar c -C $_parent --exclude='.git' -z -f $_name.tgz $_name
     fi
-    curl -T $_name.tgz $PUTURL/$_name.tgz > /dev/null
+    $CURL -T $_name.tgz $PUTURL/$_name.tgz > /dev/null
     if [[ $? -eq 0 ]]; then
         _res=(`md5sum $_name.tgz`)
         cecho -Y "${_res[0]}"
@@ -75,7 +81,7 @@ dgput()
     else
         tar c -C $_parent -z -f $_name.tgz $_name
     fi
-    curl -T $_name.tgz $PUTURL/$_name.tgz > /dev/null
+    $CURL -T $_name.tgz $PUTURL/$_name.tgz > /dev/null
     if [[ $? -eq 0 ]]; then
         _res=(`md5sum $_name.tgz`)
         cecho -Y "${_res[0]}"
@@ -93,7 +99,7 @@ tput()
     fi
     _name=`basename $1`
     _r_file=`date '+%Y-%m-%d_%H-%M-%S'`_${2:-$_name}
-    curl -T $1 $PUTURL/$_r_file > /dev/null
+    $CURL -T $1 $PUTURL/$_r_file > /dev/null
     if [[ $? -eq 0 ]]; then
         _res=(`md5sum $1`)
         cecho -Y "${_res[0]}"
@@ -106,7 +112,7 @@ get()
 {
     _l_file=${2:-$1}
     temp_file="${_l_file}.download"
-    if ! curl -fo "$temp_file" "$GETURL/$1"; then
+    if ! $CURL -fo "$temp_file" "$GETURL/$1"; then
         rm -f "$temp_file"
         cecho -R "Download failed"
         exit 1
@@ -138,7 +144,7 @@ dget()
     _file_path="$1.tgz"
     _temp_file_path="${_file_path}.download"
 
-    if curl -fo "$_temp_file_path" "$GETURL/$_file_path"; then
+    if $CURL -fo "$_temp_file_path" "$GETURL/$_file_path"; then
         mv -f "$_temp_file_path" "$_file_path"
         tar -x -o -f "$_file_path"
         cecho -Y "$(md5sum "$_file_path" | awk '{print $1}')"
@@ -153,21 +159,21 @@ dget()
 
 upgrade()
 {
-    bash <(curl -s $GETURL/@aadi@)
+    bash <($CURL -s $GETURL/@aadi@)
 }
 
 ad_tree()
 {
-    tree -C $_curdir -I '.git|vim' -L 3
+    tree -C $CURDIR -I '.git|vim' -L 3
 }
 
 vim_init()
 {
-    if [ -d $_curdir/.git ]; then
+    if [ -d $CURDIR/.git ]; then
         return
     fi
     ad cecho -g "ad vim initialize ..."
-    cd $_curdir/
+    cd $CURDIR/
     ad get @vim_bundle.tgz@
     tar xf @vim_bundle.tgz@
     _vim_ver=`vim --version | awk '/Vi IMproved / {print $5}'`
@@ -189,23 +195,23 @@ vim_init()
 
 ad_vim()
 {
-    [ ! -f $_curdir/vim/.env ] && vim_init
-    [ ! -f $_curdir/vim/.env ] || source $_curdir/vim/.env
-    if [ -f $_curdir/vim/vim ]; then
-        $_curdir/vim/vim -u $_curdir/vim/.vimrc "$@"
+    [ ! -f $CURDIR/vim/.env ] && vim_init
+    [ ! -f $CURDIR/vim/.env ] || source $CURDIR/vim/.env
+    if [ -f $CURDIR/vim/vim ]; then
+        $CURDIR/vim/vim -u $CURDIR/vim/.vimrc "$@"
     else
-        vim -u $_curdir/vim/.vimrc "$@"
+        vim -u $CURDIR/vim/.vimrc "$@"
     fi
 }
 
 ad_vimdiff()
 {
-    [ ! -f $_curdir/vim/.env ] && vim_init
-    [ ! -f $_curdir/vim/.env ] || source $_curdir/vim/.env
-    if [ -f $_curdir/vim/vimdiff ]; then
-        $_curdir/vim/vimdiff -u $_curdir/vim/.vimrc "$@"
+    [ ! -f $CURDIR/vim/.env ] && vim_init
+    [ ! -f $CURDIR/vim/.env ] || source $CURDIR/vim/.env
+    if [ -f $CURDIR/vim/vimdiff ]; then
+        $CURDIR/vim/vimdiff -u $CURDIR/vim/.vimrc "$@"
     else
-        vimdiff -u $_curdir/vim/.vimrc "$@"
+        vimdiff -u $CURDIR/vim/.vimrc "$@"
     fi
 }
 
@@ -220,8 +226,8 @@ uninstall()
 
 new_version_detect()
 {
-    _old=`cat $_curdir/latest_version`
-    _new=`curl --connect-timeout 1 -f $GETURL/'@latest_version@' 2>/dev/null`
+    _old=`cat $CURDIR/latest_version`
+    _new=`$CURL --connect-timeout 1 -f $GETURL/'@latest_version@' 2>/dev/null`
 
     if [[ ! $? -eq 0 ]]; then
         cecho -Gy 'Unable to connect to ad server'
@@ -251,8 +257,8 @@ Usage:  ad [ COMMAND | TOOL | PLUGIN ] [ ARGUMENT ]
 
     TOOL:
 __EOF__
-    for i in `ls $_curdir/tools/`; do
-        if [[ -d $_curdir/tools/$i ]]; then
+    for i in `ls $CURDIR/tools/`; do
+        if [[ -d $CURDIR/tools/$i ]]; then
             echo "        $i/"
         else
             echo "        $i"
@@ -263,8 +269,8 @@ __EOF__
 
     EXTERNAL TOOL:
 __EOF__
-    for i in `ls $_curdir/ext_tools/`; do
-        if [[ -d $_curdir/ext_tools/$i ]]; then
+    for i in `ls $CURDIR/ext_tools/`; do
+        if [[ -d $CURDIR/ext_tools/$i ]]; then
             echo "        $i/"
         else
             echo "        $i"
@@ -275,7 +281,7 @@ __EOF__
 
     PLUGIN install:
 __EOF__
-    for i in `ls $_curdir/plugins/`; do
+    for i in `ls $CURDIR/plugins/`; do
         echo "        deploy ${i##*/}"
     done
 
@@ -323,49 +329,49 @@ case $_action in
         _plugin=$1
         if [[ -z $_plugin ]]; then
             cecho -R "no plugin is specified! Select one:"
-            for i in `ls $_curdir/plugins/`; do
+            for i in `ls $CURDIR/plugins/`; do
                 echo "${i##*/}"
             done
             exit 1
         fi
         shift
-        $_curdir/plugins/$_plugin/install $@
+        $CURDIR/plugins/$_plugin/install $@
         ;;
     ex)
         # install my experimental tool, will not be displayed in usage
-        $_curdir/experimental/$1/install
+        $CURDIR/experimental/$1/install
         ;;
     *)
         # 无目录工具，直接执行
-        if [[ -f $_curdir/tools/$_action ]]; then
-            $_curdir/tools/$_action "$@"
-        elif [[ -f $_curdir/ext_tools/$_action ]]; then
-            $_curdir/ext_tools/$_action "$@"
+        if [[ -f $CURDIR/tools/$_action ]]; then
+            $CURDIR/tools/$_action "$@"
+        elif [[ -f $CURDIR/ext_tools/$_action ]]; then
+            $CURDIR/ext_tools/$_action "$@"
         # 有目录工具，目录与工具名必须同名，直接执行
-        elif [[ -f $_curdir/tools/$_action/$_action ]]; then
-            $_curdir/tools/$_action/$_action "$@"
-        elif [[ -f $_curdir/ext_tools/$_action/$_action ]]; then
-            $_curdir/ext_tools/$_action/$_action "$@"
+        elif [[ -f $CURDIR/tools/$_action/$_action ]]; then
+            $CURDIR/tools/$_action/$_action "$@"
+        elif [[ -f $CURDIR/ext_tools/$_action/$_action ]]; then
+            $CURDIR/ext_tools/$_action/$_action "$@"
         # 有目录工具，目录与工具名不同名，一般是一个工具集，展示命令列表，或直接执行
-        elif [[ -d $_curdir/tools/$_action ]]; then
+        elif [[ -d $CURDIR/tools/$_action ]]; then
             _tool=$1
             if [[ -z $_tool ]]; then
                 echo "Tool List:"
-                _list=`find $_curdir/tools/$_action/ -maxdepth 1 -perm -111 -type f`
+                _list=`find $CURDIR/tools/$_action/ -maxdepth 1 -perm -111 -type f`
                 cecho -G "$_list"
             else
                 shift
-                $_curdir/tools/$_action/$_tool "$@"
+                $CURDIR/tools/$_action/$_tool "$@"
             fi
-        elif [[ -d $_curdir/ext_tools/$_action ]]; then
+        elif [[ -d $CURDIR/ext_tools/$_action ]]; then
             _tool=$1
             if [[ -z $_tool ]]; then
                 echo "Tool List:"
-                _list=`find $_curdir/ext_tools/$_action/ -maxdepth 1 -perm -111 -type f`
+                _list=`find $CURDIR/ext_tools/$_action/ -maxdepth 1 -perm -111 -type f`
                 cecho -G "$_list"
             else
                 shift
-                $_curdir/ext_tools/$_action/$_tool "$@"
+                $CURDIR/ext_tools/$_action/$_tool "$@"
             fi
         else
             usage
