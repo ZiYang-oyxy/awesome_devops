@@ -1,22 +1,24 @@
 #!/bin/bash -e
 
+SESS=${S:-ad_bg}
+
+ad cecho -Y "Session: $SESS"
 if [[ $# -eq 0 ]]; then
     ad cecho -R "Need a command. Abort!"
     exit 1
-else
-    ad cecho -Y "Command: $*"
 fi
 
 type tmux > /dev/null || sudo yum install -y tmux
 
-tmux new-session -s ad_bg -d || {
-    ad cecho -R "kill old tmux server"
+tmux new-session -s $SESS -d || {
+    ad cecho -R "kill the old session ..."
     tmux kill-server
-    tmux new-session -s ad_bg -d
+    tmux new-session -s $SESS -d
 }
 
-LOGF="`pwd`/ad_bg_`date '+%Y-%m-%d_%H-%M-%S'`.log"
+ad cecho -Y "Command: $*"
+LOGF="`pwd`/ad_bg_${SESS}_`date '+%Y-%m-%d_%H-%M-%S'`.log"
 touch $LOGF
-tmux send -t ad_bg "$* | tee $LOGF" C-m
+tmux send -t $SESS "$* | tee $LOGF" C-m
 
 ad cecho -G "log file: $LOGF"
