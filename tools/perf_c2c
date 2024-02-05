@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [[ $# -ne 1 ]]; then
+    echo "Wrong args!!!"
+    echo "Example1: perf_c2c \"-p <PID>\""
+    echo "Example2: perf_c2c \"-t <TID>\""
+    echo "Example2: perf_c2c \"-C <CORE_IDX>\""
+    echo "Refer to https://developer.aliyun.com/article/465504?accounttraceid=dd29a9e351184125bb287ae668badedepeqc"
+    exit 1
+fi
+
+perf c2c record -F 60000 $@ sleep 5
+perf c2c report -NN -g --call-graph -c pid,iaddr --stdio
