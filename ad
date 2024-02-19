@@ -258,10 +258,18 @@ Usage:  ad [ COMMAND | TOOL | PLUGIN ] [ ARGUMENT ]
     TOOL:
 __EOF__
     for i in `ls $CURDIR/tools/`; do
+        usage_str=`grep "^${i}|" $CURDIR/tools/.usage | cut -d'|' -f2`
+        num_char=${#i}
         if [[ -d $CURDIR/tools/$i ]]; then
-            echo "        $i/"
+            echo -n "        $i/"
+            num_char=$((num_char + 1))
         else
-            echo "        $i"
+            echo -n "        $i"
+        fi
+        if [[ -n "$usage_str" ]]; then
+            printf "%$((20 - ${num_char}))s  ${usage_str}\n"
+        else
+            echo ""
         fi
     done
 
