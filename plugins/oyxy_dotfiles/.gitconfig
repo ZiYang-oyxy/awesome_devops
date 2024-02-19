@@ -1,0 +1,42 @@
+[user]
+	name = ziyang
+	email = hh123okbb@gmail.com
+[color]
+	ui = true
+[diff]
+	tool = vimdiff
+[difftool]
+	prompt = false
+[alias]
+	s = status
+	d = diff
+	ss = show --stat
+	ll = log --stat
+	br = branch
+	sl = log --pretty=tformat:'%Cgreen%ad%Creset %C(auto)%h%d %s %C(bold black)<%aN>%Creset' --date=format-local:'%Y-%m-%d %H:%M (%a)'
+[core]
+	quotepath = off
+	excludesfile = ~/.gitignore_global
+	editor = vim
+[credential]
+	helper = cache --timeout=3600
+[push]
+	default = simple
+[include]
+	path = ~/.gitconfig_ignored
+[color "diff-highlight"]
+	oldNormal = red bold
+	oldHighlight = red bold 52
+	newNormal = green bold
+	newHighlight = green bold 22
+[color "diff"]
+	meta = yellow
+	frag = magenta bold
+	commit = yellow bold
+	old = red bold
+	new = green bold
+	whitespace = red reverse
+#[https]
+#	proxy = https://127.0.0.1:1087
+#[http]
+#	proxy = http://127.0.0.1:1087
