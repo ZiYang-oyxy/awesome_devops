@@ -16,7 +16,8 @@ ad是我工作以来持续积累的研发&运维工具和dotfile，做到尽量�
 
 ⚙ Awesome Devops (or yet another AirDrop) ⚙
 
-Usage:  ad [ COMMAND | TOOL | PLUGIN ] [ ARGUMENT ]
+Usage:  ad [ COMMAND | TOOL ] [ ARGUMENT ]
+        ad deploy < PLUGIN >
 
     BASIC COMMAND:
         help      # this message
