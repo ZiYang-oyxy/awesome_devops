@@ -1,0 +1,18 @@
+cpi_ff|CPI火焰图
+dpdk|dpdk工具箱
+bpftrace|预置一些通用的bt脚本
+irq|各种查看中断统计的工具
+perf-tools|内核&进程trace工具箱
+watch|watch命令支持滚屏
+bg|让命令后台运行
+cecho|colorful echo
+ColorPalette|终端调色板
+eat_cpu|跑满指定CPU
+login_free|ssh批量免密
+login_stat|机器登录分析，用于闲置机器判定
+lstopo|查看cpu和内存分布
+perf_c2c|发现cache伪共享问题
+StartupGraph|linux boot流程可视化
+sshpass|显示地填密码做ssh登录
+virtionet_stat|virtio-net设备统计可视化
+youdao|有道词典CLI版
