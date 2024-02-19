@@ -23,7 +23,7 @@ git log -1 --pretty=format:"%ct" > latest_version
 
 rm -rf dist
 mkdir -p dist
-tar c -C .. --exclude='awesome_devops/vim' --exclude='awesome_devops/not_in_ad_tar/' --exclude='awesome_devops/dist' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
+tar c -C .. --exclude='awesome_devops/vim' --exclude='awesome_devops/not_in_ad_tar/' --exclude='awesome_devops/docs' --exclude='awesome_devops/dist' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
 
 # 打包一些外部工具
 if [[ -d $_curdir/../ad_external ]]; then
