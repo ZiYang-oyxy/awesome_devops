@@ -1,0 +1,14 @@
+#!/bin/bash
+
+curdir="`dirname $(readlink -f $0)`"
+source $curdir/../../lib/common.sh
+
+log "Configure git ..."
+
+_ln $curdir/.gitconfig ~/.gitconfig
+_ln $curdir/.gitignore_global ~/.gitignore_global
+if [[ ! -e ~/.gitconfig_ignored ]]; then
+    cp -f $curdir/.gitconfig_work ~/.gitconfig_work
+fi
+
+log "Done!"
