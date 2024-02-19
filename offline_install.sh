@@ -16,5 +16,5 @@ else
     grep -q "source ~/.awesome_devops/ad-completion.bash" ~/.bashrc || \
         printf "\nsource ~/.awesome_devops/ad-completion.bash\n" >> ~/.bashrc
 fi
+rm -f ~/bin/ad
 ln -s `readlink -f ~/.awesome_devops/ad` ~/bin/ad
-
