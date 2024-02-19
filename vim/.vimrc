@@ -334,9 +334,11 @@ let g:bookmark_disable_ctrlp = 0
 highlight BookmarkSign ctermbg=NONE ctermfg=160
 let g:bookmark_sign = '♥'
 "let g:bookmark_highlight_lines = 1
-Plug 'github/copilot.vim'
-imap <silent><script><expr> <C-L> copilot#Accept("\<CR>")
-let g:copilot_no_tab_map = v:true
+
+" Plug 'github/copilot.vim'
+" imap <silent><script><expr> <C-L> copilot#Accept("\<CR>")
+" let g:copilot_no_tab_map = v:true
+
 Plug 'Yggdroot/indentLine'
 
 "###########################
