@@ -77,7 +77,7 @@ ad-example.com
 ## 基础用法（有服务端）
 ```bash
 # 安装
-bash <(curl -s http://Awesome:Devops@ad.baidu-int:8890/@aadi@) && source ~/.bashrc
+SERVER_IP=1.1.1.1; bash <(curl -s http://Awesome:Devops@$SERVER_IP:8890/@aadi@) && source ~/.bashrc
 
 # 升级
 ad upgrade
