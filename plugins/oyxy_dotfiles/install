@@ -1,14 +1,31 @@
 #!/bin/bash
 
+#export http_proxy=http://127.0.0.1:1087;export https_proxy=http://127.0.0.1:1087;export ALL_PROXY=socks5://127.0.0.1:1080
+
 curdir="`dirname $(readlink -f $0)`"
 source $curdir/../../lib/common.sh
 
-log "Configure git ..."
+log "Configure bash ..."
+_ln $curdir/.bashrc ~/.bashrc
+_ln $curdir/.bashrc_custom ~/.bashrc_custom
 
+log "Configure git ..."
 _ln $curdir/.gitconfig ~/.gitconfig
 _ln $curdir/.gitignore_global ~/.gitignore_global
 if [[ ! -e ~/.gitconfig_ignored ]]; then
     cp -f $curdir/.gitconfig_work ~/.gitconfig_work
 fi
+curl https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash -o ~/.git-completion.bash
+
+log "Configure tmux ..."
+_ln $curdir/.tmux.conf ~/.tmux.conf
+_ln $curdir/.tmux-powerlinerc ~/.tmux-powerlinerc
+[[ -d ~/.tmux-powerline ]] || {
+  git clone https://github.com/erikw/tmux-powerline ~/.tmux-powerline
+}
+_ln $curdir/mytheme.sh ~/.tmux-powerline/themes/mytheme.sh
+
+# font
+#git clone https://github.com/supermarin/powerline-fonts.git
 
 log "Done!"
