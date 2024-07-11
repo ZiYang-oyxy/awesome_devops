@@ -5,11 +5,12 @@ _curdir="`dirname $(readlink -f $0)`"
 source $_curdir/../../lib/common.sh
 FG_PATH=$_curdir/FlameGraph
 
-if [[ $# -lt 2 ]]; then
+if [[ $# -lt 1 ]]; then
     echo "Wrong args!!!"
-    echo "Example1: cpi_ff \"-p <PID>\" svg_file_name"
-    echo "Example2: cpi_ff \"-t <TID>\" svg_file_name"
-    echo "Example2: cpi_ff \"-C <CORE_IDX>\" svg_file_name"
+    echo "Example1: cpi_ff \"-p <PID>\""
+    echo "Example2: cpi_ff \"-t <TID>\""
+    echo "Example3: cpi_ff \"-C <CORE_IDX>\""
+    echo "Example4: EVENT=\"event=0xa2,umask=0x1\" cpi_ff \"-C <CORE_IDX>\""
     exit 1
 fi
 
@@ -20,14 +21,25 @@ if perf list | grep cycle_activity.stalls_total > /dev/null 2>&1; then
     STALL_PMU=cycle_activity.stalls_total
 elif perf list | grep ic_fetch_stall.ic_stall_any > /dev/null 2>&1; then
     STALL_PMU=ic_fetch_stall.ic_stall_any
+elif [[ -n "$EVENT" ]]; then
+    # e.g. EVENT="event=0xa2,umask=0x1"
+    STALL_PMU="cpu/$EVENT,name=resource_stalls_any/"
 else
-    CPU_VENDOR=unknown_vendor
+    STALL_PMU=
 fi
+
+FILE=ad_cpi_ff_"`date '+%Y-%m-%d_%H-%M-%S'`".svg
+
+cecho -Y "STALL_PMU=${STALL_PMU}"
 
 cpi_ff()
 {
     # cpu PMU查询（XEON系列要注意找“Server Events”的表） https://perfmon-events.intel.com/#
-    perf record $1 -e cpu-cycles,$STALL_PMU -c 2000003 --call-graph dwarf -F 200 -- sleep 5
+    perf record $1 -e cpu-cycles -e $STALL_PMU --call-graph dwarf -c 2000000 -- sleep 5
+
+    if [[ -n "$EVENT" ]]; then
+        STALL_PMU=resource_stalls_any
+    fi
 
     # !!! perf script一定要按照stackcollapse-perf.pl的使用说明去掉无关的域，否则无法上色，不同的perf/kernel版本用法有出入，自行解决
     #
@@ -42,28 +54,25 @@ cpi_ff()
 
     $FG_PATH/stackcollapse-perf.pl --event-filter=cpu-cycles /tmp/out.perf > /tmp/out.folded.cycles
     $FG_PATH/stackcollapse-perf.pl --event-filter=$STALL_PMU /tmp/out.perf > /tmp/out.folded.stalls
-    $FG_PATH/difffolded.pl -n /tmp/out.folded.stalls /tmp/out.folded.cycles | $FG_PATH/flamegraph.pl --title "CPI Flame Graph: blue=stalls, red=instructions" --width=1200 > $2.svg
+    $FG_PATH/difffolded.pl -n /tmp/out.folded.stalls /tmp/out.folded.cycles | $FG_PATH/flamegraph.pl --title "CPI Flame Graph: blue=stalls, red=instructions" --width=1200 > ${FILE}
 }
 
 other_ff()
 {
-    perf record $1 --call-graph dwarf -F 200 -- sleep 5
+    perf record $1 --call-graph dwarf -c 2000000 -- sleep 5
 
     perf script | $FG_PATH/stackcollapse-perf.pl > /tmp/out.perf
-    cat /tmp/out.perf | $FG_PATH/flamegraph.pl --width=1200 > $2.svg
+    cat /tmp/out.perf | $FG_PATH/flamegraph.pl --width=1200 > ${FILE}
 }
 
 set -x
 
-case $CPU_VENDOR in
-    "unknown_vendor")
-        other_ff "$@"
-        ;;
-    *)
+if [[ -n $STALL_PMU ]]; then
         cpi_ff "$@"
-        ;;
-esac
+else
+        other_ff "$@"
+fi
 
 set +x
 
-cecho -G "Finish. Output file: $2.svg"
+cecho -G "Finish. Output file: ${FILE}"
