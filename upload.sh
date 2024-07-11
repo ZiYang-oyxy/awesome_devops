@@ -23,12 +23,12 @@ git log -1 --pretty=format:"%ct" > latest_version
 
 rm -rf dist
 mkdir -p dist
-tar c -C .. --exclude='awesome_devops/vim' --exclude='awesome_devops/not_in_ad_tar/' --exclude='awesome_devops/docs' --exclude='awesome_devops/dist' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
+tar --no-xattrs -c -C .. --exclude='awesome_devops/vim' --exclude='awesome_devops/not_in_ad_tar/' --exclude='awesome_devops/docs' --exclude='awesome_devops/dist' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
+rm -rf dist/awesome_devops
+tar x -C dist -f dist/awesome_devops.tar
 
 # 打包一些外部工具
 if [[ -d $_curdir/../ad_external ]]; then
-    rm -rf dist/awesome_devops
-    tar x -C dist -f dist/awesome_devops.tar
     rsync --filter=":- .gitignore" -avzP $FAST_EXCLUDE_STR $_curdir/../ad_external/awesome_devops/ dist/awesome_devops
 
     # 让本地也能用
@@ -53,13 +53,13 @@ cp -f dist/awesome_devops/lib/common.sh $_curdir/lib/common.sh
 source $_curdir/lib/common.sh
 
 # 打包上传，不用tar z，因为有些环境tar不支持
-tar c -C dist --exclude='dist' --exclude='not_in_ad_tar' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
+tar --no-xattrs -c -C dist --exclude='dist' --exclude='not_in_ad_tar' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
 ./ad put dist/awesome_devops.tar @awesome_devops"$VERSION_STR".tar@
 ./ad put dist/awesome_devops/install.sh @aadi"$VERSION_STR"@
 ./ad put latest_version @latest_version"$VERSION_STR"@
 
 # 上传一些没有发布到ad tar中的文件
-tar cz --exclude='vim/undodir/%*' --exclude='vim/cache' --exclude='.git' --exclude='*.swp' -f dist/vim.tgz vim
+tar --no-xattrs -cz --exclude='vim/undodir/%*' --exclude='vim/cache' --exclude='.git' --exclude='*.swp' -f dist/vim.tgz vim
 ./ad put dist/vim.tgz @vim_bundle.tgz@
 
 if [[ $1 = "fast" ]]; then
@@ -69,7 +69,7 @@ else
     for folder in */
     do
         tgz_file=@${folder%/}.tgz@
-        tar -czvf "$tgz_file" "$folder"
+        tar --no-xattrs -czvf "$tgz_file" "$folder"
         ../ad put $tgz_file
         rm $tgz_file
     done
