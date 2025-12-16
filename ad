@@ -9,9 +9,9 @@ CURDIR="`dirname $(readlink -f $0)`"
 source $CURDIR/lib/common.sh
 
 if [[ -n "$LR" ]]; then
-    CURL="curl --limit-rate $LR"
+    CURL="curl -g --limit-rate $LR"
 else
-    CURL="curl"
+    CURL="curl -g"
 fi
 
 put()
@@ -172,7 +172,7 @@ vim_init()
     if [ -d $CURDIR/.git ]; then
         return
     fi
-    ad cecho -g "ad vim initialize ..."
+    cecho -g "ad vim initialize ..."
     cd $CURDIR/
     ad get @vim_bundle.tgz@
     tar xf @vim_bundle.tgz@
@@ -317,6 +317,14 @@ if [[ -z $_action ]]; then
     exit 1
 fi
 
+function tool_pre_run() {
+    [[ -f "$1" ]] && bash "$1" || return 0
+    if [[ $? -ne 0  ]]; then
+        cecho -R "Abort: pre-run failed"
+        return 1
+    fi
+}
+
 case $_action in
     put | get | dput | dgput | dget | tput | upgrade | uninstall)
         $_action "$@"
@@ -357,29 +365,43 @@ case $_action in
             $CURDIR/ext_tools/$_action "$@"
         # 有目录工具，目录与工具名必须同名，直接执行
         elif [[ -f $CURDIR/tools/$_action/$_action ]]; then
+            tool_pre_run "$CURDIR/tools/$_action/pre-run" || exit $?
             $CURDIR/tools/$_action/$_action "$@"
         elif [[ -f $CURDIR/ext_tools/$_action/$_action ]]; then
+            tool_pre_run "$CURDIR/ext_tools/$_action/pre-run" || exit $?
             $CURDIR/ext_tools/$_action/$_action "$@"
         # 有目录工具，目录与工具名不同名，一般是一个工具集，展示命令列表，或直接执行
         elif [[ -d $CURDIR/tools/$_action ]]; then
+            _path="$CURDIR/tools/$_action"
             _tool=$1
             if [[ -z $_tool ]]; then
-                echo "Tool List:"
-                _list=`find $CURDIR/tools/$_action/ -maxdepth 1 -perm -111 -type f`
+                if [[ -f "$_path/HELP" ]]; then
+                    cecho -Y "Help:"
+                    cat $_path/HELP
+                fi
+                cecho -Y "Tool List:"
+                _list=`find $_path/ -maxdepth 1 -perm -111 -type f`
                 cecho -G "$_list"
             else
                 shift
-                $CURDIR/tools/$_action/$_tool "$@"
+                tool_pre_run "$_path/pre-run" || exit $?
+                $_path/$_tool "$@"
             fi
         elif [[ -d $CURDIR/ext_tools/$_action ]]; then
+            _path="$CURDIR/ext_tools/$_action"
             _tool=$1
             if [[ -z $_tool ]]; then
-                echo "Tool List:"
-                _list=`find $CURDIR/ext_tools/$_action/ -maxdepth 1 -perm -111 -type f`
+                if [[ -f "$_path/HELP" ]]; then
+                    cecho -Y "Help:"
+                    cat $_path/HELP
+                fi
+                cecho -Y "Tool List:"
+                _list=`find $_path/ -maxdepth 1 -perm -111 -type f`
                 cecho -G "$_list"
             else
                 shift
-                $CURDIR/ext_tools/$_action/$_tool "$@"
+                tool_pre_run "$_path/pre-run" || exit $?
+                $_path/$_tool "$@"
             fi
         else
             usage
