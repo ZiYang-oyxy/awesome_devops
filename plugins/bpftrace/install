@@ -4,18 +4,8 @@ curdir="`dirname $(readlink -f $0)`"
 source $curdir/../../lib/common.sh
 
 cd ~/bin
-mkdir -p .bpftrace.tmp
-cd .bpftrace.tmp
-ad get @bpftrace.tgz@
-tar xf @bpftrace.tgz@
-cd bpftrace
-tar xf bpftrace.tgz
-cp bpftrace ~/bin/bpftrace
-cd rpm
-sudo rpm -Uvh *.rpm
-
-cd ~/bin
-rm -rf .bpftrace.tmp
+ad get @bpftrace@ bpftrace
+chmod +x bpftrace
 
 cecho -G "bpftrace install succeeded"
 cecho -R 'need to run "source ~/.bashrc"'

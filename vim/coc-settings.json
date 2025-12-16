@@ -20,23 +20,11 @@
                     "directory": "/tmp/ccls"
                 }
             }
-        },
-        "bash": {
-            "command": "bash-language-server",
-            "args": [
-                "start"
-            ],
-            "filetypes": [
-                "sh"
-            ],
-            "ignoredRootPaths": [
-                "~"
-            ]
         }
     },
-    "diagnostic.level":"warning",
-    "diagnostic.displayByAle":false,
-    "diagnostic.messageDelay":200,
-    "diagnostic.messageTarget":"echo",
-    "diagnostic.highlighLimit":2000
+    "diagnostic.level": "warning",
+    "diagnostic.displayByAle": false,
+    "diagnostic.messageDelay": 200,
+    "diagnostic.messageTarget": "echo",
+    "diagnostic.highlighLimit": 2000
 }

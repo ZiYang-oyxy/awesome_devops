@@ -1,52 +1,148 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import re
 import argparse
+import re
 import subprocess
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-d', '--days', type=int, default=15, help='Number of days to be counted')
-args = parser.parse_args()
-count_day = args.days
+DATE_PATTERN = re.compile(r'\w{3} \w{3} \s{0,1}\d{1,2} \d{2}:\d{2}:\d{2} \d{4} ')
 
-# 初始化一个字典，用于统计每天的登录次数
-login_count = defaultdict(int)
 
-now = datetime.now()
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-d', '--days',
+        type=int,
+        default=15,
+        help='Number of recent days to include in the statistics and display',
+    )
+    parser.add_argument(
+        '-c', '--compact',
+        action='store_true',
+        help='Compact mode: show total and daily counts in one line',
+    )
+    return parser.parse_args()
 
-process = subprocess.Popen(['last', '-FR'], stdout=subprocess.PIPE)
-output, error = process.communicate()
-lines = output.decode('utf-8').splitlines()
 
-# 遍历每一行日志
-for line in lines:
-    # 提取日志中的日期
-    # 示例：chenyanl pts/66       Mon May 22 11:23:27 2023 - Mon May 22 12:43:07 2023  (01:19)
-    match = re.search(r'\w{3} \w{3} \s{0,1}\d{1,2} \d{2}:\d{2}:\d{2} \d{4} ', line)
-    if match:
-        start_time = datetime.strptime(match.group(0), "%a %b %d %H:%M:%S %Y ")
-        if now - start_time >= timedelta(days=count_day):
+def collect_login_counts(days):
+    """Return login counts keyed by YYYYMMDD within the given window."""
+    login_count = defaultdict(int)
+    now = datetime.now()
+    process = subprocess.Popen(['last', '-FR'], stdout=subprocess.PIPE)
+    output, _ = process.communicate()
+    lines = output.decode('utf-8').splitlines()
+
+    for line in lines:
+        match = DATE_PATTERN.search(line)
+        if not match:
             continue
-        start_time_str = start_time.strftime("%Y%m%d")
-        # 提取日志中的最后一列
-        last = line.split()[-1]
-        # 判断是否是有效登录
-        if last != "(00:00)":
-            # 统计该日期的登录次数
-            login_count[start_time_str] += 1
-#    else:
-#        print("not match: " + line)
-
-total = 0
-sorted_dict = sorted(login_count.items(), key=lambda t: t[0])
+        start_time = datetime.strptime(match.group(0), "%a %b %d %H:%M:%S %Y ")
+        if now - start_time >= timedelta(days=days):
+            continue
+        last_token = line.split()[-1]
+        if last_token == "(00:00)":
+            continue
+        day_key = start_time.strftime("%Y%m%d")
+        login_count[day_key] += 1
+    return login_count, now
 
 
-print("Day,LoginCount")
-for date, count in sorted_dict:
-    print("%s,%d" % (date, count))
-    total += count
+def print_csv(login_count, now, days):
+    print("Day,LoginCount")
+    total = 0
+    counts_only = []
 
-print("\nTotal:%d" % total)
+    # First pass: collect all counts for the last N days
+    for delta in range(days):
+        day_key = (now - timedelta(days=delta)).strftime("%Y%m%d")
+        count = login_count.get(day_key, 0)
+        total += count
+        counts_only.append((day_key, count))
+
+    # Calculate thresholds for color coding
+    non_zero_counts = [c for _, c in counts_only if c > 0]
+    if non_zero_counts:
+        sorted_counts = sorted(non_zero_counts, reverse=True)
+        # Top 30% -> red, next 40% -> yellow, bottom 30% -> green
+        top_30_idx = max(0, int(len(sorted_counts) * 0.3) - 1)
+        top_70_idx = max(0, int(len(sorted_counts) * 0.7) - 1)
+        red_threshold = sorted_counts[top_30_idx] if top_30_idx < len(sorted_counts) else sorted_counts[0]
+        yellow_threshold = sorted_counts[top_70_idx] if top_70_idx < len(sorted_counts) else sorted_counts[-1]
+    else:
+        red_threshold = yellow_threshold = 0
+
+    # Second pass: print with colors
+    for date, count in counts_only:
+        if count == 0:
+            # Dim white for zero values
+            colored_count = "\033[2m{}\033[0m".format(count)
+        elif count >= red_threshold:
+            # Bold red for high activity
+            colored_count = "\033[1;91m{}\033[0m".format(count)
+        elif count >= yellow_threshold:
+            # Bold yellow for medium activity
+            colored_count = "\033[1;93m{}\033[0m".format(count)
+        else:
+            # Green for low activity
+            colored_count = "\033[92m{}\033[0m".format(count)
+        print("{},{}".format(date, colored_count))
+
+    print("\n\033[1mTotal\033[0m: \033[1m{}\033[0m".format(total))
+
+
+def print_compact(login_count, now, days):
+    total = 0
+    daily_counts = []
+    counts_only = []
+
+    # First pass: collect all counts
+    for delta in range(days):
+        day_key = (now - timedelta(days=delta)).strftime("%Y%m%d")
+        count = login_count.get(day_key, 0)
+        total += count
+        counts_only.append(count)
+
+    # Calculate thresholds for color coding
+    non_zero_counts = [c for c in counts_only if c > 0]
+    if non_zero_counts:
+        sorted_counts = sorted(non_zero_counts, reverse=True)
+        # Top 30% -> red, next 40% -> yellow, bottom 30% -> green
+        top_30_idx = max(0, int(len(sorted_counts) * 0.3) - 1)
+        top_70_idx = max(0, int(len(sorted_counts) * 0.7) - 1)
+        red_threshold = sorted_counts[top_30_idx] if top_30_idx < len(sorted_counts) else sorted_counts[0]
+        yellow_threshold = sorted_counts[top_70_idx] if top_70_idx < len(sorted_counts) else sorted_counts[-1]
+    else:
+        red_threshold = yellow_threshold = 0
+
+    # Second pass: format with colors
+    for count in counts_only:
+        if count == 0:
+            # Dim white for zero values
+            daily_counts.append("\033[2m{}\033[0m".format(count))
+        elif count >= red_threshold:
+            # Bold red for high activity
+            daily_counts.append("\033[1;91m{}\033[0m".format(count))
+        elif count >= yellow_threshold:
+            # Bold yellow for medium activity
+            daily_counts.append("\033[1;93m{}\033[0m".format(count))
+        else:
+            # Green for low activity
+            daily_counts.append("\033[92m{}\033[0m".format(count))
+
+    # Format output with bold total and proper spacing
+    print("\033[1m{}\033[0m | {}".format(total, ' '.join(daily_counts)))
+
+
+def main():
+    args = parse_args()
+    login_count, now = collect_login_counts(args.days)
+    if args.compact:
+        print_compact(login_count, now, args.days)
+    else:
+        print_csv(login_count, now, args.days)
+
+
+if __name__ == '__main__':
+    main()

@@ -1,6 +1,6 @@
 [user]
-	name = ziyang
-	email = hh123okbb@gmail.com
+	name = lijun
+	email = lijun.996@bytedance.com
 [color]
 	ui = true
 [diff]
@@ -14,9 +14,13 @@
 	ll = log --stat
 	br = branch
 	sl = log --pretty=tformat:'%Cgreen%ad%Creset %C(auto)%h%d %s %C(bold black)<%aN>%Creset' --date=format-local:'%Y-%m-%d %H:%M (%a)'
+	new = "!f() { git fetch && git checkout -b sandbox/$(git config user.email | awk -F@ \"{print \\$1}\")/$(date +%m-%d)/${2:-$(date +%H-%M)} origin/${1:-master}; }; f"
+	rv = "!f() { git push origin HEAD:refs/for/${1:-master}; }; f"
+	cin = commit --amend --no-edit
+	delbranch = "!f() { git branch | grep sandbox | xargs git branch -D; }; f"
 [core]
 	quotepath = off
-	excludesfile = ~/.gitignore_global
+	excludesfile = /Users/bytedance/.gitignore_global
 	editor = vim
 [credential]
 	helper = cache --timeout=3600
@@ -40,3 +44,13 @@
 #	proxy = https://127.0.0.1:1087
 #[http]
 #	proxy = http://127.0.0.1:1087
+[init]
+	templatedir = /Users/bytedance/.gittemplates
+[difftool "sourcetree"]
+	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+	path = 
+[mergetool "sourcetree"]
+	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+	trustExitCode = true
+[commit]
+	template = /Users/bytedance/.stCommitMsg

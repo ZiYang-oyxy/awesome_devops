@@ -24,8 +24,14 @@ _ln $curdir/.tmux-powerlinerc ~/.tmux-powerlinerc
   git clone https://github.com/erikw/tmux-powerline ~/.tmux-powerline
 }
 _ln $curdir/mytheme.sh ~/.tmux-powerline/themes/mytheme.sh
+_ln $curdir/tmux_balance.sh ~/.tmux-powerline/tmux_balance.sh
+_ln $curdir/tmux-byebyecode.sh ~/.tmux-powerline/tmux-byebyecode.sh
 
 # font
 #git clone https://github.com/supermarin/powerline-fonts.git
+
+brew install shellcheck curl gnu-tar clang-format
+# :CocInstall coc-sh
+# :CocInstall coc-json
 
 log "Done!"

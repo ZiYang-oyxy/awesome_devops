@@ -11,11 +11,13 @@ export VISUAL=vim
 export EDITOR="$VISUAL"
 export PATH=/sbin:~/bin:$PATH
 export PATH=/opt/homebrew/bin:$PATH
-export PATH=$(brew --prefix)/opt/coreutils/libexec/gnubin:$PATH
-export PATH=$(brew --prefix)/opt/binutils/bin:$PATH
-export PATH=$(brew --prefix)/opt/findutils/libexec/gnubin:$PATH
-export PATH=$(brew --prefix)/opt/grep/libexec/gnubin/:$PATH
-export PATH=$(brew --prefix)/opt/ctags/bin:$PATH
+# brew install bash coreutils binutils findutils grep gawk gnu-sed
+export PATH=/opt/homebrew/opt/coreutils/libexec/gnubin:$PATH
+export PATH=/opt/homebrew/opt/binutils/bin:$PATH
+export PATH=/opt/homebrew/opt/findutils/libexec/gnubin:$PATH
+export PATH=/opt/homebrew/opt/grep/libexec/gnubin/:$PATH
+export PATH=/opt/homebrew/opt/ctags/bin:$PATH
+export PATH=/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH
 
 TERM=xterm
 
@@ -140,8 +142,10 @@ alias l='gls --color=auto -CF'
 alias rr='xset r rate 250 50'
 alias rm='grm'
 alias cp='gcp'
-alias rsync='rsync --filter=":- ~/.gitignore_global"'
+alias sed='gsed'
+#alias rsync='rsync --filter=":- ~/.gitignore_global"'
 alias chrome="open -a 'Google Chrome'"
+alias tree="tree -C"
 
 #OS X Terminal equivalent of Ctrl+Left / Ctrl+Right
 #https://apple.stackexchange.com/questions/1626/os-x-terminal-equivalent-of-ctrlleft-ctrlright
@@ -152,9 +156,10 @@ bind '"\e[1;5D": backward-word'
 
 [ -e ~/.bashrc_ignored ] && . ~/.bashrc_ignored
 
-_vps="-p 33333 root@172.188.29.150"
-_vps2="-p 33333 root@120.24.253.41"
-_nas="-p 2222 hh123okbb@192.168.31.2"
+_vps="-p 33333 root@8.220.207.192"
+_vps2="-p 33333 root@8.222.225.241"
+_nas="-6 -p 33333 hh123okbb@zaozaoxixi.synology.me"
+_nas2="-6 -p 33333 hh123okbb@zaozaoxixi.top"
 
 g()
 {

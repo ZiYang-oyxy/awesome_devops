@@ -16,7 +16,15 @@ if [[ ! -f $hostfile ]]; then
     exit 1
 fi
 
-type expect >/dev/null 2>&1 || sudo yum install -y expect
+pkg_install() {
+    if command -v yum &>/dev/null; then
+        sudo yum install -y expect
+    elif command -v apt-get &>/dev/null; then
+        sudo apt-get install -y expect
+    fi
+}
+
+type expect >/dev/null 2>&1 || pkg_install
 if ! type expect >/dev/null 2>&1; then
     cecho -R "expect tool is not found!"
     exit 1

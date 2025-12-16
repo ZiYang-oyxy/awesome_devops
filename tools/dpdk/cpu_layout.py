@@ -5,9 +5,12 @@
 
 """Display CPU topology information."""
 
+import sys
 import glob
 import typing as T
 
+RED = '\033[31m'
+RESET = '\033[0m'
 
 def range_expand(rstr: str) -> T.List[int]:
     """Expand a range string into a list of integers."""
@@ -69,6 +72,10 @@ def main() -> None:
     numa_map: T.Dict[int, int] = {}
     base_path = "/sys/devices/system/cpu"
 
+    # 获取命令行参数，跳过第一个参数（脚本名）
+    highlight_lcore_list = sys.argv[1:]
+    #highlight_lcore_list = [int(cpu) for cpu in highlight_lcore_list]
+
     cpus = range_expand(read_sysfs(f"{base_path}/online"))
 
     for cpu in cpus:
@@ -128,6 +135,22 @@ def main() -> None:
         max(len(tup[col_idx]) for tup in rows + [heading_strs])
         for col_idx in range(len(heading_strs))
     ]
+
+    for index, row in enumerate(rows):
+        row_list = list(row)
+        for i, row_str in enumerate(row_list):
+            if row_str.startswith('['):
+                lcore_str = "["
+                row_str = row_str.strip('[]').split(', ')
+                for value in row_str:
+                    if value in highlight_lcore_list:
+                        lcore_str += f"{RED}{value}{RESET}, "
+                    else:
+                        lcore_str += f"{value}, "
+                lcore_str += "]"
+                lcore_str = lcore_str[:-3] + lcore_str[-1]
+                row_list[i] = lcore_str
+        rows[index] = tuple(row_list)
 
     # print out table taking row widths into account
     print_row(heading_strs, col_widths)

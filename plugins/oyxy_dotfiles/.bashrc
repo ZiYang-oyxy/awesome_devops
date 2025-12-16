@@ -87,6 +87,15 @@ fi
 # colored GCC warnings and errors
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
+#last_time=$(date +%s.%N)
+#trace() {
+#    now=$(date +%s.%N)
+#    duration=$(echo "$now - $last_time" | bc)
+#    printf "[%.9fs] %s\n" "$duration" "$BASH_COMMAND"
+#    last_time=$now
+#}
+#trap trace DEBUG
+
 # some more ls aliases
 alias ll='ls -l'
 alias la='ls -A'
@@ -115,3 +124,16 @@ fi
 if [ -f ~/.bashrc_custom ]; then
     . ~/.bashrc_custom
 fi
+
+source /Volumes/code/awesome_devops/plugins/xfinder/xfinder.source #@ad_plugins@
+
+source /Volumes/code/awesome_devops/plugins/mls/.bashrc_mls #@mls_plugins@
+. "$HOME/.cargo/env"
+
+source /Volumes/code/ad_external/awesome_devops/plugins/vpu/.bashrc_vpu #@vpu_plugins@
+
+source /Volumes/code/awesome_devops/plugins/vpu/.bashrc_vpu #@vpu_plugins@
+
+[[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path bash)"
+
+source /Volumes/code/awesome_devops/plugins/boe/.bashrc_boe #@boe_plugins@

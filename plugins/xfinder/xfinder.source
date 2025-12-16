@@ -1,6 +1,15 @@
 #!/bin/bash
 # Copyright © 2019 Ouyang Xiongyi. All Rights Reserved.
 
+#last_time=$(date +%s.%N)
+#trace() {
+#    now=$(date +%s.%N)
+#    duration=$(echo "$now - $last_time" | bc)
+#    printf "[%.9fs] %s\n" "$duration" "$BASH_COMMAND"
+#    last_time=$now
+#}
+#trap trace DEBUG
+
 SOURCE_PATH="~/.awesome_devops/plugins/xfinder/xfinder.source"
 
 ### find
@@ -59,7 +68,7 @@ C_FILE_PAT=".*\.(c|cc|cpp|h)"
 OTHER_SRC_FILE_PAT=".*\.(g|lua|java|xml|S|patch|diff|log|txt)"
 PY_FILE_PAT=".*\.(py)"
 MAKE_FILE_PAT="(.*/(Makefile|meson\.build|makefile|CMakeLists\.txt)|.*\.(mk))"
-TAGS_FILE_PAT=".*/(tags-e|tags|cscope.out|ncscope.out)"
+TAGS_FILE_PAT=".*/(tags-e|tags|cscope\.out|ncscope\.out|GPATH|GRTAGS|GTAGS)"
 SHELL_FILE_PAT_INVERT="$C_FILE_PAT|$MAKE_FILE_PAT|$OTHER_SRC_FILE_PAT|$TAGS_FILE_PAT|$PY_FILE_PAT|.*\.(rst|md)"
 
 grep_ed() {
@@ -117,11 +126,11 @@ grep_fact() {
 }
 
 function _xgrep() {
-	$FIND "${IGNORE_FILE[@]}" -o -type f -name "*" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o -type f -name "*" ! -iregex "$TAGS_FILE_PAT" -print0 | xargs -0 grep -H --color=always -n "$@" 2>/dev/null
 }
 
 function _xgrepi() {
-	$FIND "${IGNORE_FILE[@]}" -o -type f -name "*" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
+	$FIND "${IGNORE_FILE[@]}" -o -type f -name "*" ! -iregex "$TAGS_FILE_PAT" -print0 | xargs -0 grep -H -i --color=always -n "$@" 2>/dev/null
 }
 
 function _cgrep()

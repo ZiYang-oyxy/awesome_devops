@@ -1,13 +1,21 @@
 #!/bin/bash
 
-if ! type lstopo > /dev/null 2>&1; then
-    sudo yum install -y hwloc-gui || {
-        ad cecho -R "ERROR: Not found \"lstopo\" command"
+pkg_install() {
+    if command -v yum &>/dev/null; then
+        sudo yum install -y hwloc-gui
+    elif command -v apt-get &>/dev/null; then
+        sudo apt-get install -y hwloc
+    fi
+}
+
+if ! type lstopo >/dev/null 2>&1; then
+    pkg_install || {
+        ad cecho -R "ERROR: Install \"lstopo\" failed"
         exit 1
     }
 fi
 
-SVG_FILE=`hostname`_topo.svg
+SVG_FILE=$(hostname)_topo.svg
 lstopo --of ascii --whole-io
-lstopo --of svg --whole-io > $SVG_FILE
+lstopo --of svg --whole-io >$SVG_FILE
 ad tput $SVG_FILE

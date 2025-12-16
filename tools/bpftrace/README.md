@@ -1,98 +1,46 @@
-# 快速上手
-[深入浅出 eBPF 技术](https://developer.aliyun.com/article/1223770)
-[bpftrace原理](https://github.com/iovisor/bpftrace/blob/master/docs/internals_development.md)
-[bpftrace一行教程](https://github.com/iovisor/bpftrace/blob/master/docs/tutorial_one_liners_chinese.md)
+# Tools
 
-# 一键安装
-```bash
-ad upgrade # 更新到最新版本
-ad deploy bpftrace # x86平台
-```
-> 也能直接从源装，但是享受不了最新版的各种特性，而且依赖比较多，我是直接用源码编译的x86版本，自包含，开箱即用
+These tools are a small collection curated by the bpftrace maintainers that have been battle-tested and are packaged with bpftrace. We're currently building a set of [community tools](https://github.com/bpftrace/user-tools), which is now accepting [contributions](https://github.com/bpftrace/user-tools/blob/master/CONTRIBUTING.md).
 
-# 使用
-```
-source  ~/.bashrc # 第一次安装后需要执行
+[Read more about how tools get added to this repository](../CONTRIBUTING-TOOLS.md).
 
-# 使用这个示例脚本，分析iperf3进程的tcp收发统计
-ad bpftrace tcp_profile.bt `pidof iperf3` 
+- tools/[bashreadline.bt](bashreadline.bt): Print entered bash commands system wide. [Examples](bashreadline_example.txt).
+- tools/[biolatency.bt](biolatency.bt): Block I/O latency as a histogram. [Examples](biolatency_example.txt).
+- tools/[biosnoop.bt](biosnoop.bt): Block I/O tracing tool, showing per I/O latency. [Examples](biosnoop_example.txt).
+- tools/[biostacks.bt](biostacks.bt): Show disk I/O latency with initialization stacks. [Examples](biostacks_example.txt).
+- tools/[bitesize.bt](bitesize.bt): Show disk I/O size as a histogram. [Examples](bitesize_example.txt).
+- tools/[capable.bt](capable.bt): Trace security capability checks. [Examples](capable_example.txt).
+- tools/[cpuwalk.bt](cpuwalk.bt): Sample which CPUs are executing processes. [Examples](cpuwalk_example.txt).
+- tools/[dcsnoop.bt](dcsnoop.bt): Trace directory entry cache (dcache) lookups. [Examples](dcsnoop_example.txt).
+- tools/[execsnoop.bt](execsnoop.bt): Trace new processes via exec() syscalls. [Examples](execsnoop_example.txt).
+- tools/[gethostlatency.bt](gethostlatency.bt): Show latency for getaddrinfo/gethostbyname[2] calls. [Examples](gethostlatency_example.txt).
+- tools/[killsnoop.bt](killsnoop.bt): Trace signals issued by the kill() syscall. [Examples](killsnoop_example.txt).
+- tools/[loads.bt](loads.bt): Print load averages. [Examples](loads_example.txt).
+- tools/[mdflush.bt](mdflush.bt): Trace md flush events. [Examples](mdflush_example.txt).
+- tools/[naptime.bt](naptime.bt): Show voluntary sleep calls. [Examples](naptime_example.txt).
+- tools/[opensnoop.bt](opensnoop.bt): Trace open() syscalls showing filenames. [Examples](opensnoop_example.txt).
+- tools/[oomkill.bt](oomkill.bt): Trace OOM killer. [Examples](oomkill_example.txt).
+- tools/[pidpersec.bt](pidpersec.bt): Count new processes (via fork). [Examples](pidpersec_example.txt).
+- tools/[runqlat.bt](runqlat.bt): CPU scheduler run queue latency as a histogram. [Examples](runqlat_example.txt).
+- tools/[runqlen.bt](runqlen.bt): CPU scheduler run queue length as a histogram. [Examples](runqlen_example.txt).
+- tools/[setuids.bt](setuids.bt): Trace the setuid syscalls: privilege escalation. [Examples](setuids_example.txt).
+- tools/[ssllatency.bt](ssllatency.bt): Summarize SSL/TLS handshake latency as a histogram. [Examples](ssllatency_example.txt)
+- tools/[sslsnoop.bt](sslsnoop.bt): Trace SSL/TLS handshake, showing latency and return value. [Examples](sslsnoop_example.txt)
+- tools/[statsnoop.bt](statsnoop.bt): Trace stat() syscalls for general debugging. [Examples](statsnoop_example.txt).
+- tools/[swapin.bt](swapin.bt): Show swapins by process. [Examples](swapin_example.txt).
+- tools/[syncsnoop.bt](syncsnoop.bt): Trace sync() variety of syscalls. [Examples](syncsnoop_example.txt).
+- tools/[syscount.bt](syscount.bt): Count system calls. [Examples](syscount_example.txt).
+- tools/[tcpaccept.bt](tcpaccept.bt): Trace TCP passive connections (accept()). [Examples](tcpaccept_example.txt).
+- tools/[tcpconnect.bt](tcpconnect.bt): Trace TCP active connections (connect()). [Examples](tcpconnect_example.txt).
+- tools/[tcpdrop.bt](tcpdrop.bt): Trace kernel-based TCP packet drops with details. [Examples](tcpdrop_example.txt).
+- tools/[tcplife.bt](tcplife.bt): Trace TCP session lifespans with connection details. [Examples](tcplife_example.txt).
+- tools/[tcpretrans.bt](tcpretrans.bt): Trace TCP retransmits. [Examples](tcpretrans_example.txt).
+- tools/[tcpsynbl.bt](tcpsynbl.bt): Show TCP SYN backlog as a histogram. [Examples](tcpsynbl_example.txt).
+- tools/[threadsnoop.bt](threadsnoop.bt): List new thread creation. [Examples](threadsnoop_example.txt).
+- tools/[undump.bt](undump.bt): Capture UNIX domain socket packages. [Examples](undump_example.txt).
+- tools/[vfscount.bt](vfscount.bt): Count VFS calls. [Examples](vfscount_example.txt).
+- tools/[vfsstat.bt](vfsstat.bt): Count some VFS calls, with per-second summaries. [Examples](vfsstat_example.txt).
+- tools/[writeback.bt](writeback.bt): Trace file system writeback events with details. [Examples](writeback_example.txt).
+- tools/[xfsdist.bt](xfsdist.bt): Summarize XFS operation latency distribution as a histogram. [Examples](xfsdist_example.txt).
 
-# 获得所有示例脚本路径，查看并参考实现自己的脚本
-ad bpftrace 
-```
-
-# 添加trace点
-有些场景下需要分析的地方没有找到可trace的点，只能自己加函数，则一定要注意**显式地**给函数添加去优化的声明，否则可能会被优化而无法被trace
-```c
-void __attribute__((optimize("O0"))) my_function() {
-
-    // 函数实现
-
-}
-```
-
-# 附
-## 编译静态链接版bpftrace
-
-```bash
-git clone https://github.com/iovisor/bpftrace.git
-cd bpftrace
-cp docker/Dockerfile.static Dockerfile
-
-yum install -y \
-    asciidoctor \
-    bison \
-    binutils-devel \
-    bcc-devel \
-    cereal-devel \
-    clang-devel \
-    cmake \
-    elfutils-libelf-devel \
-    elfutils-libs \
-    flex \
-    libpcap-devel \
-    libbpf-devel \
-    llvm-devel \
-    systemtap-sdt-devel \
-    zlib-devel zlib-static
-
-cat << EOF >> Dockerfile
-
-COPY . /src
-WORKDIR /src
-RUN cmake -B /build -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=MinSizeRel
-RUN make -C /build -j$(nproc)
-
-ENTRYPOINT ["/build/src/bpftrace"]
-EOF
-
-docker build -t bpftrace_build .
-docker create --name bpftrace_build-container bpftrace_build
-docker cp bpftrace_build-container:/build/src/bpftrace .
-strip ./bpftrace
-```
-
-静态版本会依赖musl c库，对应不同的linux发行版，需要安装对应的musl c库
-
-## 重新编译内核，添加ebpf需要的debug信息
-1. **编译内核时生成Debug信息**：
-在编译内核时，确保开启了生成调试信息的选项。这通常涉及到在`make menuconfig`配置界面中启用相关选项（例如，“Kernel hacking” -> “Compile-time checks and compiler options” -> “Compile the kernel with debug info”）。这会使得编译出来的vmlinux文件包含调试信息。
-
-2. **安装Headers**：
-内核headers通常在编译过程中被创建，并且可以直接被安装。执行以下命令：
-```bash
-make headers_install INSTALL_HDR_PATH=/usr/src/kernels/$(make kernelrelease)
-```
-这将会把headers复制到`/usr/src/kernels/<kernel-version>/`目录下。
-
-##  BPF CO-RE (Compile Once – Run Everywhere)[](https://libbpf.readthedocs.io/en/latest/libbpf_overview.html?spm=a2c6h.12873639.article-detail.12.133d5c69AN7mlU#bpf-co-re-compile-once-run-everywhere "Link to this heading")
-让bpf脚本include这个`vmlinux.h`文件，就能包含内核所有头文件的定义
-```
-$ bpftool btf dump file /sys/kernel/btf/vmlinux format c > vmlinux.h
-```
-
-## 找不到头文件的时候
-用-I参数，例如
-```
-$ bpftrace -I /usr/src/kernels/4.18.0-348.7.1.el8_5.x86_64/include ./x.bt
-```
+For more eBPF observability tools, see [bcc tools](https://github.com/iovisor/bcc#tools).

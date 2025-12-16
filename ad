@@ -8,11 +8,23 @@
 CURDIR="`dirname $(readlink -f $0)`"
 source $CURDIR/lib/common.sh
 
+# IPv4/IPv6 dual-stack support
+# -g: allow brackets in URLs (for IPv6 addresses like [2001:db8::1])
+# curl will automatically choose IPv4 or IPv6 based on DNS resolution
+# To force IPv6: add -6 flag
+# To force IPv4: add -4 flag
 if [[ -n "$LR" ]]; then
     CURL="curl -g --limit-rate $LR"
 else
     CURL="curl -g"
 fi
+
+# Optional: Uncomment to prefer IPv6 when both are available
+# if [[ -n "$LR" ]]; then
+#     CURL="curl -g -6 --limit-rate $LR"
+# else
+#     CURL="curl -g -6"
+# fi
 
 put()
 {

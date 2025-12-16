@@ -112,7 +112,7 @@ Q: Mac的终端上安装后报错
 
 ## 常用功能说明
 ### 文件中转（通过命令行）
-![命令行上传下载.gif](./docs/命令行上传下载.gif)
+![](./docs/命令行上传下载.gif)
 ```bash
 # 传文件
 ad put <LOCAL_FILE_PATH> [REMOTE_FILE_NAME]

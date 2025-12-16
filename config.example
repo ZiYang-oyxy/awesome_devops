@@ -1,3 +1,35 @@
-SERVEFILE_URL=ad-example.com
+# ============================================
+# IPv4/IPv6 Dual-Stack Configuration Examples
+# ============================================
+
+# Option 1: IPv4 address (traditional)
+SERVEFILE_URL=10.131.251.191
 SERVEFILE_PUT_ADDR=$SERVEFILE_URL:8889
 SERVEFILE_GET_ADDR=$SERVEFILE_URL:8890
+export PUTURL="http://Awesome:Devops@$SERVEFILE_PUT_ADDR"
+export GETURL="http://Awesome:Devops@$SERVEFILE_GET_ADDR"
+
+# Option 2: IPv6 address (use brackets!)
+# SERVEFILE_URL=[2001:db8::1]
+# SERVEFILE_PUT_ADDR=$SERVEFILE_URL:8889
+# SERVEFILE_GET_ADDR=$SERVEFILE_URL:8890
+# export PUTURL="http://Awesome:Devops@$SERVEFILE_PUT_ADDR"
+# export GETURL="http://Awesome:Devops@$SERVEFILE_GET_ADDR"
+
+# Option 3: Domain name (auto dual-stack)
+# If domain has both A and AAAA records, curl will choose automatically
+# SERVEFILE_URL=ad-example.com
+# SERVEFILE_PUT_ADDR=$SERVEFILE_URL:8889
+# SERVEFILE_GET_ADDR=$SERVEFILE_URL:8890
+# export PUTURL="http://Awesome:Devops@$SERVEFILE_PUT_ADDR"
+# export GETURL="http://Awesome:Devops@$SERVEFILE_GET_ADDR"
+
+# Option 4: Dual-stack with fallback
+# Use domain name, curl will try IPv6 first, fallback to IPv4
+# No configuration change needed - it's automatic!
+
+# ============================================
+# Advanced: Force IPv4 or IPv6
+# ============================================
+# To force IPv6 only: uncomment the IPv6 preference section in ad/ad_tos scripts
+# To force IPv4 only: use IPv4 address directly or add -4 flag in scripts

@@ -277,7 +277,7 @@ autocmd BufReadPost,FileReadPost,BufNewFile * call system("tmux rename-window " 
 "###########################
 "# Python lang
 "###########################
-Plug 'python-mode/python-mode', { 'branch': 'develop' }
+"Plug 'python-mode/python-mode', { 'branch': 'develop' }
 let g:pymode_options_max_line_length = 100
 let g:pymode_rope_goto_definition_bind = '<leader>g'
 Plug 'davidhalter/jedi-vim'
@@ -320,6 +320,15 @@ let g:go_auto_type_info = 1
 "# cpp lang
 "###########################
 Plug 'octol/vim-cpp-enhanced-highlight'
+Plug 'bfrg/vim-cuda-syntax'
+" Enable highlighting of CUDA kernel calls
+let g:cuda_kernel_highlight = 1
+" Highlight keywords from CUDA Runtime API
+let g:cuda_runtime_api_highlight = 1
+" Highlight keywords from CUDA Driver API
+let g:cuda_driver_api_highlight = 1
+" Highlight keywords from CUDA Thrust library
+let g:cuda_thrust_highlight = 1
 
 "###########################
 "# bash lang
@@ -371,35 +380,35 @@ nmap <Leader>9 <Plug>MarkSearchGroup9Next
 "# cscope
 "###########################
 
-" " ================= use gtags_cscope ========================
-" " brew install global
-" " brew install universal-ctags
-" if !(has('job') || (has('nvim') && exists('*jobwait')))
-" else
-"     Plug 'ludovicchabant/vim-gutentags'
-" endif
-" 
-" " enable gtags module
-" let g:gutentags
-" let g:gutentags_modules = ['ctags', 'gtags_cscope']
-" 
-" " config project root markers.
-" let g:gutentags_add_default_project_roots=0
-" let g:gutentags_project_root = ['.root', '.git']
-" let g:gutentags_generate_on_empty_buffer=1
-" 
-" "" generate datebases in my cache directory, prevent gtags files polluting my project
-" "let g:gutentags_cache_dir = expand('~/.awesome_devops/vim/cache/tags')
-" 
-" set statusline+=%{gutentags#statusline()}
-" 
-" " Useful debug
-" "let g:gutentags_trace = 1
-" 
-" let g:gutentags_ctags_exclude = [
-"     \ '*/freebsd/*',
-"     \ '*/windows/*'
-" \]
+" ================= use gtags_cscope ========================
+" brew install global
+" brew install universal-ctags
+if !(has('job') || (has('nvim') && exists('*jobwait')))
+else
+    Plug 'ludovicchabant/vim-gutentags'
+endif
+
+" enable gtags module
+"let g:gutentags
+let g:gutentags_modules = ['ctags', 'gtags_cscope']
+
+" config project root markers.
+let g:gutentags_add_default_project_roots=0
+let g:gutentags_project_root = ['.root', '.git']
+let g:gutentags_generate_on_empty_buffer=1
+
+"" generate datebases in my cache directory, prevent gtags files polluting my project
+"let g:gutentags_cache_dir = expand('~/.awesome_devops/vim/cache/tags')
+
+set statusline+=%{gutentags#statusline()}
+
+" Useful debug
+"let g:gutentags_trace = 1
+
+let g:gutentags_ctags_exclude = [
+    \ '*/freebsd/*',
+    \ '*/windows/*'
+\]
 
 " ================= use dynamic cscope ========================
 Plug 'ZiYang1989/cscope_dynamic'
@@ -507,6 +516,8 @@ set list
 set expandtab
 set tabstop=4
 set shiftwidth=4
+"set tabstop=8
+"set shiftwidth=8
 nnoremap <F2> :set invexpandtab<CR>
 
 set fileformats=unix,dos
@@ -654,6 +665,8 @@ function! AdjustWindowHeight(minheight, maxheight)
 	endw
 	exe max([min([n_lines, a:maxheight]), a:minheight]) . "wincmd _"
 endfunction
+
+nmap <F12> <Plug>CscopeDBInit
 
 set shortmess+=A
 call plug#end()

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 _curdir="`dirname $(readlink -f $0)`"
 
@@ -11,7 +11,7 @@ if [[ $1 = "fast" ]]; then
     FAST_EXCLUDE_STR="--exclude=not_in_ad_tar"
 fi
 
-curl --connect-timeout 1 -f http://Awesome:Devops@$SERVEFILE_PUT_ADDR/@latest_version@ > /dev/null || {
+curl --connect-timeout 1 -f ${GETURL}/@latest_version@ > /dev/null || {
     ad cecho -R "Unable to connect to ad server"
     exit 1
 }
@@ -23,7 +23,15 @@ git log -1 --pretty=format:"%ct" > latest_version
 
 rm -rf dist
 mkdir -p dist
-tar --no-xattrs -c -C .. --exclude='awesome_devops/vim' --exclude='awesome_devops/not_in_ad_tar/' --exclude='awesome_devops/docs' --exclude='awesome_devops/dist' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
+tar --no-xattrs -c -C .. \
+  --exclude='awesome_devops/vim' \
+  --exclude='awesome_devops/not_in_ad_tar/' \
+  --exclude='awesome_devops/docs' \
+  --exclude='awesome_devops/dist' \
+  --exclude='.git' \
+  --exclude='*.swp' \
+  --exclude-from=<(git ls-files -oi --exclude-standard | sed 's|^|awesome_devops/|' | grep -vE 'awesome_devops/(changelog\.log|latest_version|config)$') \
+  -f dist/awesome_devops.tar awesome_devops/
 rm -rf dist/awesome_devops
 tar x -C dist -f dist/awesome_devops.tar
 
@@ -42,10 +50,8 @@ else
 fi
 
 # 替换访问地址
-$SED -i 's/SERVEFILE_PUT_ADDR=.*/SERVEFILE_PUT_ADDR='$SERVEFILE_PUT_ADDR'/g' dist/awesome_devops/lib/common.sh
-$SED -i 's/SERVEFILE_GET_ADDR=.*/SERVEFILE_GET_ADDR='$SERVEFILE_GET_ADDR'/g' dist/awesome_devops/lib/common.sh
-$SED -i 's/SERVEFILE_GET_ADDR/'$SERVEFILE_GET_ADDR'/g' dist/awesome_devops/install.sh
-$SED -i 's/VERSION_STR/'$VERSION_STR'/g' dist/awesome_devops/install.sh
+$SED -i 's|@GETURL@|'$GETURL'|g' dist/awesome_devops/install.sh
+$SED -i 's|VERSION_STR|'$VERSION_STR'|g' dist/awesome_devops/install.sh
 
 # 临时替换common.sh，否则./ad无法执行
 cp -f $_curdir/lib/common.sh .common.sh

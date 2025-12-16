@@ -1,8 +1,6 @@
 #!/bin/bash
 
 source ~/.awesome_devops/config
-export PUTURL="http://Awesome:Devops@$SERVEFILE_PUT_ADDR"
-export GETURL="http://Awesome:Devops@$SERVEFILE_GET_ADDR"
 
 curdir(){
     dirname $(readlink -f $0)

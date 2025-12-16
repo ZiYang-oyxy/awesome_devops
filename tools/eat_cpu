@@ -5,11 +5,19 @@ if [ -z $1 ]; then
     exit 1
 fi
 
-if ! type stress > /dev/null 2>&1; then
-    sudo yum install -y stress || {
-        ad cecho -R "ERROR: Not found \"stress\" command"
+pkg_install() {
+    if command -v yum &>/dev/null; then
+        sudo yum install -y stress
+    elif command -v apt-get &>/dev/null; then
+        sudo apt-get install -y stress
+    fi
+}
+
+if ! type stress >/dev/null 2>&1; then
+    pkg_install || {
+        ad cecho -R "ERROR: Install \"stress\" failed"
         exit 1
     }
 fi
 
-taskset -c $1 stress -c `nproc --all`
+taskset -c $1 stress -c $(nproc --all)

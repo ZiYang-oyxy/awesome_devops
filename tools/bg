@@ -8,17 +8,25 @@ if [[ $# -eq 0 ]]; then
     exit 1
 fi
 
-type tmux > /dev/null || sudo yum install -y tmux
+pkg_install() {
+    if command -v yum &>/dev/null; then
+        sudo yum install -y tmux
+    elif command -v apt-get &>/dev/null; then
+        sudo apt-get install -y tmux
+    fi
+}
+
+type tmux > /dev/null || pkg_install
 
 tmux new-session -s $SESS -d || {
     ad cecho -R "kill the old session ..."
-    tmux kill-server
+    tmux kill-session -t $SESS
     tmux new-session -s $SESS -d
 }
 
 ad cecho -Y "Command: $*"
 LOGF="`pwd`/ad_bg_${SESS}_`date '+%Y-%m-%d_%H-%M-%S'`.log"
 touch $LOGF
-tmux send -t $SESS "$* | tee $LOGF" C-m
+tmux send -t $SESS "$* 2>&1 | tee $LOGF" C-m
 
 ad cecho -G "log file: $LOGF"
