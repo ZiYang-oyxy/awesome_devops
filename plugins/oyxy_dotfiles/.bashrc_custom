@@ -147,6 +147,11 @@ alias sed='gsed'
 alias chrome="open -a 'Google Chrome'"
 alias tree="tree -C"
 
+# AI Summary aliases
+alias cx="codex"
+alias cx2="codex --dangerously-bypass-approvals-and-sandbox"
+alias cc="claude"
+
 #OS X Terminal equivalent of Ctrl+Left / Ctrl+Right
 #https://apple.stackexchange.com/questions/1626/os-x-terminal-equivalent-of-ctrlleft-ctrlright
 bind '"\e[5C": forward-word'
@@ -163,8 +168,10 @@ _nas2="-6 -p 33333 hh123okbb@zaozaoxixi.top"
 
 g()
 {
+    set -x
     target="_$1"
     ssh ${!target}
+    set +x
 }
 
 source ~/.awesome_devops/ad-completion.bash

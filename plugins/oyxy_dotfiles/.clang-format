@@ -1,0 +1,44 @@
+---
+# Based on LLVM, adjusted towards Linux kernel style but with 4-space indentation.
+BasedOnStyle: LLVM
+
+# 4-space indentation, no tabs.
+IndentWidth: 4
+UseTab: Never
+ColumnLimit: 80
+
+# Brace style similar to Linux kernel.
+BreakBeforeBraces: Linux
+
+# Keep control-flow and functions multi-line when possible.
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortCaseExpressionOnASingleLine: false
+
+# Pointer / reference style (type *ptr), align with variable name.
+PointerAlignment: Right
+ReferenceAlignment: Pointer
+
+# switch/case and labels similar to kernel.
+IndentCaseLabels: false
+IndentGotoLabels: false
+
+# Spaces around parentheses: control statements have space, functions don't.
+SpaceBeforeParens: ControlStatements
+
+# Spacing tweaks.
+SpaceAfterCStyleCast: true
+SpacesInContainerLiterals: false
+SpacesInParens: Never
+SpacesInSquareBrackets: false
+SpaceInEmptyBlock: false
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeAssignmentOperators: true
+
+# Don't reorder includes automatically.
+SortIncludes:
+  Enabled: false
+...
