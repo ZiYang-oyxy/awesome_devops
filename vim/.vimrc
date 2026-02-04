@@ -407,7 +407,10 @@ set statusline+=%{gutentags#statusline()}
 
 let g:gutentags_ctags_exclude = [
     \ '*/freebsd/*',
-    \ '*/windows/*'
+    \ '*/windows/*',
+    \ '*.log',
+    \ '*.log.[0-9]*',
+    \ 'node_modules'
 \]
 
 " ================= use dynamic cscope ========================

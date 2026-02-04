@@ -1,3 +1,12 @@
+# OPENSPEC:START
+# OpenSpec shell completions configuration
+if [ -d "/Users/bytedance/.local/share/bash-completion/completions" ]; then
+  for f in "/Users/bytedance/.local/share/bash-completion/completions"/*; do
+    [ -f "$f" ] && . "$f"
+  done
+fi
+# OPENSPEC:END
+
 # ~/.bashrc: executed by bash(1) for non-login shells.
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
@@ -140,3 +149,5 @@ source /Volumes/code/awesome_devops/plugins/boe/.bashrc_boe #@boe_plugins@
 
 source ~/.awesome_devops/ad-completion.bash
 
+
+export PATH="$HOME/.local/bin:$PATH"

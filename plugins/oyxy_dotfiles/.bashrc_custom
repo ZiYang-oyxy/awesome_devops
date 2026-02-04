@@ -19,102 +19,16 @@ export PATH=/opt/homebrew/opt/grep/libexec/gnubin/:$PATH
 export PATH=/opt/homebrew/opt/ctags/bin:$PATH
 export PATH=/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH
 
-TERM=xterm
-
-__parse_git_branch() {
-	#branch_symbol=""
-	branch_symbol=""
-	type git >/dev/null 2>&1
-	if [ "$?" -ne 0 ]; then
-		return
-	fi
-
-	#git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ \[\1\]/'
-
-	# Quit if this is not a Git repo.
-	branch=$(git symbolic-ref HEAD 2> /dev/null)
-	if [[ -z $branch ]] ; then
-		# attempt to get short-sha-name
-		branch=":$(git rev-parse --short HEAD 2> /dev/null)"
-	fi
-	if [ "$?" -ne 0 ]; then
-		# this must not be a git repo
-		return
-	fi
-
-	# Clean off unnecessary information.
-	branch=${branch#refs\/heads\/}
-
-	ad cecho -G "${branch_symbol} ${branch}"
-}
-export __parse_git_branch
-
-__parse_git_ahead() {
-	type git >/dev/null 2>&1
-	if [ "$?" -ne 0 ]; then
-		return
-	fi
-
-	#[[ -z $(git show HEAD 2> /dev/null) ]] && return
-
-	# check if git
-	[[ -z $(git rev-parse --git-dir 2> /dev/null) ]] && return
-
-	symbolic_ref=$(git symbolic-ref -q HEAD)
-	[[ -z "${symbolic_ref}" ]] && return
-
-	tracking_branch=$(git for-each-ref --format='%(upstream:short)' ${symbolic_ref})
-
-	# creates global variables $1 and $2 based on left vs. right tracking
-	set -- $(git rev-list --left-right --count $tracking_branch...HEAD)
-
-	behind=$1
-	ahead=$2
-
-	# print out the information
-	if [[ $behind -gt 0 ]] ; then
-		local ret="↓$behind"
-	fi
-	if [[ $ahead -gt 0 ]] ; then
-		local ret="${ret}↑$ahead"
-	fi
-	ad cecho -B "$ret"
-}
-export __parse_git_ahead
-
-__parse_git_stats(){
-	type git >/dev/null 2>&1
-	if [ "$?" -ne 0 ]; then
-		return
-	fi
-
-	# check if git
-	[[ -z $(git rev-parse --git-dir 2> /dev/null) ]] && return
-
-	# return the number of modified but not staged items
-	modified=$(git ls-files --modified `git rev-parse --show-cdup` | wc -l)
-	ad cecho -M "+$modified" | tr -d '[:space:]'
-}
-export __parse_git_stats
-
-__git_str()
-{
-	A=`__parse_git_branch`
-	B=`__parse_git_ahead`
-	C=`__parse_git_stats`
-	echo "$B $C $A"
-    echo""
-}
-export __git_str
-
-PS1='╔║${debian_chroot:+($debian_chroot)}\[\033[1;33m\]\w\[\033[00m\] $(__git_str)\n╚═❯ '
+#TERM=xterm
+export STARSHIP_CONFIG="$HOME/.config/starship.toml"
+eval "$(starship init bash)"
 #PS1='${debian_chroot:+($debian_chroot)}\[\033[1;35m\]\w\[\033[00m\]\n>> '
 
 # for git information of tmux-powerline
 #PS1="$PS1"'$([ -n "$TMUX" ] && tmux setenv TMUXPWD_$(tmux display -p "#D" | tr -d %) "$PWD")'
 
 if [ -f $(brew --prefix)/etc/bash_completion ]; then
-    . $(brew --prefix)/etc/bash_completion
+  . $(brew --prefix)/etc/bash_completion
 fi
 
 #All commands have been installed with the prefix 'g'.
@@ -133,7 +47,8 @@ fi
 #curl https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash -o ~/.git-completion.bash
 source ~/.git-completion.bash
 
-alias vi="vim"
+#alias vi="vim"
+#alias vim="nvim"
 alias d="sdcv"
 alias ls='gls --color=auto'
 alias ll='gls --color=auto -l'
@@ -149,8 +64,14 @@ alias tree="tree -C"
 
 # AI Summary aliases
 alias cx="codex"
+#export ANTHROPIC_BASE_URL="https://www.right.codes/claude-aws"
+#export ANTHROPIC_API_KEY="sk-2eaf81852d0a43f6b2270857b426a174"
+export OPENAI_API_KEY="sk-8f344e10cb53493680d5e83edccae98f"
+export OPENAI_BASE_URL="https://www.right.codes/codex/v1"
 alias cx2="codex --dangerously-bypass-approvals-and-sandbox"
 alias cc="claude"
+alias cc2="claude --dangerously-skip-permissions"
+alias oc="opencode"
 
 #OS X Terminal equivalent of Ctrl+Left / Ctrl+Right
 #https://apple.stackexchange.com/questions/1626/os-x-terminal-equivalent-of-ctrlleft-ctrlright
@@ -166,12 +87,11 @@ _vps2="-p 33333 root@8.222.225.241"
 _nas="-6 -p 33333 hh123okbb@zaozaoxixi.synology.me"
 _nas2="-6 -p 33333 hh123okbb@zaozaoxixi.top"
 
-g()
-{
-    set -x
-    target="_$1"
-    ssh ${!target}
-    set +x
+g() {
+  set -x
+  target="_$1"
+  ssh ${!target}
+  set +x
 }
 
 source ~/.awesome_devops/ad-completion.bash
