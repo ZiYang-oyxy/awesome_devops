@@ -1,10 +1,30 @@
 ---@diagnostic disable: undefined-global
 local M = {}
 
+function M.toggle_oldfiles()
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].filetype == "TelescopePrompt" then
+      vim.api.nvim_win_close(win, true)
+      return
+    end
+  end
+  require("telescope.builtin").oldfiles()
+end
+
 function M.setup()
   local actions = require("telescope.actions")
 
   local function toggle_telescope_aerial()
+    local telescope = require("telescope")
+    local ok = pcall(telescope.load_extension, "aerial")
+    if not ok then
+      return
+    end
+    local aerial = telescope.extensions.aerial
+    if not aerial or not aerial.aerial then
+      return
+    end
     for _, win in ipairs(vim.api.nvim_list_wins()) do
       local buf = vim.api.nvim_win_get_buf(win)
       if vim.bo[buf].filetype == "TelescopePrompt" then
@@ -12,10 +32,11 @@ function M.setup()
         return
       end
     end
-    require("telescope").extensions.aerial.aerial()
+    aerial.aerial()
   end
 
   vim.keymap.set("n", "<F7>", toggle_telescope_aerial, { desc = "Toggle Telescope Aerial" })
+  vim.keymap.set("n", "<C-p>", M.toggle_oldfiles, { desc = "Toggle Recent" })
 
   require("telescope").setup({
     defaults = {
