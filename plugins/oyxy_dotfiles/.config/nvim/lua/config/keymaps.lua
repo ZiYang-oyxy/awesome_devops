@@ -6,8 +6,6 @@ local keymap = vim.keymap.set
 
 keymap("n", "<leader>q", "<cmd>qa!<cr>", { desc = "Quit all" })
 keymap("n", "<leader>a", "A", { desc = "Append end of line" })
--- keymap("n", "<leader>y", "+y", { desc = "Yank to clipboard" })
--- keymap("n", "<leader>p", "+p", { desc = "Paste from clipboard" })
 keymap("x", "p", '"_dP') -- 使用黑洞寄存器，避免覆盖clipboard
 keymap({ "n", "v" }, "d", '"_d') -- 使用黑洞寄存器clipboard
 keymap("n", "q", "<Nop>", { desc = "Disable macro recording" })
