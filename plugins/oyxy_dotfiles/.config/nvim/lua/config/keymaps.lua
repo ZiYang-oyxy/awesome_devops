@@ -9,3 +9,14 @@ keymap("n", "q", "<Nop>", { desc = "Disable macro recording" })
 keymap("n", "Q", "<Nop>", { desc = "Disable Ex mode" })
 keymap("n", "<leader>ss", "<cmd>source $MYVIMRC<cr>", { desc = "Reload config" })
 keymap("n", "<leader>ee", "<cmd>edit ~/Documents/byte/Notes/note.md<cr>", { desc = "Edit note.md" })
+keymap("n", "<F9>", function()
+  require("trouble").toggle({
+    mode = "lsp",
+    warn_no_results = false,
+    open_no_results = true,
+    win = {
+      position = "left",
+      size = math.min(60, math.floor(vim.o.columns * 0.3)),
+    },
+  })
+end, { desc = "Trouble LSP (toggle)" })
