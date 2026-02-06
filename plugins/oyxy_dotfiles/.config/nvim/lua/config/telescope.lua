@@ -40,6 +40,19 @@ function M.setup()
 
   require("telescope").setup({
     defaults = {
+      prompt_prefix = "   ",
+      selection_caret = " ",
+      path_display = { "truncate" },
+      layout_config = {
+        width = 0.90,
+        preview_cutoff = 1,
+        horizontal = {
+          preview_width = 0.6,
+        },
+        -- height = 0.85,
+        -- height = 0.3,
+        -- prompt_position = "top",
+      },
       mappings = {
         i = {
           ["<F7>"] = actions.close,

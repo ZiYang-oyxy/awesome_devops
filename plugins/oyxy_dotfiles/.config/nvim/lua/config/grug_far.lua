@@ -6,11 +6,14 @@ function M.open()
     return
   end
 
-  local ext = vim.bo.buftype == "" and vim.fn.expand("%:e")
+  local current_file = vim.bo.buftype == "" and vim.fn.expand("%")
+  if current_file == "" then
+    current_file = nil
+  end
   grug.open({
     transient = true,
     prefills = {
-      filesFilter = ext and ext ~= "" and "*." .. ext or nil,
+      paths = current_file and vim.fn.fnameescape(current_file) or nil,
     },
   })
 end
