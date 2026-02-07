@@ -1,18 +1,20 @@
 ---@diagnostic disable: undefined-global
-local function telescope_or_fallback(telescope_action, fallback)
+local function snacks_only(snacks_action)
   return function()
-    local ok, telescope = pcall(require, "telescope.builtin")
-    if ok then
-      telescope_action(telescope)
+    local ok, snacks = pcall(require, "snacks")
+    if ok and snacks and snacks.picker then
+      snacks_action(snacks.picker)
       return
     end
 
-    if fallback then
-      fallback()
-    else
-      vim.notify("Telescope is not available", vim.log.levels.WARN)
-    end
+    vim.notify("Snacks picker is not available", vim.log.levels.WARN)
   end
+end
+
+local function ivy_opts(opts)
+  return vim.tbl_deep_extend("force", {
+    layout = { preset = "ivy" },
+  }, opts or {})
 end
 
 return {
@@ -23,39 +25,62 @@ return {
         keys = {
           {
             "<C-2>s",
-            telescope_or_fallback(function(telescope)
-              telescope.lsp_workspace_symbols({
-                query = vim.fn.expand("<cword>"),
-              })
-            end, function()
-              vim.lsp.buf.workspace_symbol(vim.fn.expand("<cword>"))
+            snacks_only(function(picker)
+              picker.lsp_workspace_symbols(ivy_opts({
+                search = vim.fn.expand("<cword>"),
+              }))
             end),
             desc = "LSP Workspace Symbols",
           },
-          { "<C-2>g", vim.lsp.buf.definition, desc = "LSP Definition" },
-          { "<C-2>c", vim.lsp.buf.incoming_calls, desc = "LSP Incoming Calls" },
-          { "<C-2>t", vim.lsp.buf.references, desc = "LSP References" },
-          { "<C-2>d", vim.lsp.buf.outgoing_calls, desc = "LSP Outgoing Calls" },
+          {
+            "<C-2>g",
+            snacks_only(function(picker)
+              picker.lsp_definitions(ivy_opts())
+            end),
+            desc = "LSP Definition",
+          },
+          {
+            "<C-2>c",
+            snacks_only(function(picker)
+              picker.lsp_incoming_calls(ivy_opts())
+            end),
+            desc = "LSP Incoming Calls",
+          },
+          {
+            "<C-2>t",
+            snacks_only(function(picker)
+              picker.lsp_references(ivy_opts())
+            end),
+            desc = "LSP References",
+          },
+          {
+            "<C-2>d",
+            snacks_only(function(picker)
+              picker.lsp_outgoing_calls(ivy_opts())
+            end),
+            desc = "LSP Outgoing Calls",
+          },
           {
             "<C-2>e",
-            telescope_or_fallback(function(telescope)
-              telescope.live_grep()
+            snacks_only(function(picker)
+              picker.grep(ivy_opts())
             end),
             desc = "Live Grep",
           },
           {
             "<C-2>f",
-            telescope_or_fallback(function(telescope)
-              telescope.find_files()
+            snacks_only(function(picker)
+              picker.files(ivy_opts())
             end),
             desc = "Find Files",
           },
           {
             "<C-2>i",
-            telescope_or_fallback(function(telescope)
-              telescope.grep_string({
+            snacks_only(function(picker)
+              picker.grep(ivy_opts({
                 search = vim.fn.expand("<cfile>"),
-              })
+                regex = false,
+              }))
             end),
             desc = "Grep Current File Name",
           },
