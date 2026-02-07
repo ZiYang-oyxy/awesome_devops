@@ -4,3 +4,6 @@ vim.g.python3_host_prog = pipx_python
 vim.g.node_host_prog = "/opt/homebrew/bin/neovim-node-host"
 vim.g.ruby_host_prog = "/opt/homebrew/lib/ruby/gems/4.0.0/bin/neovim-ruby-host"
 vim.g.perl_host_prog = "/opt/homebrew/bin/perl"
+
+vim.opt.number = true
+vim.opt.relativenumber = false

@@ -23,13 +23,17 @@ keymap("v", "=", "$")
 keymap({ "n", "v" }, "$", "%", { desc = "Jump to match" })
 keymap("n", "<leader>ss", "<cmd>source $MYVIMRC<cr>", { desc = "Reload config" })
 keymap("n", "<leader>ee", "<cmd>edit ~/Documents/byte/Notes/note.md<cr>", { desc = "Edit note.md" })
-keymap("n", "<F9>", function()
+keymap("n", "<C-p>", function()
+  require("config.telescope").toggle_oldfiles()
+end, { desc = "Toggle Recent" })
+keymap("n", "<F7>", function()
   require("trouble").toggle({
     mode = "lsp",
     warn_no_results = false,
     open_no_results = true,
     win = {
-      position = "bottom",
+      position = "left",
+      size = 0.3,
     },
   })
 end, { desc = "Trouble LSP (toggle)" })

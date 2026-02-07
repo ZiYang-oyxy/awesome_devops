@@ -4,6 +4,20 @@ local M = {}
 
 M.opts = {
   picker = {
+    win = {
+      input = {
+        keys = {
+          ["<F9>"] = { "close", mode = { "n", "i" } },
+          ["<C-p>"] = { "close", mode = { "n", "i" } },
+        },
+      },
+      list = {
+        keys = {
+          ["<F9>"] = "close",
+          ["<C-p>"] = "close",
+        },
+      },
+    },
     sources = {
       explorer = {
         layout = { layout = { position = "right" } },
@@ -59,6 +73,22 @@ function M.setup(opts)
     snacks.setup(opts or {})
   end
 
+  local function toggle_symbols_picker()
+    if snacks.picker and snacks.picker.get then
+      local active = snacks.picker.get({ tab = true })
+      if #active > 0 then
+        active[1]:close()
+        return
+      end
+    end
+    if snacks.picker and snacks.picker.lsp_symbols then
+      snacks.picker.lsp_symbols()
+      return
+    end
+    LazyVim.pick("lsp_symbols")()
+  end
+
+  vim.keymap.set("n", "<F9>", toggle_symbols_picker, { desc = "Toggle Symbols" })
   vim.keymap.set("n", "<leader><F8>", function()
     snacks.picker.explorer({ cwd = get_root() })
   end, { desc = "Snacks explorer (root)" })
