@@ -5,8 +5,14 @@
 local keymap = vim.keymap.set
 
 keymap("n", "<leader>q", "<cmd>qa!<cr>", { desc = "Quit all" })
+keymap({ "n", "x" }, "<leader>y", '"+y', { desc = "Copy to clipboard" })
+keymap({ "n", "x" }, "<leader>p", '"+p', { desc = "Paste from clipboard" })
+keymap({ "n", "x" }, "y", '"0y')
+keymap({ "n", "x" }, "p", '"0p')
+keymap("n", ";", ":", { desc = "Command mode" })
+keymap("t", "<C-\\>", "<C-\\><C-n>", { desc = "Terminal: Normal mode" })
+-- keymap("t", "<Esc>", "<C-\\><C-n>", { desc = "Terminal: Normal mode (Esc)" })
 keymap("n", "<leader>a", "A", { desc = "Append end of line" })
-keymap("x", "p", '"_dP') -- 使用黑洞寄存器，避免覆盖clipboard
 keymap({ "n", "v" }, "d", '"_d') -- 使用黑洞寄存器clipboard
 keymap("n", "q", "<Nop>", { desc = "Disable macro recording" })
 keymap("n", "Q", "<Nop>", { desc = "Disable Ex mode" })
@@ -27,3 +33,9 @@ keymap("n", "<F9>", function()
     },
   })
 end, { desc = "Trouble LSP (toggle)" })
+keymap("n", "<C-a>", function()
+  require("codex").toggle()
+end, { desc = "Codex: Toggle" })
+keymap("v", "<C-a>", function()
+  require("codex").actions.send_selection()
+end, { desc = "Codex: Send selection" })
