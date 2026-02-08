@@ -1,11 +1,11 @@
 return {
   {
-    dir = "/Volumes/code/vibecoding/mark/vim-mark_cx",
-    name = "mark.nvim",
+    "ZiYang-oyxy/vim-mark.nvim",
     main = "mark",
     lazy = false,
     opts = {
       search_global_progress = true,
+      mark_only = true,
       keymaps = { preset = "none" },
       auto_save = true,
       auto_load = false,
@@ -54,10 +54,30 @@ return {
       {
         "#",
         function()
-          require("mark").search_current_mark(false, vim.v.count1)
+          local mark = require("mark")
+          if mark.search_next(true, nil, vim.v.count1) then
+            return ""
+          end
+          if mark.get_count() > 0 then
+            mark.search_any_mark(true, vim.v.count1)
+            return ""
+          end
+          vim.schedule(function()
+            local pattern = vim.fn.getreg("/")
+            if type(pattern) ~= "string" or pattern == "" then
+              return
+            end
+            if not pcall(vim.regex, pattern) then
+              return
+            end
+            mark.mark_regex({ pattern = pattern })
+            vim.cmd("silent! nohlsearch")
+          end)
+          return "#"
         end,
         mode = "n",
-        desc = "Mark: Next current match",
+        expr = true,
+        desc = "Mark: Prev (native fallback + record)",
         silent = true,
       },
       {
