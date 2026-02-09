@@ -72,7 +72,8 @@ cecho(){
 
 export PATH=~/bin:$PATH
 if type brew > /dev/null 2>&1; then
-    export PATH=$(brew --prefix)/opt/coreutils/libexec/gnubin:$PATH
-    export PATH=$(brew --prefix)/opt/findutils/libexec/gnubin:$PATH
-    export PATH=$(brew --prefix)/opt/grep/libexec/gnubin/:$PATH
+    brew_prefix=$(brew --prefix)
+    export PATH=$brew_prefix/opt/coreutils/libexec/gnubin:$PATH
+    export PATH=$brew_prefix/opt/findutils/libexec/gnubin:$PATH
+    export PATH=$brew_prefix/opt/grep/libexec/gnubin/:$PATH
 fi

@@ -4,7 +4,6 @@
 export LANG=en_US.UTF-8
 
 # for mbp m1
-eval "$(/opt/homebrew/bin/brew shellenv)"
 export BASH_SILENCE_DEPRECATION_WARNING=1
 
 export VISUAL=vim
@@ -47,8 +46,9 @@ fi
 #curl https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash -o ~/.git-completion.bash
 source ~/.git-completion.bash
 
-#alias vi="vim"
-#alias vim="nvim"
+alias ovim="/opt/homebrew/bin/vim"
+alias vim="nvim"
+alias vi="nvim"
 alias d="sdcv"
 alias ls='gls --color=auto'
 alias ll='gls --color=auto -l'
@@ -66,6 +66,7 @@ alias tree="tree -C"
 alias cx="codex"
 #export ANTHROPIC_BASE_URL="https://www.right.codes/claude-aws"
 #export ANTHROPIC_API_KEY="sk-2eaf81852d0a43f6b2270857b426a174"
+export CODEX_REASONING_EFFORT="high"
 export OPENAI_API_KEY="sk-8f344e10cb53493680d5e83edccae98f"
 export OPENAI_BASE_URL="https://www.right.codes/codex/v1"
 alias cx2="codex --dangerously-bypass-approvals-and-sandbox"
@@ -94,7 +95,6 @@ g() {
   set +x
 }
 
-source ~/.awesome_devops/ad-completion.bash
 
 # XXX KNOWN ISSUES
 # For bash users, autojump keeps track of directories by modifying $PROMPT_COMMAND. Do not overwrite $PROMPT_COMMAND

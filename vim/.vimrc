@@ -380,38 +380,38 @@ nmap <Leader>9 <Plug>MarkSearchGroup9Next
 "# cscope
 "###########################
 
-" ================= use gtags_cscope ========================
-" brew install global
-" brew install universal-ctags
-if !(has('job') || (has('nvim') && exists('*jobwait')))
-else
-    Plug 'ludovicchabant/vim-gutentags'
-endif
-
-" enable gtags module
-"let g:gutentags
-let g:gutentags_modules = ['ctags', 'gtags_cscope']
-
-" config project root markers.
-let g:gutentags_add_default_project_roots=0
-let g:gutentags_project_root = ['.root', '.git']
-let g:gutentags_generate_on_empty_buffer=1
-
-"" generate datebases in my cache directory, prevent gtags files polluting my project
-"let g:gutentags_cache_dir = expand('~/.awesome_devops/vim/cache/tags')
-
-set statusline+=%{gutentags#statusline()}
-
-" Useful debug
-"let g:gutentags_trace = 1
-
-let g:gutentags_ctags_exclude = [
-    \ '*/freebsd/*',
-    \ '*/windows/*',
-    \ '*.log',
-    \ '*.log.[0-9]*',
-    \ 'node_modules'
-\]
+" " ================= use gtags_cscope ========================
+" " brew install global
+" " brew install universal-ctags
+" if !(has('job') || (has('nvim') && exists('*jobwait')))
+" else
+"     Plug 'ludovicchabant/vim-gutentags'
+" endif
+" 
+" " enable gtags module
+" "let g:gutentags
+" let g:gutentags_modules = ['ctags', 'gtags_cscope']
+" 
+" " config project root markers.
+" let g:gutentags_add_default_project_roots=0
+" let g:gutentags_project_root = ['.root', '.git']
+" let g:gutentags_generate_on_empty_buffer=1
+" 
+" "" generate datebases in my cache directory, prevent gtags files polluting my project
+" "let g:gutentags_cache_dir = expand('~/.awesome_devops/vim/cache/tags')
+" 
+" set statusline+=%{gutentags#statusline()}
+" 
+" " Useful debug
+" "let g:gutentags_trace = 1
+" 
+" let g:gutentags_ctags_exclude = [
+"     \ '*/freebsd/*',
+"     \ '*/windows/*',
+"     \ '*.log',
+"     \ '*.log.[0-9]*',
+"     \ 'node_modules'
+" \]
 
 " ================= use dynamic cscope ========================
 Plug 'ZiYang1989/cscope_dynamic'
