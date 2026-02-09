@@ -3,6 +3,12 @@
 -- Add any additional keymaps here
 
 local keymap = vim.keymap.set
+local lsp_toggle = require("config.lsp_toggle")
+
+keymap("n", "<F12>", function()
+  lsp_toggle.toggle()
+end, { desc = "LSP (toggle)" })
+
 local function copy_current_file_path()
   local file_path = vim.fn.expand("%:p")
   if file_path == "" then
@@ -54,6 +60,7 @@ local function mark_module()
 end
 
 keymap("n", "<leader>q", "<cmd>qa!<cr>", { desc = "Quit all" })
+keymap("n", "S", "<cmd>wa<cr>", { desc = "Write all" })
 keymap({ "n", "x" }, "!", function()
   mark_module().mark_word_or_selection({ group = vim.v.count })
 end, { desc = "Mark: Toggle word or selection", silent = true })
