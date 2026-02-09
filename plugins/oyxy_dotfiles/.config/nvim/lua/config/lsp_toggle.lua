@@ -1,5 +1,5 @@
 local M = {
-  enabled = false,
+  enabled = true,
   servers = {},
   initialized = false,
   native_enable = nil,
@@ -46,6 +46,13 @@ local function clear_all_buffer_diagnostics()
   end
 end
 
+local function enable_all_configured_servers()
+  local names = configured_servers()
+  if #names > 0 and type(vim.lsp.enable) == "function" then
+    vim.lsp.enable(names, true)
+  end
+end
+
 function M.setup()
   if M.initialized then
     return
@@ -55,46 +62,14 @@ function M.setup()
 
   if type(vim.lsp.enable) == "function" and not M.native_enable then
     M.native_enable = vim.lsp.enable
-    vim.lsp.enable = function(name, enable)
-      if enable == false or M.enabled then
-        return M.native_enable(name, enable)
-      end
-
-      local names = vim._ensure_list(name)
-      for _, server in ipairs(names) do
-        if server ~= "*" then
-          M.servers[server] = true
-        end
-      end
-    end
   end
-
-  local group = vim.api.nvim_create_augroup("user_lsp_toggle", { clear = true })
-  vim.api.nvim_create_autocmd("LspAttach", {
-    group = group,
-    callback = function(event)
-      if M.enabled then
-        return
-      end
-
-      local client_id = event.data and event.data.client_id
-      if client_id then
-        local client = vim.lsp.get_client_by_id(client_id)
-        if client then
-          client:stop(true)
-        end
-      end
-
-      vim.diagnostic.reset(nil, event.buf)
-    end,
-  })
 end
 
 function M.configure_server(server, opts)
   M.servers[server] = true
   vim.lsp.config(server, opts)
 
-  if M.enabled then
+  if M.enabled and type(vim.lsp.enable) == "function" then
     vim.lsp.enable(server, true)
   end
 end
@@ -108,10 +83,13 @@ function M.enable(silent)
   M.enabled = true
   ensure_lsp_loaded()
 
-  local names = configured_servers()
-  if #names > 0 and M.native_enable then
-    M.native_enable(names, true)
-  end
+  enable_all_configured_servers()
+
+  vim.defer_fn(function()
+    if M.enabled then
+      enable_all_configured_servers()
+    end
+  end, 100)
 
   if not silent then
     vim.notify("LSP: ON")
@@ -127,6 +105,8 @@ function M.disable(silent)
   local names = configured_servers()
   if #names > 0 and M.native_enable then
     M.native_enable(names, false)
+  elseif #names > 0 and type(vim.lsp.enable) == "function" then
+    vim.lsp.enable(names, false)
   end
 
   clear_all_buffer_diagnostics()

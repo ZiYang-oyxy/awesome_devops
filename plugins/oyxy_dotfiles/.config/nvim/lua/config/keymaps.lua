@@ -3,11 +3,6 @@
 -- Add any additional keymaps here
 
 local keymap = vim.keymap.set
-local lsp_toggle = require("config.lsp_toggle")
-
-keymap("n", "<F12>", function()
-  lsp_toggle.toggle()
-end, { desc = "LSP (toggle)" })
 
 local function copy_current_file_path()
   local file_path = vim.fn.expand("%:p")
@@ -126,34 +121,77 @@ local diagnostic_virtual_text_on_config = vim.deepcopy(vim.diagnostic.config().v
 if diagnostic_virtual_text_on_config == nil or diagnostic_virtual_text_on_config == false then
   diagnostic_virtual_text_on_config = true
 end
+
+local inlay_hints_enabled = false
+
 local function refresh_current_buffer_diagnostics()
   local bufnr = vim.api.nvim_get_current_buf()
   vim.diagnostic.hide(nil, bufnr)
   vim.diagnostic.show(nil, bufnr)
 end
 
-keymap("n", "<leader>tv", function()
-  local current_virtual_text = vim.diagnostic.config().virtual_text
-  local enabled = current_virtual_text ~= false
-  local next_virtual_text
-  if enabled then
-    next_virtual_text = false
-  else
-    next_virtual_text = diagnostic_virtual_text_on_config
-  end
+local function is_virtual_text_enabled()
+  return vim.diagnostic.config().virtual_text ~= false
+end
 
+local function set_virtual_text_enabled(enabled)
+  local next_virtual_text = enabled and diagnostic_virtual_text_on_config or false
   vim.diagnostic.config({ virtual_text = next_virtual_text })
   refresh_current_buffer_diagnostics()
-  vim.notify("Diagnostic virtual text: " .. (next_virtual_text ~= false and "ON" or "OFF"))
+end
+
+local function set_inlay_hints_enabled(enabled)
+  if not vim.lsp.inlay_hint then
+    return false
+  end
+
+  inlay_hints_enabled = enabled
+  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_is_loaded(bufnr) then
+      pcall(vim.lsp.inlay_hint.enable, enabled, { bufnr = bufnr })
+    end
+  end
+
+  return true
+end
+
+vim.api.nvim_create_autocmd("LspAttach", {
+  group = vim.api.nvim_create_augroup("user_inlay_hints_default", { clear = true }),
+  callback = function(event)
+    if not vim.lsp.inlay_hint then
+      return
+    end
+    pcall(vim.lsp.inlay_hint.enable, inlay_hints_enabled, { bufnr = event.buf })
+  end,
+})
+
+set_virtual_text_enabled(false)
+set_inlay_hints_enabled(false)
+
+keymap("n", "<F12>", function()
+  local next_enabled = not (is_virtual_text_enabled() and inlay_hints_enabled)
+  set_virtual_text_enabled(next_enabled)
+  local inlay_supported = set_inlay_hints_enabled(next_enabled)
+  if inlay_supported then
+    vim.notify("LSP virtual text + inlay hints: " .. (next_enabled and "ON" or "OFF"))
+  else
+    vim.notify("Diagnostic virtual text: " .. (next_enabled and "ON" or "OFF") .. " (inlay hints unsupported)")
+  end
+end, { desc = "LSP Virtual Text + Inlay Hint (toggle)" })
+
+keymap("n", "<leader>tv", function()
+  local next_enabled = not is_virtual_text_enabled()
+  set_virtual_text_enabled(next_enabled)
+  vim.notify("Diagnostic virtual text: " .. (next_enabled and "ON" or "OFF"))
 end, { desc = "LSP Diagnostic Virtual Text (toggle)" })
+
 keymap("n", "<leader>ti", function()
   if not vim.lsp.inlay_hint then
     vim.notify("Current Neovim version does not support LSP inlay hints", vim.log.levels.WARN)
     return
   end
 
-  local bufnr = vim.api.nvim_get_current_buf()
-  local enabled = vim.lsp.inlay_hint.is_enabled({ bufnr = bufnr })
-  vim.lsp.inlay_hint.enable(not enabled, { bufnr = bufnr })
-  vim.notify("LSP inlay hints: " .. (not enabled and "ON" or "OFF"))
+  local next_enabled = not inlay_hints_enabled
+  set_inlay_hints_enabled(next_enabled)
+  vim.notify("LSP inlay hints: " .. (next_enabled and "ON" or "OFF"))
 end, { desc = "LSP Inlay Hint (toggle)" })

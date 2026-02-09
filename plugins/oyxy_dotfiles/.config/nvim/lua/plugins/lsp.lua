@@ -23,6 +23,11 @@ return {
     local lsp_toggle = require("config.lsp_toggle")
     lsp_toggle.setup()
 
+    opts.diagnostics = opts.diagnostics or {}
+    opts.diagnostics.virtual_text = false
+    opts.inlay_hints = opts.inlay_hints or {}
+    opts.inlay_hints.enabled = false
+
     opts.servers = opts.servers or {}
     opts.servers["*"] = opts.servers["*"] or {}
     opts.servers["*"].keys = opts.servers["*"].keys or {}
