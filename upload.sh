@@ -38,9 +38,6 @@ tar x -C dist -f dist/awesome_devops.tar
 # 打包一些外部工具
 if [[ -d $_curdir/../ad_external ]]; then
     rsync --filter=":- .gitignore" -avzP $FAST_EXCLUDE_STR $_curdir/../ad_external/awesome_devops/ dist/awesome_devops
-
-    # 让本地也能用
-    rsync --filter=":- .gitignore" -avzP $FAST_EXCLUDE_STR $_curdir/../ad_external/awesome_devops/ $_curdir
 fi
 
 if [[ $OSTYPE == 'darwin'* ]]; then

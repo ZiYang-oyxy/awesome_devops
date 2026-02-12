@@ -1,16 +1,19 @@
-# ⚙ Awesome Devops (or yet another AirDrop) ⚙
+# ⚙Awesome Devops (or yet another AirDrop)⚙
 
 ## Mac/Linux一键安装
+
 ```bash
 bash <(curl -s http://Awesome:Devops@ad-example.com:8890/@aadi@) && source ~/.bashrc
 ```
 
 ## 用途
+
 ad是我工作以来持续积累的研发&运维工具和dotfile，做到尽量零依赖，一键安装，方便在任何环境上开箱即用，同时实现了方便的文件中转（需要搭配http server）。
 
 > 工具介绍可能远落后于最新版本，ad tree可以看到所有工具的路径，大部分都是脚本，可自行摸索。有些开发工具可能会自动安装rpm，只适配了centos
 
 ## ad help
+
 ```
 # ad
 
@@ -73,6 +76,7 @@ ad-example.com
 ```
 
 ## 基础用法（有服务端）
+
 ```bash
 # 安装
 SERVER_IP=1.1.1.1; bash <(curl -s http://Awesome:Devops@$SERVER_IP:8890/@aadi@) && source ~/.bashrc
@@ -91,6 +95,7 @@ ad get <file>
 ```
 
 ## 基础用法（无服务端）
+
 ```bash
 # 安装
 ./offline_install.sh
@@ -99,7 +104,23 @@ ad get <file>
 ad
 ```
 
+## 开发态外部目录叠加
+
+为了保持仓库干净，`upload.sh` 不再把外部工具同步回当前仓库。  
+`ad` 会在运行时自动叠加外部目录：
+
+- 默认外部目录：`../ad_external/awesome_devops`（相对于 `ad` 脚本所在目录）
+- 可通过环境变量覆盖：`AD_EXTERNAL_DIR=/path/to/awesome_devops`
+- 同名冲突优先级：内置目录优先，外部目录只补充缺失工具
+
+示例：
+
+```bash
+AD_EXTERNAL_DIR=~/code/ad_external/awesome_devops ad help
+```
+
 ## FAQ
+
 Q: Mac的同学用safari浏览器无法访问链接
 
 > A: 换个浏览器试试，推荐用Chrome
@@ -109,8 +130,11 @@ Q: Mac的终端上安装后报错
 > A: ad大量使用bash脚本编写，不一定完全支持zsh环境，MacOS上从默认的zsh切到bash方法：chsh -s /bin/bash。同时由于作者的mac上使用的都是gnu版本的工具，所以不保证mac原生工具没有兼容性问题
 
 ## 常用功能说明
+
 ### 文件中转（通过命令行）
+
 ![](./docs/命令行上传下载.gif)
+
 ```bash
 # 传文件
 ad put <LOCAL_FILE_PATH> [REMOTE_FILE_NAME]
@@ -122,9 +146,11 @@ ad dget <REMOTE_DIR_NAME>
 ```
 
 ### 文件中转（通过浏览器）
+
 ![web上传下载.gif](./docs/web上传下载.gif)
 
 ### xfinder —— 高效查找、检索工具
+
 包装了grep和find命令，能区分文件类型进行检索，选择匹配结果后可实现快速跳转，长久以来辅助我高效完成任何编程语言的代码流程分析
 ![xfinder.gif](./docs/xfinder.gif)
 
@@ -148,16 +174,20 @@ _xfind #直接打印结果
 ```
 
 ### ssh多机并行执行
+
 云上经常需要批量处理多台机器，例如批量升级，批量收集日志、版本等等，ad实现了ssh免密工具，同时集成了低版本的pssh（最新版对python高版本有依赖，不易部署）来支持批处理功能。
 ![pssh.gif](./docs/pssh.gif)
 
 ### GDB dashboard
+
 本身是个开源工具，但是针对一些旧版本的linux发行版经常用起来有些问题，所以我做了适配并修改了我自己的常用配置
 ![gdb.gif](./docs/gdb.gif)
 
 ### CPI火焰图
+
 CPI火焰图能很好地协助我进行程序的性能分析，同时也能快速了解整个程序的运行流程，ad把依赖的工具打包封装到了cpi_ff（同时适配了一些常见的cpu，无法正确显示的情况下，PMU的配置需要自行查阅手册并修改cpi_ff脚本）。用法如下：
 ![cpiff.svg](./docs/cpiff.svg)
+
 ```bash
 # 抓线程的火焰图，对于dpdk这类R2C的线程比较适合
 ad cpi_ff "-t <tid>" <output_filename>
@@ -165,6 +195,7 @@ ad cpi_ff "-t <tid>" <output_filename>
 # 抓进程的火焰图
 ad cpi_ff "-p <pid>" <output_filename>
 ```
+
 > 参考文章1 [https://www.brendangregg.com/perf.html](https://www.brendangregg.com/perf.html)
 >
 > 参考文章2 [https://developer.aliyun.com/article/465499](https://developer.aliyun.com/article/465499)
@@ -172,10 +203,13 @@ ad cpi_ff "-p <pid>" <output_filename>
 > Intel cpu PMU查询（XEON系列要注意找“Server Events”的表） [https://perfmon-events.intel.com/#](https://perfmon-events.intel.com/)
 
 ### 内核/进程trace
+
 这类工具的好处是敏捷，使用场景广，不依赖源码重新编译的情况下，完成大量内核/进程逻辑问题和性能问题的分析
 
 #### 初阶版（ad perf-tools）
+
 **Trace进程**
+
 ```bash
 ad perf-tools uprobe -H -s 'r:bash:readline +0($retval):string'
 Tracing uprobe readline (r:readline /usr/bin/bash:0xd5690 +0($retval):string). Ctrl-C to end.
@@ -200,6 +234,7 @@ addr2line -e /usr/bin/bash 000055b45485d015
 ```
 
 **Trace内核**
+
 ```bash
 # ad perf-tools funcgraph -a <function> 跟踪函数执行流程
 ad perf-tools funcgraph -a do_nanosleep | head -20
@@ -249,9 +284,11 @@ Tracing "*sleep"... Ctrl-C to end.
 ```
 
 #### 进阶版（bpftrace）
+
 ad集成了在x86上可直接运行的零依赖的最新版本bpftrace，linux发行版配套的版本一般都太老。bpftrace的使用，可以执行`ad bpftrace usage`阅读使用指南
 > bpftrace的一些新feature可以参考 [https://github.com/iovisor/bpftrace/blob/master/CHANGELOG.md](https://github.com/iovisor/bpftrace/blob/master/CHANGELOG.md)
 
 ### virtio-net stats
+
 一直没有找到一个很好用的virtio-net性能观测工具，所以按照自己的想法，把网卡统计、中断统计、中断配置、rps/xps配置打散之后，重新基于virtio queue组合呈现
 ![virtionet_stats.gif](./docs/virtionet_stats.gif)

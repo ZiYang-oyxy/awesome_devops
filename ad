@@ -8,6 +8,102 @@
 CURDIR="`dirname $(readlink -f $0)`"
 source $CURDIR/lib/common.sh
 
+EXTERNAL_ROOT="${AD_EXTERNAL_DIR:-$CURDIR/../ad_external/awesome_devops}"
+if [[ ! -d "$EXTERNAL_ROOT" ]]; then
+    EXTERNAL_ROOT=""
+fi
+
+merge_dir_entries()
+{
+    _relative_path="$1"
+    {
+        ls "$CURDIR/$_relative_path" 2> /dev/null
+        if [[ -n "$EXTERNAL_ROOT" ]]; then
+            ls "$EXTERNAL_ROOT/$_relative_path" 2> /dev/null
+        fi
+    } | awk 'NF' | sort -u
+}
+
+resolve_plugin_install()
+{
+    _plugin_name="$1"
+    if [[ -f "$CURDIR/plugins/$_plugin_name/install" ]]; then
+        echo "$CURDIR/plugins/$_plugin_name/install"
+        return 0
+    fi
+    if [[ -n "$EXTERNAL_ROOT" ]] && [[ -f "$EXTERNAL_ROOT/plugins/$_plugin_name/install" ]]; then
+        echo "$EXTERNAL_ROOT/plugins/$_plugin_name/install"
+        return 0
+    fi
+    return 1
+}
+
+resolve_tool_file()
+{
+    _tool_name="$1"
+    if [[ -f "$CURDIR/tools/$_tool_name" ]]; then
+        echo "$CURDIR/tools/$_tool_name"
+        return 0
+    fi
+    if [[ -f "$CURDIR/ext_tools/$_tool_name" ]]; then
+        echo "$CURDIR/ext_tools/$_tool_name"
+        return 0
+    fi
+    if [[ -n "$EXTERNAL_ROOT" ]] && [[ -f "$EXTERNAL_ROOT/tools/$_tool_name" ]]; then
+        echo "$EXTERNAL_ROOT/tools/$_tool_name"
+        return 0
+    fi
+    if [[ -n "$EXTERNAL_ROOT" ]] && [[ -f "$EXTERNAL_ROOT/ext_tools/$_tool_name" ]]; then
+        echo "$EXTERNAL_ROOT/ext_tools/$_tool_name"
+        return 0
+    fi
+    return 1
+}
+
+resolve_named_tool_dir()
+{
+    _tool_name="$1"
+    if [[ -f "$CURDIR/tools/$_tool_name/$_tool_name" ]]; then
+        echo "$CURDIR/tools/$_tool_name"
+        return 0
+    fi
+    if [[ -f "$CURDIR/ext_tools/$_tool_name/$_tool_name" ]]; then
+        echo "$CURDIR/ext_tools/$_tool_name"
+        return 0
+    fi
+    if [[ -n "$EXTERNAL_ROOT" ]] && [[ -f "$EXTERNAL_ROOT/tools/$_tool_name/$_tool_name" ]]; then
+        echo "$EXTERNAL_ROOT/tools/$_tool_name"
+        return 0
+    fi
+    if [[ -n "$EXTERNAL_ROOT" ]] && [[ -f "$EXTERNAL_ROOT/ext_tools/$_tool_name/$_tool_name" ]]; then
+        echo "$EXTERNAL_ROOT/ext_tools/$_tool_name"
+        return 0
+    fi
+    return 1
+}
+
+resolve_tool_suite_dir()
+{
+    _tool_name="$1"
+    if [[ -d "$CURDIR/tools/$_tool_name" ]]; then
+        echo "$CURDIR/tools/$_tool_name"
+        return 0
+    fi
+    if [[ -d "$CURDIR/ext_tools/$_tool_name" ]]; then
+        echo "$CURDIR/ext_tools/$_tool_name"
+        return 0
+    fi
+    if [[ -n "$EXTERNAL_ROOT" ]] && [[ -d "$EXTERNAL_ROOT/tools/$_tool_name" ]]; then
+        echo "$EXTERNAL_ROOT/tools/$_tool_name"
+        return 0
+    fi
+    if [[ -n "$EXTERNAL_ROOT" ]] && [[ -d "$EXTERNAL_ROOT/ext_tools/$_tool_name" ]]; then
+        echo "$EXTERNAL_ROOT/ext_tools/$_tool_name"
+        return 0
+    fi
+    return 1
+}
+
 # IPv4/IPv6 dual-stack support
 # -g: allow brackets in URLs (for IPv6 addresses like [2001:db8::1])
 # curl will automatically choose IPv4 or IPv6 based on DNS resolution
@@ -240,8 +336,15 @@ __EOF__
 
     EXTERNAL TOOL:
 __EOF__
-    for i in `ls $CURDIR/ext_tools/`; do
-        if [[ -d $CURDIR/ext_tools/$i ]]; then
+    for i in `merge_dir_entries ext_tools`; do
+        if [[ -e "$CURDIR/ext_tools/$i" ]]; then
+            _ext_tool_entry="$CURDIR/ext_tools/$i"
+        elif [[ -n "$EXTERNAL_ROOT" ]] && [[ -e "$EXTERNAL_ROOT/ext_tools/$i" ]]; then
+            _ext_tool_entry="$EXTERNAL_ROOT/ext_tools/$i"
+        else
+            continue
+        fi
+        if [[ -d "$_ext_tool_entry" ]]; then
             echo "        $i/"
         else
             echo "        $i"
@@ -252,7 +355,7 @@ __EOF__
 
     PLUGIN install:
 __EOF__
-    for i in `ls $CURDIR/plugins/`; do
+    for i in `merge_dir_entries plugins`; do
         echo "        deploy ${i##*/}"
     done
 
@@ -302,13 +405,21 @@ case $_action in
         _plugin=$1
         if [[ -z $_plugin ]]; then
             cecho -R "no plugin is specified! Select one:"
-            for i in `ls $CURDIR/plugins/`; do
+            for i in `merge_dir_entries plugins`; do
                 echo "${i##*/}"
             done
             exit 1
         fi
+        _plugin_install=`resolve_plugin_install "$_plugin"` || {
+            cecho -R "unknown plugin: $_plugin"
+            cecho -R "Select one:"
+            for i in `merge_dir_entries plugins`; do
+                echo "${i##*/}"
+            done
+            exit 1
+        }
         shift
-        $CURDIR/plugins/$_plugin/install $@
+        "$_plugin_install" "$@"
         ;;
     ex)
         # install my experimental tool, will not be displayed in usage
@@ -316,49 +427,27 @@ case $_action in
         ;;
     *)
         # 无目录工具，直接执行
-        if [[ -f $CURDIR/tools/$_action ]]; then
-            $CURDIR/tools/$_action "$@"
-        elif [[ -f $CURDIR/ext_tools/$_action ]]; then
-            $CURDIR/ext_tools/$_action "$@"
+        if _resolved_tool_file=`resolve_tool_file "$_action"`; then
+            "$_resolved_tool_file" "$@"
         # 有目录工具，目录与工具名必须同名，直接执行
-        elif [[ -f $CURDIR/tools/$_action/$_action ]]; then
-            tool_pre_run "$CURDIR/tools/$_action/pre-run" || exit $?
-            $CURDIR/tools/$_action/$_action "$@"
-        elif [[ -f $CURDIR/ext_tools/$_action/$_action ]]; then
-            tool_pre_run "$CURDIR/ext_tools/$_action/pre-run" || exit $?
-            $CURDIR/ext_tools/$_action/$_action "$@"
+        elif _resolved_named_tool_dir=`resolve_named_tool_dir "$_action"`; then
+            tool_pre_run "$_resolved_named_tool_dir/pre-run" || exit $?
+            "$_resolved_named_tool_dir/$_action" "$@"
         # 有目录工具，目录与工具名不同名，一般是一个工具集，展示命令列表，或直接执行
-        elif [[ -d $CURDIR/tools/$_action ]]; then
-            _path="$CURDIR/tools/$_action"
+        elif _path=`resolve_tool_suite_dir "$_action"`; then
             _tool=$1
             if [[ -z $_tool ]]; then
                 if [[ -f "$_path/HELP" ]]; then
                     cecho -Y "Help:"
-                    cat $_path/HELP
+                    cat "$_path/HELP"
                 fi
                 cecho -Y "Tool List:"
-                _list=`find $_path/ -maxdepth 1 -perm -111 -type f`
+                _list=`find "$_path/" -maxdepth 1 -perm -111 -type f`
                 cecho -G "$_list"
             else
                 shift
                 tool_pre_run "$_path/pre-run" || exit $?
-                $_path/$_tool "$@"
-            fi
-        elif [[ -d $CURDIR/ext_tools/$_action ]]; then
-            _path="$CURDIR/ext_tools/$_action"
-            _tool=$1
-            if [[ -z $_tool ]]; then
-                if [[ -f "$_path/HELP" ]]; then
-                    cecho -Y "Help:"
-                    cat $_path/HELP
-                fi
-                cecho -Y "Tool List:"
-                _list=`find $_path/ -maxdepth 1 -perm -111 -type f`
-                cecho -G "$_list"
-            else
-                shift
-                tool_pre_run "$_path/pre-run" || exit $?
-                $_path/$_tool "$@"
+                "$_path/$_tool" "$@"
             fi
         else
             usage
