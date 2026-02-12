@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [[ -z $1 ]]; then
+    echo "Usage: $0 <process name>"
+    exit 1
+fi
+
+pids=($(pgrep $1))
+for pid in "${pids[@]}"; do
+    if [[ -z $firstline ]]; then
+        firstline=$(numastat -p $pid | grep Node)
+        numastat -p $pid | grep Node
+    fi
+    #result=$(numastat -p $pid | tail -1 | sed "s/^Total/$pid/")
+    numastat -p $pid | tail -1 | sed "s/^Total/$pid/"
+done
+

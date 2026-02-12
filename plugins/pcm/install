@@ -1,0 +1,14 @@
+#!/bin/bash
+
+curdir="`dirname $(readlink -f $0)`"
+source $curdir/../../lib/common.sh
+
+cd ~/tmp
+ad_tos dget @pcm@
+mkdir -p /usr/local/share/pcm/
+cp @pcm@/opCode*txt /usr/local/share/pcm/
+cp -rf @pcm@/PMURegisterDeclarations /usr/local/share/pcm/
+cp @pcm@/pcm* ~/bin/
+
+cecho -G "pcm install succeeded"
+cecho -R 'need to run "source ~/.bashrc"'
