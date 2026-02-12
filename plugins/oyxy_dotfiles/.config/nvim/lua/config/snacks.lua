@@ -1,6 +1,8 @@
 ---@diagnostic disable: undefined-global
 
 local M = {}
+local bookmarks = require("config.snacks_bookmarks")
+local explorer_bookmark_actions = bookmarks.make_explorer_actions()
 
 local function patch_explorer_watch(snacks)
   if vim.fn.has("mac") ~= 1 then
@@ -202,6 +204,30 @@ local function explorer_toggle_help(picker)
   picker.list.win:toggle_help()
 end
 
+local function explorer_with_inline_bookmarks(opts, ctx)
+  local ok_source, source = pcall(require, "snacks.picker.source.explorer")
+  if not ok_source or not source or not source.explorer then
+    return {}
+  end
+
+  local finder = source.explorer(opts, ctx)
+  if type(finder) ~= "function" then
+    return finder
+  end
+
+  local is_empty = not (ctx and ctx.filter and ctx.filter.is_empty) or ctx.filter:is_empty()
+  if not is_empty then
+    return finder
+  end
+
+  return function(cb)
+    for _, bookmark in ipairs(bookmarks.inline_items()) do
+      cb(bookmark)
+    end
+    finder(cb)
+  end
+end
+
 M.opts = {
   picker = {
     win = {
@@ -220,10 +246,14 @@ M.opts = {
     },
     sources = {
       explorer = {
+        finder = explorer_with_inline_bookmarks,
         layout = { layout = { position = "right" }, cycle = false },
         actions = {
           explorer_open_recursive = explorer_open_recursive,
           explorer_close_recursive = explorer_close_recursive,
+          explorer_bookmark_toggle = explorer_bookmark_actions.explorer_bookmark_toggle,
+          explorer_bookmark_next = explorer_bookmark_actions.explorer_bookmark_next,
+          explorer_bookmark_refresh = explorer_bookmark_actions.explorer_bookmark_refresh,
           explorer_toggle_help = {
             action = explorer_toggle_help,
             desc = "Toggle help + explorer symbol legend",
@@ -239,6 +269,9 @@ M.opts = {
               ["l"] = false,
               ["o"] = "confirm",
               ["O"] = "explorer_open_recursive",
+              ["b"] = "explorer_bookmark_toggle",
+              ["B"] = "explorer_bookmark_refresh",
+              ["gb"] = "explorer_bookmark_next",
             },
           },
         },
@@ -260,6 +293,18 @@ local function get_cwd()
   return vim.fn.getcwd()
 end
 
+local function get_current_file_path()
+  local file = vim.api.nvim_buf_get_name(0)
+  if file == "" then
+    return nil
+  end
+  local uv = vim.uv or vim.loop
+  local stat = uv and uv.fs_stat and uv.fs_stat(file) or nil
+  if stat and stat.type == "file" then
+    return file
+  end
+end
+
 local function get_root()
   local buf = vim.api.nvim_get_current_buf()
   local buf_path = vim.api.nvim_buf_get_name(buf)
@@ -278,6 +323,15 @@ local function get_root()
   return get_cwd()
 end
 
+local function explorer_reveal_or_open_root(snacks)
+  local file = get_current_file_path()
+  if file and snacks.explorer and snacks.explorer.reveal then
+    snacks.explorer.reveal({ file = file })
+    return
+  end
+  snacks.picker.explorer({ cwd = get_root() })
+end
+
 function M.setup(opts)
   local ok, snacks = pcall(require, "snacks")
   if not ok then
@@ -287,6 +341,7 @@ function M.setup(opts)
   if snacks.setup then
     snacks.setup(opts or {})
   end
+  bookmarks.load()
   patch_explorer_watch(snacks)
 
   local function toggle_symbols_picker()
@@ -306,8 +361,8 @@ function M.setup(opts)
 
   vim.keymap.set("n", "<F9>", toggle_symbols_picker, { desc = "Toggle Symbols" })
   vim.keymap.set("n", "<leader><F8>", function()
-    snacks.picker.explorer({ cwd = get_root() })
-  end, { desc = "Snacks explorer (root)" })
+    explorer_reveal_or_open_root(snacks)
+  end, { desc = "Snacks explorer (reveal/root fallback)" })
   vim.keymap.set("n", "<F8>", function()
     snacks.picker.explorer({ cwd = get_cwd() })
   end, { desc = "Snacks explorer (cwd)" })

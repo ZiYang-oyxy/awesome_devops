@@ -7,3 +7,4 @@ vim.g.perl_host_prog = "/opt/homebrew/bin/perl"
 
 vim.opt.number = true
 vim.opt.relativenumber = false
+vim.opt.clipboard = ""
