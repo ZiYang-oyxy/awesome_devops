@@ -21,7 +21,7 @@ _ad()
         1)
             tools=`ls ~/.awesome_devops/tools 2> /dev/null`
             ext_tools=`ls ~/.awesome_devops/ext_tools 2>/dev/null`
-            COMPREPLY=($(compgen -W "help upgrade tree put tput get dput dgput dget deploy vim vimdiff uninstall $tools $ext_tools" "${COMP_WORDS[1]}"))
+            COMPREPLY=($(compgen -W "help upgrade tree put tput get dput dgput dget deploy uninstall $tools $ext_tools" "${COMP_WORDS[1]}"))
             ;;
         2)
             case ${COMP_WORDS[1]} in

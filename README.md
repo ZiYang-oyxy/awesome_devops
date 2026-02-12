@@ -23,7 +23,6 @@ Usage:  ad [ COMMAND | TOOL ] [ ARGUMENT ]
         help      # this message
         upgrade   # upgrade to latest version
         uninstall # leave no trace
-        vim       # my vim
         tree      # prints out ad directory in a tree-like display
         [ put | tput | get ] <file>
         [ dput | dgput | dget ] <directory>
@@ -61,7 +60,6 @@ Usage:  ad [ COMMAND | TOOL ] [ ARGUMENT ]
         deploy oyxy_dotfiles
         deploy prometheus
         deploy pssh
-        deploy vim
         deploy xfinder
 
 Upload link:

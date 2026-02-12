@@ -2,35 +2,6 @@
 
 set -e
 
-ensure_local_domain() {
-    local domain="ad-local-domain.com"
-    local ipv4="10.131.251.191"
-    local ipv6="fdbd:dc03:4:ffff:11:131:251:191"
-    local hosts_file="/etc/hosts"
-    local tmp
-
-    tmp=$(mktemp)
-
-    if sudo sh -c "cat '$hosts_file' >/dev/null" 2>/dev/null; then
-        # backup once to ease rollback if needed
-        sudo cp "$hosts_file" "${hosts_file}.bak.$(date +%Y%m%d%H%M%S)" >/dev/null 2>&1 || true
-        sudo grep -v -E "(^|[[:space:]])${domain}([[:space:]]|$)" "$hosts_file" > "$tmp"
-        printf "%s\t%s\n" "$ipv4" "$domain" >> "$tmp"
-        printf "%s\t%s\n" "$ipv6" "$domain" >> "$tmp"
-        sudo cp "$tmp" "$hosts_file"
-        sudo chmod 644 "$hosts_file" >/dev/null 2>&1 || true
-        rm -f "$tmp"
-        echo "Configured $domain in /etc/hosts"
-    else
-        rm -f "$tmp"
-        echo "Warning: unable to update /etc/hosts automatically. Add manually:"
-        echo "  $ipv4    $domain"
-        echo "  $ipv6    $domain"
-    fi
-}
-
-ensure_local_domain
-
 mkdir -p ~/tmp/
 curl @GETURL@/@awesome_devopsVERSION_STR.tar@ -o ~/tmp/awesome_devops.tar
 if [[ -e ~/.awesome_devops ]]; then

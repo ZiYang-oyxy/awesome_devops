@@ -64,10 +64,6 @@ tar --no-xattrs -c -C dist --exclude='dist' --exclude='not_in_ad_tar' --exclude=
 ./ad put dist/awesome_devops/install.sh @aadi"$VERSION_STR"@
 ./ad put latest_version @latest_version"$VERSION_STR"@
 
-# 上传一些没有发布到ad tar中的文件
-tar --no-xattrs -cz --exclude='vim/undodir/%*' --exclude='vim/cache' --exclude='.git' --exclude='*.swp' -f dist/vim.tgz vim
-./ad put dist/vim.tgz @vim_bundle.tgz@
-
 if [[ $1 = "fast" ]]; then
     ad cecho -C "skip not_in_ad_tar routine"
 else

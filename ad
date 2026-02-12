@@ -176,55 +176,7 @@ upgrade()
 
 ad_tree()
 {
-    tree -C $CURDIR -I '.git|vim' -L 3
-}
-
-vim_init()
-{
-    if [ -d $CURDIR/.git ]; then
-        return
-    fi
-    cecho -g "ad vim initialize ..."
-    cd $CURDIR/
-    ad get @vim_bundle.tgz@
-    tar xf @vim_bundle.tgz@
-    _vim_ver=`vim --version | awk '/Vi IMproved / {print $5}'`
-    # 非arm（macos），并且支持版本很低，这使用预制vim
-    if [[ $(echo "$_vim_ver < 9.0" | bc -l) ]] && [[ ! $(vim --version | grep -q arm64) ]]; then
-        ad get @vim9.0_x86@ vim/vim
-        chmod +x vim/vim
-        ad get @vimdiff9.0_x86@ vim/vimdiff
-        chmod +x vim/vimdiff
-        # 从 /usr/local/share/vim/vim90 中获得
-        ad get @vim90_x86.tgz@
-        tar xf @vim90_x86.tgz@
-        mv vim91 vim/vim91
-        echo "export VIMRUNTIME=~/.awesome_devops/vim/vim91" > vim/.env
-    fi
-    touch vim/.env
-    cd -
-}
-
-ad_vim()
-{
-    [ ! -f $CURDIR/vim/.env ] && vim_init
-    [ ! -f $CURDIR/vim/.env ] || source $CURDIR/vim/.env
-    if [ -f $CURDIR/vim/vim ]; then
-        $CURDIR/vim/vim -u $CURDIR/vim/.vimrc "$@"
-    else
-        vim -u $CURDIR/vim/.vimrc "$@"
-    fi
-}
-
-ad_vimdiff()
-{
-    [ ! -f $CURDIR/vim/.env ] && vim_init
-    [ ! -f $CURDIR/vim/.env ] || source $CURDIR/vim/.env
-    if [ -f $CURDIR/vim/vimdiff ]; then
-        $CURDIR/vim/vimdiff -u $CURDIR/vim/.vimrc "$@"
-    else
-        vimdiff -u $CURDIR/vim/.vimrc "$@"
-    fi
+    tree -C $CURDIR -I '.git' -L 3
 }
 
 uninstall()
@@ -262,7 +214,6 @@ Usage:  ad [ COMMAND | TOOL | PLUGIN ] [ ARGUMENT ]
         help      # this message
         upgrade   # upgrade to latest version
         uninstall # leave no trace
-        vim       # my vim
         tree      # prints out ad directory in a tree-like display
         [ put | tput | get ] <file>
         [ dput | dgput | dget ] <directory>
@@ -346,12 +297,6 @@ case $_action in
         ;;
     tree)
         ad_tree
-        ;;
-    vim)
-        ad_vim "$@"
-        ;;
-    vimdiff)
-        ad_vimdiff "$@"
         ;;
     deploy)
         _plugin=$1

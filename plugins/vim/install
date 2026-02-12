@@ -1,4 +1,0 @@
-#!/bin/bash
-
-curdir="`dirname $(readlink -f $0)`"
-$curdir/../../vim/softlink.sh

@@ -11,6 +11,7 @@
 #trap trace DEBUG
 
 SOURCE_PATH="~/.awesome_devops/plugins/xfinder/xfinder.source"
+EDITOR_CMD="${EDITOR:-vi}"
 
 ### find
 
@@ -27,7 +28,7 @@ function _xfindi()
 }
 
 find_ed() {
-	gawk --re-interval -v cmd="$*" -v me="$SOURCE_PATH" '
+	gawk --re-interval -v cmd="$*" -v me="$SOURCE_PATH" -v editor="$EDITOR_CMD" '
 	BEGIN {
 		system("clear")
 		cmd2 = sprintf("bash -c \"source %s; %s\"", me, cmd)
@@ -47,7 +48,7 @@ find_ed() {
 		if (num > i || num < 1)
 			exit
 
-		system(sprintf("vim %s", lines[num]))
+		system(sprintf("%s %s", editor, lines[num]))
 
 		system("clear")
 		for (j = 1; j <= i; ++j) {
@@ -80,7 +81,7 @@ grep_ed() {
 
 	CMD=$CMD" \\\\\"$*\\\\\""
 
-	gawk --re-interval -v cmd="$CMD" -v me="$SOURCE_PATH" '
+	gawk --re-interval -v cmd="$CMD" -v me="$SOURCE_PATH" -v editor="$EDITOR_CMD" '
 	BEGIN {
 		system("clear")
 		cmd2 = sprintf("bash -c \"source %s; %s\"", me, cmd)
@@ -105,7 +106,7 @@ grep_ed() {
 		file = gensub(/^.{8}([^\033]+).{29}([0-9]+).*/, "\\1", "g", lines[num])
 		row = gensub(/^.{8}([^\033]+).{29}([0-9]+).*/, "\\2", "g", lines[num])
 
-		system(sprintf("vim +%s %s", row, file))
+		system(sprintf("%s +%s %s", editor, row, file))
 
 		system("clear")
 		for (j = 1; j <= i; ++j) {
