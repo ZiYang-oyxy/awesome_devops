@@ -13,3 +13,4 @@ vim/cache
 changelog.log
 latest_version
 .common.sh
+config
