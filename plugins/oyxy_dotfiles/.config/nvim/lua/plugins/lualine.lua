@@ -12,6 +12,14 @@ return {
           colored = true,
           always_visible = false,
         },
+        {
+          function()
+            return "🪄"
+          end,
+          cond = function()
+            return require("config.autoformat_toggle").is_enabled()
+          end,
+        },
       }
     end,
   },

@@ -131,6 +131,28 @@ local function is_virtual_text_enabled()
   return vim.diagnostic.config().virtual_text ~= false
 end
 
+local function is_diagnostics_enabled()
+  if vim.diagnostic.is_enabled then
+    return vim.diagnostic.is_enabled()
+  end
+  if vim.diagnostic.is_disabled then
+    return not vim.diagnostic.is_disabled()
+  end
+  return true
+end
+
+local function set_diagnostics_enabled(enabled)
+  if vim.fn.has("nvim-0.10") == 0 then
+    if enabled then
+      pcall(vim.diagnostic.enable)
+    else
+      pcall(vim.diagnostic.disable)
+    end
+    return
+  end
+  vim.diagnostic.enable(enabled)
+end
+
 local function set_virtual_text_enabled(enabled)
   local next_virtual_text = enabled and diagnostic_virtual_text_on_config or false
   vim.diagnostic.config({ virtual_text = next_virtual_text })
@@ -162,19 +184,27 @@ vim.api.nvim_create_autocmd("LspAttach", {
   end,
 })
 
+set_diagnostics_enabled(false)
 set_virtual_text_enabled(false)
 set_inlay_hints_enabled(false)
 
 keymap("n", "<F12>", function()
-  local next_enabled = not (is_virtual_text_enabled() and inlay_hints_enabled)
+  local inlay_supported = vim.lsp.inlay_hint ~= nil
+  local all_enabled = is_diagnostics_enabled() and is_virtual_text_enabled() and (not inlay_supported or inlay_hints_enabled)
+  local next_enabled = not all_enabled
+
+  set_diagnostics_enabled(next_enabled)
   set_virtual_text_enabled(next_enabled)
-  local inlay_supported = set_inlay_hints_enabled(next_enabled)
   if inlay_supported then
-    vim.notify("LSP virtual text + inlay hints: " .. (next_enabled and "ON" or "OFF"))
-  else
-    vim.notify("Diagnostic virtual text: " .. (next_enabled and "ON" or "OFF") .. " (inlay hints unsupported)")
+    set_inlay_hints_enabled(next_enabled)
   end
-end, { desc = "LSP Virtual Text + Inlay Hint (toggle)" })
+
+  if inlay_supported then
+    vim.notify("Diagnostics + LSP virtual text + inlay hints: " .. (next_enabled and "ON" or "OFF"))
+  else
+    vim.notify("Diagnostics + virtual text: " .. (next_enabled and "ON" or "OFF") .. " (inlay hints unsupported)")
+  end
+end, { desc = "Diagnostics + LSP Virtual Text + Inlay Hint (toggle)" })
 
 keymap("n", "<leader>tv", function()
   local next_enabled = not is_virtual_text_enabled()
