@@ -14,3 +14,4 @@ changelog.log
 latest_version
 .common.sh
 config
+plugins/oyxy_dotfiles/.config/nvim/lazy-lock.json
