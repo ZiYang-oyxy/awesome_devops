@@ -4,7 +4,7 @@
 [color]
 	ui = true
 [diff]
-	tool = vimdiff
+	tool = nvimdiff
 [difftool]
 	prompt = false
 [alias]
@@ -21,7 +21,7 @@
 [core]
 	quotepath = off
 	excludesfile = /Users/bytedance/.gitignore_global
-	editor = vim
+	editor = nvim
 [credential]
 	helper = cache --timeout=3600
 [push]

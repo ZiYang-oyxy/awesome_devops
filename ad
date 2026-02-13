@@ -353,7 +353,6 @@ publish()
     rm -rf dist
     mkdir -p dist
     tar --no-xattrs -c -C .. \
-        --exclude='awesome_devops/vim' \
         --exclude='awesome_devops/not_in_ad_tar/' \
         --exclude='awesome_devops/docs' \
         --exclude='awesome_devops/dist' \
