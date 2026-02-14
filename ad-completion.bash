@@ -182,7 +182,6 @@ _ad()
 }
 
 complete -F _ad ad
-complete -F _ad ad_tos
 
 # 让bash命令行直接能使用cecho，不需要额外带上ad
 cecho(){
