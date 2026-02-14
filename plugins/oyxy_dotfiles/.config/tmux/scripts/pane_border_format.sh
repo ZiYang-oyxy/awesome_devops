@@ -18,12 +18,13 @@ if [[ "$active" == "1" ]]; then
   accent_color="$theme_color"
   text_style="#[bold]"
   text_color="#FFFFFF"
+  fill_color="$accent_color"
 else
   accent_color="colour244"
   text_style=""
   text_color="#000000"
+  fill_color="colour18"
 fi
-fill_color="$accent_color"
 
 width="$width_raw"
 if ! [[ "$width" =~ ^[0-9]+$ ]]; then
