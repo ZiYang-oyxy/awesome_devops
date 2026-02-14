@@ -9,6 +9,5 @@ fi
 
 # Cache as a user option and apply to border style
 tmux set -g @theme_color "$theme"
-tmux set -g pane-active-border-style "fg=$theme"
 
 exit 0
