@@ -6,7 +6,27 @@
 #
 
 CURDIR="`dirname $(readlink -f $0)`"
+
+_env_ph_fts_namespace="${PH_FTS_NAMESPACE-}"
+_env_ph_fts_token="${PH_FTS_TOKEN-}"
+_env_ph_fts_env="${PH_FTS_ENV-}"
+_env_ph_fts_profile="${PH_FTS_PROFILE-}"
+_env_ph_fts_remote_root="${PH_FTS_REMOTE_ROOT-}"
+_env_has_ph_fts_namespace="${PH_FTS_NAMESPACE+x}"
+_env_has_ph_fts_token="${PH_FTS_TOKEN+x}"
+_env_has_ph_fts_env="${PH_FTS_ENV+x}"
+_env_has_ph_fts_profile="${PH_FTS_PROFILE+x}"
+_env_has_ph_fts_remote_root="${PH_FTS_REMOTE_ROOT+x}"
+
 source $CURDIR/lib/common.sh
+if [[ -f "$CURDIR/config" ]]; then
+    source "$CURDIR/config"
+fi
+[[ -n "$_env_has_ph_fts_namespace" ]] && PH_FTS_NAMESPACE="$_env_ph_fts_namespace"
+[[ -n "$_env_has_ph_fts_token" ]] && PH_FTS_TOKEN="$_env_ph_fts_token"
+[[ -n "$_env_has_ph_fts_env" ]] && PH_FTS_ENV="$_env_ph_fts_env"
+[[ -n "$_env_has_ph_fts_profile" ]] && PH_FTS_PROFILE="$_env_ph_fts_profile"
+[[ -n "$_env_has_ph_fts_remote_root" ]] && PH_FTS_REMOTE_ROOT="$_env_ph_fts_remote_root"
 
 EXTERNAL_ROOT="${AD_EXTERNAL_DIR:-$CURDIR/../ad_external/awesome_devops}"
 if [[ ! -d "$EXTERNAL_ROOT" ]]; then
@@ -112,123 +132,301 @@ resolve_tool_suite_dir()
     return 1
 }
 
-# IPv4/IPv6 dual-stack support
-# -g: allow brackets in URLs (for IPv6 addresses like [2001:db8::1])
-# curl will automatically choose IPv4 or IPv6 based on DNS resolution
-# To force IPv6: add -6 flag
-# To force IPv4: add -4 flag
-if [[ -n "$LR" ]]; then
-    CURL="curl -g --limit-rate $LR"
-else
-    CURL="curl -g"
-fi
+trim_trailing_slash()
+{
+    _path="$1"
+    while [[ "$_path" == */ ]]; do
+        _path="${_path%/}"
+    done
+    echo "$_path"
+}
 
-# Optional: Uncomment to prefer IPv6 when both are available
-# if [[ -n "$LR" ]]; then
-#     CURL="curl -g -6 --limit-rate $LR"
-# else
-#     CURL="curl -g -6"
-# fi
+join_remote_path()
+{
+    _prefix="$1"
+    _leaf="$2"
+    if [[ -z "$_prefix" ]]; then
+        echo "$_leaf"
+    elif [[ -z "$_leaf" ]]; then
+        echo "$_prefix"
+    else
+        echo "${_prefix}/${_leaf}"
+    fi
+}
+
+is_explicit_remote_path()
+{
+    _path="$1"
+    [[ "$_path" == */* ]] || [[ "$_path" == ./* ]] || [[ "$_path" == ../* ]]
+}
+
+ph_fts_release_root()
+{
+    _root="$(trim_trailing_slash "${PH_FTS_REMOTE_ROOT:-}")"
+    if [[ -n "$_root" ]]; then
+        echo "${_root}/releases/awesome_devops"
+    else
+        echo "releases/awesome_devops"
+    fi
+}
+
+ph_fts_transfer_files_root()
+{
+    _root="$(trim_trailing_slash "${PH_FTS_REMOTE_ROOT:-}")"
+    if [[ -n "$_root" ]]; then
+        echo "${_root}/transfer/files"
+    else
+        echo "transfer/files"
+    fi
+}
+
+ph_fts_transfer_dirs_root()
+{
+    _root="$(trim_trailing_slash "${PH_FTS_REMOTE_ROOT:-}")"
+    if [[ -n "$_root" ]]; then
+        echo "${_root}/transfer/dirs"
+    else
+        echo "transfer/dirs"
+    fi
+}
+
+release_version_root()
+{
+    join_remote_path "$(ph_fts_release_root)" "$1"
+}
+
+release_tar_remote()
+{
+    join_remote_path "$(release_version_root "$1")" "awesome_devops.tar"
+}
+
+release_install_remote()
+{
+    join_remote_path "$(release_version_root "$1")" "install.sh"
+}
+
+release_latest_remote()
+{
+    join_remote_path "$(ph_fts_release_root)" "latest_version"
+}
+
+release_not_in_ad_tar_remote()
+{
+    join_remote_path "$(release_version_root "$1")" "not_in_ad_tar/$2"
+}
+
+build_file_remote_target()
+{
+    _input="$1"
+    if is_explicit_remote_path "$_input"; then
+        echo "$_input"
+    else
+        join_remote_path "$(ph_fts_transfer_files_root)" "$_input"
+    fi
+}
+
+build_dir_remote_target()
+{
+    _input="$1"
+    if [[ "$_input" != *.tgz ]]; then
+        _input="${_input}.tgz"
+    fi
+    if is_explicit_remote_path "$_input"; then
+        echo "$_input"
+    else
+        join_remote_path "$(ph_fts_transfer_dirs_root)" "$_input"
+    fi
+}
+
+ph_fts_build_args()
+{
+    PH_FTS_ARGS=()
+    [[ -n "$PH_FTS_ENV" ]] && PH_FTS_ARGS+=(-e "$PH_FTS_ENV")
+    [[ -n "$PH_FTS_PROFILE" ]] && PH_FTS_ARGS+=(--profile "$PH_FTS_PROFILE")
+    [[ -n "$PH_FTS_NAMESPACE" ]] && PH_FTS_ARGS+=(-n "$PH_FTS_NAMESPACE")
+    [[ -n "$PH_FTS_TOKEN" ]] && PH_FTS_ARGS+=(-t "$PH_FTS_TOKEN")
+}
+
+require_ph_fts()
+{
+    if ! type ph-fts >/dev/null 2>&1; then
+        cecho -R "ph-fts command not found"
+        exit 1
+    fi
+    if [[ -z "$PH_FTS_TOKEN" ]] && [[ -z "$PH_FTS_PROFILE" ]]; then
+        cecho -Y "PH_FTS_TOKEN is empty, fallback to ph-fts cached login state"
+    fi
+    ph_fts_build_args
+}
+
+ph_fts_upload_file()
+{
+    ph-fts upload "${PH_FTS_ARGS[@]}" -L "$1" -R "$2"
+}
+
+run_ph_fts_upload_gray_stream()
+{
+    printf '\033[38;5;8m'
+    ph_fts_upload_file "$1" "$2"
+    _ret=$?
+    printf '\033[0m'
+    return $_ret
+}
+
+ph_fts_download_file()
+{
+    ph-fts download "${PH_FTS_ARGS[@]}" -L "$1" -R "$2"
+}
+
+run_ph_fts_download_gray_stream()
+{
+    printf '\033[38;5;8m'
+    ph_fts_download_file "$1" "$2"
+    _ret=$?
+    printf '\033[0m'
+    return $_ret
+}
+
+ph_fts_try_download()
+{
+    require_ph_fts
+    _local_file="$1"
+    shift
+    PH_FTS_LAST_REMOTE=""
+    for _candidate in "$@"; do
+        [[ -z "$_candidate" ]] && continue
+        if run_ph_fts_download_gray_stream "$_local_file" "$_candidate"; then
+            PH_FTS_LAST_REMOTE="$_candidate"
+            return 0
+        fi
+    done
+    return 1
+}
 
 put()
 {
-    if [[ ! -f $1 ]]; then
+    require_ph_fts
+    if [[ ! -f "$1" ]]; then
         cecho -R "No such file"
         exit 1
     fi
-    _name=`basename $1`
-    _r_file=${2:-$_name}
-    $CURL -T $1 $PUTURL/$_r_file > /dev/null
-    if [[ $? -eq 0 ]]; then
-        _res=(`md5sum $1`)
-        cecho -Y "${_res[0]}"
-        cecho -G "$GETURL/$_r_file"
-        cecho -M "ad get $_r_file"
+    _name="$(basename "$1")"
+    _r_file="$(build_file_remote_target "${2:-$_name}")"
+    if ! run_ph_fts_upload_gray_stream "$1" "$_r_file"; then
+        cecho -R "Upload failed"
+        exit 1
     fi
+    _res=(`md5sum "$1"`)
+    cecho -Y "${_res[0]}"
+    cecho -G "$_r_file"
+    cecho -M "ad get $_r_file"
 }
 
 # [Comparison of Compression Algorithms]
 # https://linuxreviews.org/Comparison_of_Compression_Algorithms
 dput()
 {
+    require_ph_fts
     # “:”会被tar认为是远程服务器
     if [[ $1 =~ .*:.* ]]; then
         cecho -R "not allow directory contain \":\""
         exit 1
     fi
-    if [[ ! -d $1 ]]; then
+    if [[ ! -d "$1" ]]; then
         cecho -R "No such directory"
         exit 1
     fi
-    _name=`basename $1`
-    _parent=`dirname $1`
+    _name="$(basename "$1")"
+    _parent="$(dirname "$1")"
+    _r_file="$(build_dir_remote_target "${2:-$_name}")"
     if (type pigz >/dev/null 2>&1); then
-        tar --no-xattrs -c -C $_parent --exclude='.git' -f - $_name | pigz > $_name.tgz
+        tar --no-xattrs -c -C "$_parent" --exclude='.git' -f - "$_name" | pigz > "$_name.tgz"
     else
-        tar --no-xattrs -c -C $_parent --exclude='.git' -z -f $_name.tgz $_name
+        tar --no-xattrs -c -C "$_parent" --exclude='.git' -z -f "$_name.tgz" "$_name"
     fi
-    $CURL -T $_name.tgz $PUTURL/$_name.tgz > /dev/null
-    if [[ $? -eq 0 ]]; then
-        _res=(`md5sum $_name.tgz`)
-        cecho -Y "${_res[0]}"
-        cecho -G "$GETURL/$_name.tgz"
-        cecho -M "ad dget $_name"
+    if ! run_ph_fts_upload_gray_stream "$_name.tgz" "$_r_file"; then
+        cecho -R "Upload failed"
+        rm -f "$_name.tgz"
+        exit 1
     fi
-    rm $_name.tgz
+    _res=(`md5sum "$_name.tgz"`)
+    cecho -Y "${_res[0]}"
+    cecho -G "$_r_file"
+    cecho -M "ad dget $_r_file"
+    rm -f "$_name.tgz"
 }
 
 # [Comparison of Compression Algorithms]
 # https://linuxreviews.org/Comparison_of_Compression_Algorithms
 dgput()
 {
+    require_ph_fts
     # “:”会被tar认为是远程服务器
     if [[ $1 =~ .*:.* ]]; then
         cecho -R "not allow directory contain \":\""
         exit 1
     fi
-    if [[ ! -d $1 ]]; then
+    if [[ ! -d "$1" ]]; then
         cecho -R "No such directory"
         exit 1
     fi
-    _name=`basename $1`
-    _parent=`dirname $1`
+    _name="$(basename "$1")"
+    _parent="$(dirname "$1")"
+    _r_file="$(build_dir_remote_target "${2:-$_name}")"
     if (type pigz >/dev/null 2>&1); then
-        tar --no-xattrs -c -C $_parent -f - $_name | pigz > $_name.tgz
+        tar --no-xattrs -c -C "$_parent" -f - "$_name" | pigz > "$_name.tgz"
     else
-        tar --no-xattrs -c -C $_parent -z -f $_name.tgz $_name
+        tar --no-xattrs -c -C "$_parent" -z -f "$_name.tgz" "$_name"
     fi
-    $CURL -T $_name.tgz $PUTURL/$_name.tgz > /dev/null
-    if [[ $? -eq 0 ]]; then
-        _res=(`md5sum $_name.tgz`)
-        cecho -Y "${_res[0]}"
-        cecho -G "$GETURL/$_name.tgz"
-        cecho -M "ad dget $_name"
+    if ! run_ph_fts_upload_gray_stream "$_name.tgz" "$_r_file"; then
+        cecho -R "Upload failed"
+        rm -f "$_name.tgz"
+        exit 1
     fi
-    rm $_name.tgz
+    _res=(`md5sum "$_name.tgz"`)
+    cecho -Y "${_res[0]}"
+    cecho -G "$_r_file"
+    cecho -M "ad dget $_r_file"
+    rm -f "$_name.tgz"
 }
 
 tput()
 {
-    if [[ ! -f $1 ]]; then
+    require_ph_fts
+    if [[ ! -f "$1" ]]; then
         cecho -R "No such file"
         exit 1
     fi
-    _name=`basename $1`
-    _r_file=`date '+%Y-%m-%d_%H-%M-%S'`_${2:-$_name}
-    $CURL -T $1 $PUTURL/$_r_file > /dev/null
-    if [[ $? -eq 0 ]]; then
-        _res=(`md5sum $1`)
-        cecho -Y "${_res[0]}"
-        cecho -G "$GETURL/$_r_file"
-        cecho -M "ad get $_r_file"
+    _name="$(basename "$1")"
+    _r_name="`date '+%Y-%m-%d_%H-%M-%S'`_${2:-$_name}"
+    _r_file="$(build_file_remote_target "$_r_name")"
+    if ! run_ph_fts_upload_gray_stream "$1" "$_r_file"; then
+        cecho -R "Upload failed"
+        exit 1
     fi
+    _res=(`md5sum "$1"`)
+    cecho -Y "${_res[0]}"
+    cecho -G "$_r_file"
+    cecho -M "ad get $_r_file"
 }
 
 get()
 {
-    _l_file=${2:-$1}
+    _remote_input="$1"
+    if [[ -n "$2" ]]; then
+        _l_file="$2"
+    else
+        _l_file="$(basename "$_remote_input")"
+    fi
     temp_file="${_l_file}.download"
-    if ! $CURL -fo "$temp_file" "$GETURL/$1"; then
+    _download_candidates=()
+    if is_explicit_remote_path "$_remote_input"; then
+        _download_candidates+=("$_remote_input")
+    else
+        _download_candidates+=("$(build_file_remote_target "$_remote_input")")
+        _download_candidates+=("$_remote_input")
+    fi
+    if ! ph_fts_try_download "$temp_file" "${_download_candidates[@]}"; then
         rm -f "$temp_file"
         cecho -R "Download failed"
         exit 1
@@ -257,15 +455,43 @@ dget()
         exit 1
     fi
 
-    _file_path="$1.tgz"
-    _temp_file_path="${_file_path}.download"
+    _remote_input="$1"
+    _download_candidates=()
+    if is_explicit_remote_path "$_remote_input"; then
+        if [[ "$_remote_input" == *.tgz ]]; then
+            _download_candidates+=("$_remote_input")
+        else
+            _download_candidates+=("${_remote_input}.tgz")
+        fi
+    else
+        if [[ "$_remote_input" == *.tgz ]]; then
+            _download_candidates+=("$(build_dir_remote_target "$_remote_input")")
+            _download_candidates+=("$_remote_input")
+        else
+            _download_candidates+=("$(build_dir_remote_target "$_remote_input")")
+            _download_candidates+=("${_remote_input}.tgz")
+        fi
+    fi
 
-    if $CURL -fo "$_temp_file_path" "$GETURL/$_file_path"; then
-        mv -f "$_temp_file_path" "$_file_path"
-        tar -x -o -f "$_file_path"
-        cecho -Y "$(md5sum "$_file_path" | awk '{print $1}')"
-        cecho -G "$(readlink -f "$1")"
-        rm "$_file_path"
+    _selected_remote=""
+    for _candidate in "${_download_candidates[@]}"; do
+        if [[ -n "$_candidate" ]]; then
+            _selected_remote="$_candidate"
+            break
+        fi
+    done
+    _local_tgz="$(basename "$_selected_remote")"
+    _temp_file_path="${_local_tgz}.download"
+
+    if ph_fts_try_download "$_temp_file_path" "${_download_candidates[@]}"; then
+        _selected_remote="$PH_FTS_LAST_REMOTE"
+        _local_tgz="$(basename "$_selected_remote")"
+        mv -f "$_temp_file_path" "$_local_tgz"
+        tar -x -o -f "$_local_tgz"
+        cecho -Y "$(md5sum "$_local_tgz" | awk '{print $1}')"
+        _display_dir="$(basename "$_local_tgz" .tgz)"
+        cecho -G "$(readlink -f "$_display_dir")"
+        rm -f "$_local_tgz"
     else
         rm -f "$_temp_file_path"
         cecho -R "Download failed"
@@ -275,7 +501,29 @@ dget()
 
 upgrade()
 {
-    bash <($CURL -s $GETURL/@aadi@)
+    require_ph_fts
+    _tmp_dir="$(mktemp -d)"
+    _latest_file="$_tmp_dir/latest_version"
+    _install_file="$_tmp_dir/install.sh"
+    _latest_remote="$(release_latest_remote)"
+    if ! ph_fts_try_download "$_latest_file" "$_latest_remote" "@latest_version@"; then
+        rm -rf "$_tmp_dir"
+        cecho -R "Unable to download latest_version"
+        exit 1
+    fi
+    _latest_ver="$(tr -d '\r\n' < "$_latest_file")"
+    _install_candidates=()
+    if [[ -n "$_latest_ver" ]]; then
+        _install_candidates+=("$(release_install_remote "$_latest_ver")")
+    fi
+    _install_candidates+=("@aadi@")
+    if ! ph_fts_try_download "$_install_file" "${_install_candidates[@]}"; then
+        rm -rf "$_tmp_dir"
+        cecho -R "Unable to download install script"
+        exit 1
+    fi
+    bash "$_install_file"
+    rm -rf "$_tmp_dir"
 }
 
 ad_tree()
@@ -340,23 +588,21 @@ publish()
     VERSION_STR=${VERSION_STR:-}
     _fast_exclude_str=""
 
-    source "$CURDIR/config"
     cd "$CURDIR"
+    require_ph_fts
+
+    if [[ -z "$VERSION_STR" ]]; then
+        VERSION_STR="$(git log -1 --pretty=format:"%ct")"
+    fi
 
     if [[ $_fast_mode -eq 1 ]]; then
         _fast_exclude_str="--exclude=not_in_ad_tar"
     fi
 
-    # Only verify server reachability; latest_version may legitimately return 404 on first publish.
-    curl --connect-timeout 1 -sS -o /dev/null "${GETURL}/@latest_version@" || {
-        cecho -R "Unable to connect to ad server"
-        exit 1
-    }
-
     echo ". Recent changes:" >changelog.log
     git log -5 --pretty=format:"%ct %cI %s" >>changelog.log
     echo "" >>changelog.log
-    git log -1 --pretty=format:"%ct" >latest_version
+    echo "$VERSION_STR" >latest_version
 
     rm -rf dist
     mkdir -p dist
@@ -382,9 +628,19 @@ publish()
         SED=sed
     fi
 
-    # 替换访问地址
-    $SED -i "s|@GETURL@|$GETURL|g" dist/awesome_devops/install.sh
-    $SED -i "s|VERSION_STR|$VERSION_STR|g" dist/awesome_devops/install.sh
+    _release_root="$(ph_fts_release_root)"
+    _release_tar_remote="$(release_tar_remote "$VERSION_STR")"
+    _release_install_remote="$(release_install_remote "$VERSION_STR")"
+    _release_latest_remote="$(release_latest_remote)"
+
+    # 注入发布路径信息
+    $SED -i "s|@AD_RELEASE_ROOT@|$_release_root|g" dist/awesome_devops/install.sh
+    $SED -i "s|@AD_RELEASE_VERSION@|$VERSION_STR|g" dist/awesome_devops/install.sh
+    $SED -i "s|@PH_FTS_NAMESPACE@|${PH_FTS_NAMESPACE:-}|g" dist/awesome_devops/install.sh
+    if [[ -f dist/awesome_devops/config ]]; then
+        # Never publish local secrets from a developer machine.
+        $SED -i "s|^PH_FTS_TOKEN=.*$|PH_FTS_TOKEN=\"\"|g" dist/awesome_devops/config
+    fi
 
     # 临时替换common.sh，否则./ad无法执行
     _common_bak="$CURDIR/.common.sh.publish.$$"
@@ -402,18 +658,18 @@ publish()
 
     # 打包上传，不用tar z，因为有些环境tar不支持
     tar --no-xattrs -c -C dist --exclude='dist' --exclude='not_in_ad_tar' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
-    "$CURDIR/ad" put dist/awesome_devops.tar "@awesome_devops${VERSION_STR}.tar@"
-    "$CURDIR/ad" put dist/awesome_devops/install.sh "@aadi${VERSION_STR}@"
-    "$CURDIR/ad" put latest_version "@latest_version${VERSION_STR}@"
+    put dist/awesome_devops.tar "$_release_tar_remote"
+    put dist/awesome_devops/install.sh "$_release_install_remote"
+    put latest_version "$_release_latest_remote"
 
     if [[ $_fast_mode -eq 1 ]]; then
-        "$CURDIR/ad" cecho -C "skip not_in_ad_tar routine"
+        cecho -C "skip not_in_ad_tar routine"
     else
         cd not_in_ad_tar
         for folder in */; do
-            tgz_file="@${folder%/}.tgz@"
+            tgz_file="${folder%/}.tgz"
             tar --no-xattrs -czvf "$tgz_file" "$folder"
-            "$CURDIR/ad" put "$tgz_file"
+            put "$tgz_file" "$(release_not_in_ad_tar_remote "$VERSION_STR" "$tgz_file")"
             rm "$tgz_file"
         done
         cd - >/dev/null
@@ -423,18 +679,35 @@ publish()
 
     echo
     echo "Install link:"
-    "$CURDIR/ad" cecho -Y "bash <(curl -s $GETURL/@aadi${VERSION_STR}@) && source ~/.bashrc"
+    _install_cmd="ph-fts download -L ~/tmp/ad_install.sh -R $_release_install_remote"
+    if [[ -n "$PH_FTS_NAMESPACE" ]]; then
+        _install_cmd="${_install_cmd} -n $PH_FTS_NAMESPACE"
+    fi
+    _install_cmd="${_install_cmd} -t <token> && bash ~/tmp/ad_install.sh && source ~/.bashrc"
+    cecho -Y "$_install_cmd"
 }
 
 new_version_detect()
 {
-    _old=`cat $CURDIR/latest_version`
-    _new=`$CURL --connect-timeout 1 -sS $GETURL/'@latest_version@' 2>/dev/null`
-
-    if [[ ! $? -eq 0 ]]; then
-        cecho -Gy 'Unable to connect to ad server'
+    if ! type ph-fts >/dev/null 2>&1; then
         return
     fi
+    if [[ -z "$PH_FTS_NAMESPACE" ]] && [[ -z "$PH_FTS_PROFILE" ]]; then
+        return
+    fi
+
+    _old=`cat $CURDIR/latest_version 2>/dev/null`
+    [[ "$_old" =~ ^[0-9]+$ ]] || _old=0
+    _tmp_file="$(mktemp)"
+    ph_fts_build_args
+    if ! ph-fts download "${PH_FTS_ARGS[@]}" -L "$_tmp_file" -R "$(release_latest_remote)" > /dev/null 2>&1; then
+        if ! ph-fts download "${PH_FTS_ARGS[@]}" -L "$_tmp_file" -R "@latest_version@" > /dev/null 2>&1; then
+            rm -f "$_tmp_file"
+            return
+        fi
+    fi
+    _new="$(tr -d '\r\n' < "$_tmp_file")"
+    rm -f "$_tmp_file"
 
     if [[ ! "$_new" =~ ^[0-9]+$ ]]; then
         return
@@ -507,16 +780,21 @@ __EOF__
         echo "        deploy ${i##*/}"
     done
 
+    _transfer_files_root="$(ph_fts_transfer_files_root)"
+    _transfer_dirs_root="$(ph_fts_transfer_dirs_root)"
+    _release_root="$(ph_fts_release_root)"
     cat <<__EOF__
 
-Upload link:
-$PUTURL
+Remote transfer root:
+files: $_transfer_files_root
+dirs:  $_transfer_dirs_root
+releases: $_release_root
 
 Install or Upgrade:
-bash <(curl -s $GETURL/@aadi@) && source ~/.bashrc
+ad upgrade
 
-Home page:
-$SERVEFILE_URL
+Manual install:
+ph-fts download -L ~/tmp/ad_install.sh -R ${_release_root}/<version>/install.sh [-n <namespace>] -t <token> && bash ~/tmp/ad_install.sh && source ~/.bashrc
 __EOF__
 
     new_version_detect

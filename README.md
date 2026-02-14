@@ -1,14 +1,20 @@
 # ⚙Awesome Devops (or yet another AirDrop)⚙
 
-## Mac/Linux一键安装
+## Mac/Linux安装（ph-fts）
 
 ```bash
-bash <(curl -s http://Awesome:Devops@ad-example.com:8890/@aadi@) && source ~/.bashrc
+export PH_FTS_TOKEN=<token>
+
+ph-fts download -L ~/tmp/ad_install.sh \
+  -R releases/awesome_devops/<version>/install.sh \
+  [-n <namespace>] -t "$PH_FTS_TOKEN"
+
+bash ~/tmp/ad_install.sh && source ~/.bashrc
 ```
 
 ## 用途
 
-ad是我工作以来持续积累的研发&运维工具和dotfile，做到尽量零依赖，一键安装，方便在任何环境上开箱即用，同时实现了方便的文件中转（需要搭配http server）。
+ad是我工作以来持续积累的研发&运维工具和dotfile，做到尽量零依赖，一键安装，方便在任何环境上开箱即用，同时实现了方便的文件中转（通过 `ph-fts`）。
 
 > 工具介绍可能远落后于最新版本，ad tree可以看到所有工具的路径，大部分都是脚本，可自行摸索。有些开发工具可能会自动安装rpm，只适配了centos
 
@@ -65,21 +71,25 @@ Usage:  ad [ COMMAND | TOOL ] [ ARGUMENT ]
         deploy pssh
         deploy xfinder
 
-Upload link:
-http://Awesome:Devops@ad-example.com:8889
+Remote transfer root:
+files: transfer/files
+dirs:  transfer/dirs
+releases: releases/awesome_devops
 
 Install or Upgrade:
-bash <(curl -s http://Awesome:Devops@ad-example.com:8890/@aadi@) && source ~/.bashrc
+ad upgrade
 
-Home page:
-ad-example.com
+Manual install:
+ph-fts download -L ~/tmp/ad_install.sh -R releases/awesome_devops/<version>/install.sh [-n <namespace>] -t <token> && bash ~/tmp/ad_install.sh && source ~/.bashrc
 ```
 
-## 基础用法（有服务端）
+## 基础用法（ph-fts）
 
 ```bash
 # 安装
-SERVER_IP=1.1.1.1; bash <(curl -s http://Awesome:Devops@$SERVER_IP:8890/@aadi@) && source ~/.bashrc
+export PH_FTS_TOKEN=<token>
+ph-fts download -L ~/tmp/ad_install.sh -R releases/awesome_devops/<version>/install.sh [-n <namespace>] -t "$PH_FTS_TOKEN"
+bash ~/tmp/ad_install.sh && source ~/.bashrc
 
 # 升级
 ad upgrade
@@ -91,7 +101,7 @@ ad
 ad put <file>
 
 # 下载文件
-ad get <file>
+ad get <remote_file_or_name>
 ```
 
 ## 基础用法（无服务端）
@@ -104,6 +114,18 @@ ad get <file>
 ad
 ```
 
+## 关键配置
+
+`config` / `~/.awesome_devops/config` 中新增了 ph-fts 配置项：
+
+```bash
+PH_FTS_NAMESPACE=""                # 可选，留空时不传 namespace 参数
+PH_FTS_TOKEN=""                    # 推荐配置；也可用 ph-fts login 缓存态
+PH_FTS_ENV="prod"                  # 可选
+PH_FTS_PROFILE=""                  # 可选，配置后可不显式传token
+PH_FTS_REMOTE_ROOT=""              # 可选，远端路径前缀
+```
+
 ## 开发态外部目录叠加
 
 为了保持仓库干净，`ad publish` 不会把外部工具同步回当前仓库。  
@@ -112,7 +134,7 @@ ad
 - 默认外部目录：`../ad_external/awesome_devops`（相对于 `ad` 脚本所在目录）
 - 可通过环境变量覆盖：`AD_EXTERNAL_DIR=/path/to/awesome_devops`
 - 若外部目录存在 `ad`，主仓库 `ad` 会自动转发到外部 `ad`（可用 `AD_DISABLE_EXTERNAL_AD=1` 关闭）
-- 同名冲突优先级：内置目录优先，外部目录只补充缺失工具
+- 工具同名冲突优先级：内置目录优先，外部目录只补充缺失工具
 
 示例：
 
