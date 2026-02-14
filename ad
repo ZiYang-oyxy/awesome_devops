@@ -13,6 +13,14 @@ if [[ ! -d "$EXTERNAL_ROOT" ]]; then
     EXTERNAL_ROOT=""
 fi
 
+if [[ -z "$AD_DISABLE_EXTERNAL_AD" ]] && [[ -z "$AD_EXTERNAL_AD_PASSTHRU" ]] && [[ -n "$EXTERNAL_ROOT" ]] && [[ -x "$EXTERNAL_ROOT/ad" ]]; then
+    _external_ad_real="$(readlink -f "$EXTERNAL_ROOT/ad")"
+    _self_ad_real="$(readlink -f "$0")"
+    if [[ "$_external_ad_real" != "$_self_ad_real" ]]; then
+        AD_EXTERNAL_AD_PASSTHRU=1 AD_BASE_AD="$_self_ad_real" AD_EXTERNAL_DIR="$EXTERNAL_ROOT" exec "$EXTERNAL_ROOT/ad" "$@"
+    fi
+fi
+
 merge_dir_entries()
 {
     _relative_path="$1"

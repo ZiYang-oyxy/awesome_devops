@@ -111,6 +111,7 @@ ad
 
 - 默认外部目录：`../ad_external/awesome_devops`（相对于 `ad` 脚本所在目录）
 - 可通过环境变量覆盖：`AD_EXTERNAL_DIR=/path/to/awesome_devops`
+- 若外部目录存在 `ad`，主仓库 `ad` 会自动转发到外部 `ad`（可用 `AD_DISABLE_EXTERNAL_AD=1` 关闭）
 - 同名冲突优先级：内置目录优先，外部目录只补充缺失工具
 
 示例：
