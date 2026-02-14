@@ -37,3 +37,11 @@ if vim.treesitter and vim.treesitter.language and vim.treesitter.language.regist
   vim.treesitter.language.register("javascript", "javascript.jsx")
   vim.treesitter.language.register("tsx", "typescript.tsx")
 end
+
+-- Disable spell checking underline in markdown buffers.
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "markdown", "markdown.mdx" },
+  callback = function()
+    vim.opt_local.spell = false
+  end,
+})
