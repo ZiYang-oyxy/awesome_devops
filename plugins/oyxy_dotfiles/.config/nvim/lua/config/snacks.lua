@@ -305,14 +305,17 @@ local function get_current_file_path()
   end
 end
 
-local function get_root()
+local function get_root(path)
   local buf = vim.api.nvim_get_current_buf()
-  local buf_path = vim.api.nvim_buf_get_name(buf)
+  local buf_path = path or vim.api.nvim_buf_get_name(buf)
   local buf_dir = buf_path ~= "" and vim.fs.dirname(buf_path) or nil
   if buf_dir then
     local marker = vim.fs.find({ ".git", "lua" }, { path = buf_dir, upward = true })[1]
     if marker then
       return vim.fs.dirname(marker)
+    end
+    if path then
+      return buf_dir
     end
   end
 
@@ -326,7 +329,29 @@ end
 local function explorer_reveal_or_open_root(snacks)
   local file = get_current_file_path()
   if file and snacks.explorer and snacks.explorer.reveal then
-    snacks.explorer.reveal({ file = file })
+    local target_root = get_root(file)
+    if snacks.picker and snacks.picker.get then
+      local explorer = snacks.picker.get({ source = "explorer" })[1]
+      if explorer and explorer.cwd and explorer.set_cwd then
+        local cwd = explorer:cwd()
+        if cwd ~= target_root then
+          explorer:set_cwd(target_root)
+        end
+        snacks.explorer.reveal({ file = file })
+        return
+      end
+    end
+  end
+
+  if file and snacks.picker and snacks.picker.explorer then
+    snacks.picker.explorer({
+      cwd = get_root(file),
+      on_show = function()
+        if snacks.explorer and snacks.explorer.reveal then
+          snacks.explorer.reveal({ file = file })
+        end
+      end,
+    })
     return
   end
   snacks.picker.explorer({ cwd = get_root() })
