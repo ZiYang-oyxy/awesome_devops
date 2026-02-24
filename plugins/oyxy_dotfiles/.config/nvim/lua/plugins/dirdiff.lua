@@ -1,6 +1,6 @@
 return {
   {
-    dir = "/Volumes/code/vim-dirdiff",
+    "ZiYang-oyxy/vim-dirdiff",
     enabled = true,
     main = "dirdiff",
     cmd = {

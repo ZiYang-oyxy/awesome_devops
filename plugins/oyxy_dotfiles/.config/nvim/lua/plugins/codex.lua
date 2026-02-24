@@ -1,6 +1,6 @@
 return {
   {
-    dir = "/Volumes/code/codex.nvim",
+    "ZiYang-oyxy/codex.nvim",
     config = function()
       require("codex").setup()
     end,

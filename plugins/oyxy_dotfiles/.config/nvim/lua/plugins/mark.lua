@@ -1,6 +1,6 @@
 return {
   {
-    dir = "~/code/vim-mark.nvim",
+    "ZiYang-oyxy/vim-mark.nvim",
     main = "mark",
     lazy = false,
     opts = {

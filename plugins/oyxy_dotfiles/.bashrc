@@ -135,14 +135,11 @@ fi
 
 source /Volumes/code/awesome_devops/plugins/xfinder/xfinder.source #@ad_plugins@
 
-source /Volumes/code/ad_external/awesome_devops/plugins/mls/.bashrc_mls #@mls_plugins@
 . "$HOME/.cargo/env"
 
-source /Volumes/code/ad_external/awesome_devops/plugins/vpu/.bashrc_vpu #@vpu_plugins@
 
 [[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path bash)"
 
-source /Volumes/code/ad_external/awesome_devops/plugins/boe/.bashrc_boe #@boe_plugins@
 
 source ~/.awesome_devops/ad-completion.bash
 
