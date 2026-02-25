@@ -233,14 +233,10 @@ M.opts = {
     win = {
       input = {
         keys = {
-          ["<F9>"] = { "close", mode = { "n", "i" } },
-          ["<C-p>"] = { "close", mode = { "n", "i" } },
         },
       },
       list = {
         keys = {
-          ["<F9>"] = "close",
-          ["<C-p>"] = "close",
         },
       },
     },
@@ -376,6 +372,15 @@ function M.setup(opts)
         active[1]:close()
         return
       end
+    end
+    local bufnr = vim.api.nvim_get_current_buf()
+    if vim.bo[bufnr].filetype == "snacks_dashboard" and snacks.picker and snacks.picker.files then
+      snacks.picker.files({ cwd = get_root() })
+      return
+    end
+    if vim.lsp and vim.lsp.get_clients and #vim.lsp.get_clients({ bufnr = bufnr }) == 0 then
+      vim.notify("No LSP symbols available in current buffer", vim.log.levels.WARN)
+      return
     end
     if snacks.picker and snacks.picker.lsp_symbols then
       snacks.picker.lsp_symbols()

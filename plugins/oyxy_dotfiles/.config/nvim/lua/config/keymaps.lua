@@ -50,33 +50,49 @@ local function export_mermaid_svg()
   end)
 end
 
-local function mark_module()
-  return require("mark")
-end
-
 keymap("n", "<leader>q", "<cmd>qa!<cr>", { desc = "Quit all" })
 keymap("n", "S", "<cmd>wa<cr>", { desc = "Write all" })
-keymap({ "n", "x" }, "!", function()
-  mark_module().mark_word_or_selection({ group = vim.v.count })
-end, { desc = "Mark: Toggle word or selection", silent = true })
-keymap("n", "<leader><cr>", function()
-  mark_module().clear_all()
-end, { desc = "Mark: Clear all", silent = true })
-keymap("n", "n", function()
-  mark_module().search_any_mark(false, vim.v.count1)
-end, { desc = "Mark: Next any match", silent = true })
-keymap("n", "N", function()
-  mark_module().search_any_mark(true, vim.v.count1)
-end, { desc = "Mark: Prev any match", silent = true })
-keymap("n", "#", function()
-  mark_module().search_word_or_selection_mark(false, vim.v.count1)
-end, { desc = "Mark: Next word/selection mark", silent = true })
-keymap("n", "@", function()
-  mark_module().search_word_or_selection_mark(true, vim.v.count1)
-end, { desc = "Mark: Prev word/selection mark", silent = true })
-keymap("n", "<leader>`", function()
-  mark_module().list()
-end, { desc = "Mark: List all", silent = true, nowait = true })
+do
+  local ok_mark, mark = pcall(require, "mark")
+  if ok_mark and mark then
+    local function feed_default_key(lhs)
+      local keys = vim.api.nvim_replace_termcodes(lhs, true, false, true)
+      vim.api.nvim_feedkeys(keys, "n", true)
+    end
+
+    local function should_skip_mark_mapping()
+      local ft = vim.bo.filetype
+      local bt = vim.bo.buftype
+      return ft == "snacks_dashboard" or bt == "nofile"
+    end
+
+    keymap({ "n", "x" }, "!", function()
+      if should_skip_mark_mapping() then
+        feed_default_key("!")
+        return
+      end
+      mark.mark_word_or_selection({ group = vim.v.count })
+    end, { desc = "Mark: Toggle word or selection", silent = true })
+    keymap("n", "<leader><cr>", function()
+      mark.clear_all()
+    end, { desc = "Mark: Clear all", silent = true })
+    keymap("n", "n", function()
+      mark.search_any_mark(false, vim.v.count1)
+    end, { desc = "Mark: Next any match", silent = true })
+    keymap("n", "N", function()
+      mark.search_any_mark(true, vim.v.count1)
+    end, { desc = "Mark: Prev any match", silent = true })
+    keymap("n", "#", function()
+      mark.search_word_or_selection_mark(false, vim.v.count1)
+    end, { desc = "Mark: Next word/selection mark", silent = true })
+    keymap("n", "@", function()
+      mark.search_word_or_selection_mark(true, vim.v.count1)
+    end, { desc = "Mark: Prev word/selection mark", silent = true })
+    keymap("n", "<leader>`", function()
+      mark.list()
+    end, { desc = "Mark: List all", silent = true, nowait = true })
+  end
+end
 keymap({ "n", "x" }, "<leader>y", '"+y', { desc = "Copy to clipboard" })
 keymap({ "n", "x" }, "<leader>p", '"+p', { desc = "Paste from clipboard" })
 keymap("n", ";", ":", { desc = "Command mode" })
