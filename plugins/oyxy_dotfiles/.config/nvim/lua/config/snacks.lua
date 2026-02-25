@@ -233,10 +233,14 @@ M.opts = {
     win = {
       input = {
         keys = {
+          ["<F9>"] = { "close", mode = { "n", "i" } },
+          ["<C-p>"] = { "close", mode = { "n", "i" } },
         },
       },
       list = {
         keys = {
+          ["<F9>"] = "close",
+          ["<C-p>"] = "close",
         },
       },
     },
