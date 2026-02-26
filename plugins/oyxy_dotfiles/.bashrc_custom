@@ -64,7 +64,7 @@ alias tree="tree -C"
 # AI Summary aliases
 alias cx="printenv OPENAI_API_KEY | codex login --with-api-key; codex"
 alias cx1="printenv OPENAI_API_KEY | codex login --with-api-key; codex --dangerously-bypass-approvals-and-sandbox -m gpt-5.3-codex-spark"
-alias cx2="printenv OPENAI_API_KEY | codex login --with-api-key; codex --dangerously-bypass-approvals-and-sandbox"
+alias cx2="printenv OPENAI_API_KEY | codex login --with-api-key; codex --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=medium"
 alias cx3="printenv OPENAI_API_KEY | codex login --with-api-key; codex --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=xhigh"
 alias cc="claude"
 alias cc2="claude --dangerously-skip-permissions"
