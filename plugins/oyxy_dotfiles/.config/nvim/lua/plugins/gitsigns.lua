@@ -4,6 +4,7 @@ return {
     keys = {
       { "<leader>tb", "<cmd>Gitsigns blame<cr>", desc = "Git Blame" },
       { "<leader>tB", "<cmd>Gitsigns toggle_current_line_blame<cr>", desc = "Git Blame Line" },
+      { "<leader>td", "<cmd>Gitsigns diffthis ~<cr>", desc = "Git Diff This ~" },
     },
     opts = {
       current_line_blame = true, -- Toggle with `:Gitsigns toggle_current_line_blame`
