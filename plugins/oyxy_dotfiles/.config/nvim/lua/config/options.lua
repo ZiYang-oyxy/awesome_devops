@@ -9,3 +9,6 @@ vim.g.autoformat = false
 vim.opt.number = true
 vim.opt.relativenumber = false
 vim.opt.clipboard = ""
+vim.opt.wrap = true
+vim.opt.linebreak = true
+vim.opt.breakindent = true
