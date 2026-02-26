@@ -247,6 +247,7 @@ M.opts = {
     sources = {
       explorer = {
         finder = explorer_with_inline_bookmarks,
+        hidden = true,
         layout = { layout = { position = "right" }, cycle = false },
         actions = {
           explorer_open_recursive = explorer_open_recursive,
