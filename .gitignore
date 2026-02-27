@@ -13,5 +13,5 @@ vim/cache
 changelog.log
 latest_version
 .common.sh
-config
+/config
 plugins/oyxy_dotfiles/.config/nvim/lazy-lock.json
