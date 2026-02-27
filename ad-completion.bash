@@ -142,7 +142,7 @@ _ad()
         1)
             tools="$(_ad_merge_dir_entries "$root" "$ext_root" tools)"
             ext_tools="$(_ad_merge_dir_entries "$root" "$ext_root" ext_tools)"
-            COMPREPLY=($(compgen -W "help upgrade uninstall tree publish put tput get dput dgput dget deploy $tools $ext_tools" "${COMP_WORDS[1]}"))
+            COMPREPLY=($(compgen -W "help upgrade uninstall tree publish doctor put tput get dput dgput dget deploy $tools $ext_tools" "${COMP_WORDS[1]}"))
             ;;
         2)
             case ${COMP_WORDS[1]} in
@@ -152,6 +152,9 @@ _ad()
                     ;;
                 publish)
                     COMPREPLY=($(compgen -W "-f -h" "${COMP_WORDS[2]}"))
+                    ;;
+                doctor)
+                    COMPREPLY=($(compgen -W "env help -h --help" "${COMP_WORDS[2]}"))
                     ;;
                 *)
                     # 有目录工具，目录与工具名必须同名，直接执行

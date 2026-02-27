@@ -6,7 +6,12 @@
 #
 
 CURDIR="`dirname $(readlink -f $0)`"
-source $CURDIR/lib/common.sh
+AD_CALLER_EXPORTED_ENV="$(export -p | sed 's/^declare -x /export /')"
+
+restore_caller_exported_env()
+{
+    eval "$AD_CALLER_EXPORTED_ENV"
+}
 
 EXTERNAL_ROOT="${AD_EXTERNAL_DIR:-$CURDIR/../ad_external/awesome_devops}"
 if [[ ! -d "$EXTERNAL_ROOT" ]]; then
@@ -20,6 +25,9 @@ if [[ -z "$AD_DISABLE_EXTERNAL_AD" ]] && [[ -z "$AD_EXTERNAL_AD_PASSTHRU" ]] && 
         AD_EXTERNAL_AD_PASSTHRU=1 AD_BASE_AD="$_self_ad_real" AD_EXTERNAL_DIR="$EXTERNAL_ROOT" exec "$EXTERNAL_ROOT/ad" "$@"
     fi
 fi
+
+source "$CURDIR/lib/common.sh"
+restore_caller_exported_env
 
 merge_dir_entries()
 {
@@ -341,6 +349,7 @@ publish()
     _fast_exclude_str=""
 
     source "$CURDIR/config"
+    restore_caller_exported_env
     cd "$CURDIR"
 
     if [[ $_fast_mode -eq 1 ]]; then
@@ -399,6 +408,7 @@ publish()
     cp -f "$CURDIR/lib/common.sh" "$_common_bak"
     cp -f dist/awesome_devops/lib/common.sh "$CURDIR/lib/common.sh"
     source "$CURDIR/lib/common.sh"
+    restore_caller_exported_env
 
     # 打包上传，不用tar z，因为有些环境tar不支持
     tar --no-xattrs -c -C dist --exclude='dist' --exclude='not_in_ad_tar' --exclude='.git' --exclude='*.swp' -f dist/awesome_devops.tar awesome_devops/
@@ -445,6 +455,59 @@ new_version_detect()
     fi
 }
 
+doctor_usage()
+{
+    cat <<__EOF__
+Usage: ad doctor env
+
+Inspect effective runtime environment and passthrough status.
+__EOF__
+}
+
+doctor_env()
+{
+    _passthrough_expected="no"
+    if [[ -z "$AD_DISABLE_EXTERNAL_AD" ]] && [[ -z "$AD_EXTERNAL_AD_PASSTHRU" ]] && [[ -n "$EXTERNAL_ROOT" ]] && [[ -x "$EXTERNAL_ROOT/ad" ]]; then
+        _external_ad_real="$(readlink -f "$EXTERNAL_ROOT/ad")"
+        _self_ad_real="$(readlink -f "$0")"
+        if [[ "$_external_ad_real" != "$_self_ad_real" ]]; then
+            _passthrough_expected="yes"
+        fi
+    fi
+
+    echo
+    cecho -Y "ad doctor env"
+    cecho -C "script: " -W "$(readlink -f "$0")"
+    cecho -C "curdir: " -W "$CURDIR"
+    cecho -C "external root: " -W "${EXTERNAL_ROOT:-<empty>}"
+    cecho -C "passthrough expected: " -W "$_passthrough_expected"
+    cecho -C "AD_DISABLE_EXTERNAL_AD: " -W "${AD_DISABLE_EXTERNAL_AD:-<empty>}"
+    cecho -C "AD_EXTERNAL_AD_PASSTHRU: " -W "${AD_EXTERNAL_AD_PASSTHRU:-<empty>}"
+    cecho -C "AD_BASE_AD: " -W "${AD_BASE_AD:-<empty>}"
+    cecho -C "TOS: " -W "${TOS:-<empty>}"
+    cecho -C "PUTURL: " -W "${PUTURL:-<empty>}"
+    cecho -C "GETURL: " -W "${GETURL:-<empty>}"
+    cecho -C "SERVEFILE_URL: " -W "${SERVEFILE_URL:-<empty>}"
+}
+
+doctor()
+{
+    _topic="${1:-env}"
+    case "$_topic" in
+        env)
+            doctor_env
+            ;;
+        -h|--help|help)
+            doctor_usage
+            ;;
+        *)
+            cecho -R "unknown doctor topic: $_topic"
+            doctor_usage
+            exit 1
+            ;;
+    esac
+}
+
 usage(){
 
     cat <<__EOF__
@@ -459,6 +522,7 @@ Usage:  ad [ COMMAND | TOOL | PLUGIN ] [ ARGUMENT ]
         uninstall # leave no trace
         tree      # prints out ad directory in a tree-like display
         publish   # package and upload release artifacts
+        doctor env # inspect effective runtime environment
         [ put | tput | get ] <file>
         [ dput | dgput | dget ] <directory>
 
@@ -545,6 +609,9 @@ case $_action in
         ;;
     publish)
         publish "$@"
+        ;;
+    doctor)
+        doctor "$@"
         ;;
     help)
         usage
