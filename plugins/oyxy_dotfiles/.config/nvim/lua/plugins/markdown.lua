@@ -1,6 +1,7 @@
 return {
   {
-    "iamcco/markdown-preview.nvim",
+    dir = "~/code/markdown-preview.nvim",
+    name = "markdown-preview.nvim",
     keys = {
       { "<leader>cp", false },
       {
