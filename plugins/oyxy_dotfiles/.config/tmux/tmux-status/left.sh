@@ -142,4 +142,4 @@ if [[ -n "$prev_bg" ]]; then
   rendered+="#[fg=${prev_bg},bg=${status_bg}]${separator}"
 fi
 
-printf '%s' "$rendered  >>>  "
+printf '%s' "${rendered}#[fg=${active_bg},bg=${status_bg},bold]  >>>  #[default]"
