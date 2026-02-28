@@ -19,7 +19,7 @@ inactive_fg="#000000"
 active_bg=$(tmux show -gqv @theme_color 2>/dev/null || true)
 [[ -z "$active_bg" ]] && active_bg="#9A2600"
 active_fg="#ffffff"
-separator=" "
+separator=""
 left_cap=""
 hollow_separator=" "
 max_width=18
@@ -142,4 +142,4 @@ if [[ -n "$prev_bg" ]]; then
   rendered+="#[fg=${prev_bg},bg=${status_bg}]${separator}"
 fi
 
-printf '%s' "$rendered"
+printf '%s' "$rendered  >>>  "
