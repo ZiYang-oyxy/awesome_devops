@@ -12,12 +12,11 @@ state=$(cat "$CACHE_FILE" 2>/dev/null || true)
 
 result=$(echo "$state" | jq -r --arg wid "$window_id" '
   .tasks // [] | .[] | select(.window_id == $wid) |
-  if .status == "in_progress" then "in_progress"
-  elif .status == "completed" and .acknowledged != true then "waiting"
-  else empty end
+  if .status == "completed" and .acknowledged != true then "waiting"
+  else empty
+  end
 ' 2>/dev/null | head -1 || true)
 
 case "$result" in
-  in_progress) printf '⏳' ;;
   waiting) printf '🔔' ;;
 esac

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Args: <active> <theme_color> <pane_pid> <pane_width> <pane_path> <pane_cmd> <window_zoomed_flag>
+# Args: <active> <theme_color> <pane_pid> <pane_width> <pane_path> <pane_cmd> <window_zoomed_flag> <pane_id> <window_id>
 active="${1:-0}"
 theme_color="${2:-}"
 pid="${3:-}"
@@ -9,6 +9,8 @@ width_raw="${4:-80}"
 pane_path="${5:-$PWD}"
 pane_cmd="${6:-}"
 zoomed_flag="${7:-0}"
+pane_id="${8:-}"
+window_id="${9:-}"
 
 if [[ -z "$theme_color" ]]; then
   theme_color="#9A2600"
@@ -45,10 +47,14 @@ if ((inner_width < 10)); then
 fi
 
 title="$("$HOME/.config/tmux/scripts/pane_starship_title.sh" "$pid" "$inner_width" "$pane_path" "$pane_cmd")"
+pane_icon="$("$HOME/.config/tmux/tmux-status/pane_task_icon.sh" "$pane_id" "$window_id" "$active" "$pane_cmd" 2>/dev/null || true)"
+if [[ -n "$pane_icon" ]]; then
+  pane_icon="${pane_icon} "
+fi
 
 left_cap=""
 right_cap=""
-body=" ${zoomed_prefix}${title} "
+body=" ${zoomed_prefix}${pane_icon}${title} "
 plain="${left_cap}${body}${right_cap}"
 content_len=${#plain}
 

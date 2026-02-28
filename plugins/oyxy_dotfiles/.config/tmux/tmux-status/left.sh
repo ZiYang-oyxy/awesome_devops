@@ -73,12 +73,11 @@ get_session_icon() {
   local result
   result=$(echo "$tracker_state" | jq -r --arg sid "$sid" '
     .tasks // [] | .[] | select(.session_id == $sid) |
-    if .status == "in_progress" then "in_progress"
-    elif .status == "completed" and .acknowledged != true then "waiting"
-    else empty end
+    if .status == "completed" and .acknowledged != true then "waiting"
+    else empty
+    end
   ' 2>/dev/null | head -1 || true)
   case "$result" in
-  in_progress) printf '⏳' ;;
   waiting) printf '🔔' ;;
   esac
 }
