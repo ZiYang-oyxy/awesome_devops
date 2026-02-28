@@ -94,7 +94,8 @@ _cx_run() {
 }
 
 alias cx="_cx_run false"
-alias cx1="_cx_run false --dangerously-bypass-approvals-and-sandbox -m gpt-5.3-codex-spark"
+#alias cx1="_cx_run false --dangerously-bypass-approvals-and-sandbox -m gpt-5.3-codex-spark"
+alias cx1="_cx_run false --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=low"
 alias cx2="_cx_run false --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=medium"
 alias cx3="_cx_run true --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=xhigh"
 alias cc="claude"
