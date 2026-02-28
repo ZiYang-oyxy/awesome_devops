@@ -40,6 +40,8 @@ meta=$(tmux display-message -p -t "$pane_id" '#{session_id}	#{window_id}	#{pane_
 [[ -z "$meta" ]] && exit 0
 IFS=$'\t' read -r session_id window_id pane_id <<< "$meta"
 [[ -z "$session_id" || -z "$window_id" || -z "$pane_id" ]] && exit 0
+session_name=$(tmux display-message -p -t "$pane_id" '#{session_name}' 2>/dev/null || true)
+[[ -z "$session_name" ]] && session_name="$session_id"
 
 mkdir -p "$(dirname "$CACHE_FILE")"
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
@@ -78,4 +80,38 @@ echo "$state" | jq \
 ' > "$CACHE_FILE.tmp"
 mv "$CACHE_FILE.tmp" "$CACHE_FILE"
 
+# If this pane is currently attached to any active client, acknowledge immediately.
+active_client_panes=$(tmux list-clients -F '#{pane_id}' 2>/dev/null | awk 'NF{print}' | tr '\n' '\t' || true)
+if [[ "$active_client_panes" == *"${pane_id}"$'\t'* ]]; then
+  state=$(cat "$CACHE_FILE" 2>/dev/null || true)
+  [[ -z "$state" ]] && state='{"tasks":[]}'
+  echo "$state" | jq \
+    --arg task_id "$task_id" \
+    --arg pid "$pane_id" \
+    --argjson now "$now_ts" '
+    .tasks = (
+      (.tasks // [])
+      | map(
+          if ((.task_id // "") == $task_id or (.pane_id // "") == $pid) then
+            .acknowledged = true | .updated_at = $now
+          else
+            .
+          end
+        )
+    )
+  ' > "$CACHE_FILE.tmp"
+  mv "$CACHE_FILE.tmp" "$CACHE_FILE"
+fi
+
 tmux refresh-client -S 2>/dev/null || true
+
+if command -v osascript >/dev/null 2>&1; then
+  notify_title='Codex task completed'
+  notify_body="session: ${session_name}, window: ${window_id}, pane: ${pane_id}"
+  # Escape quotes/backslashes for AppleScript string literal.
+  notify_title_escaped=${notify_title//\\/\\\\}
+  notify_title_escaped=${notify_title_escaped//\"/\\\"}
+  notify_body_escaped=${notify_body//\\/\\\\}
+  notify_body_escaped=${notify_body_escaped//\"/\\\"}
+  osascript -e "display notification \"${notify_body_escaped}\" with title \"${notify_title_escaped}\"" >/dev/null 2>&1 || true
+fi
