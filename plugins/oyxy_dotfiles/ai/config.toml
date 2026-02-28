@@ -1,0 +1,474 @@
+# ⚠️ TOML 作用域注意：`[table]` 之后的键都会归属该 table，直到下一个 `[other]`。
+# 如果你想配置顶层键（如 `notify`/`model`/`web_search`），请放在第一个 `[table]` 之前，
+# 或明确放在你期望的 table 下，避免“看起来写了但实际没生效/生效在错误作用域”。
+# 最小安全结构示例（建议按这个顺序放置）：
+#   1) 顶层键：model / notify / web_search / personality ...
+#   2) [tui]
+#   3) [mcp_servers.<name>]
+#   4) [notice.model_migrations]
+# 这样可以最大限度避免把顶层键误写进某个 table。
+# Codex 配置模板（根据 schema: https://developers.openai.com/codex/config-schema.json）
+# 说明：
+# - 本文件为“可填写模板”，默认都注释掉；按需取消注释即可。
+# - 枚举可选值会在注释中完整列出。
+# - 某些对象是“映射表”（dynamic keys），示例 key 用 <...> 占位。
+
+# =========================
+# 顶层基础项
+# =========================
+
+# 系统/开发者提示词
+# instructions = "System instructions"
+# developer_instructions = "Developer instructions"
+# compact_prompt = "Compact prompt text"
+
+# 模型相关
+model = "gpt-5.3-codex"
+model_reasoning_effort = "medium"       # none|minimal|low|medium|high|xhigh
+plan_mode_reasoning_effort = "high"     # none|minimal|low|medium|high|xhigh
+model_reasoning_summary = "auto"        # auto|concise|detailed|none
+model_verbosity = "medium"              # low|medium|high
+# review_model = "gpt-5"
+# model_provider = "openai"                 # 对应 [model_providers.<key>] 的 key
+# oss_provider = "ollama"                   # 本地模型提供方（如 ollama/lmstudio）
+# model_context_window = 200000              # integer，模型上下文窗口（token）
+# model_auto_compact_token_limit = 120000    # integer，触发自动压缩阈值
+# model_supports_reasoning_summaries = true  # boolean，强制声明支持 reasoning summary
+# model_instructions_file = "/abs/path/instructions.md"   # 绝对路径
+# model_catalog_json = "/abs/path/model-catalog.json"     # 绝对路径，模型目录 JSON（仅启动时加载）
+
+# 认证/登录
+# forced_login_method = "chatgpt"           # 可选: "chatgpt" | "api"
+# forced_chatgpt_workspace_id = "workspace_xxx"
+# cli_auth_credentials_store = "auto"       # 可选: "file" | "keyring" | "auto" | "ephemeral"
+# mcp_oauth_credentials_store = "auto"      # 可选: "auto" | "file" | "keyring"
+# mcp_oauth_callback_port = 1455              # integer，固定 OAuth 回调端口（不设则随机）
+# mcp_oauth_callback_url = "http://127.0.0.1:1455/callback" # 可选，MCP OAuth 重定向 URI
+
+# 运行策略
+# approval_policy = "on-request"            # 可选: "untrusted" | "on-failure" | "on-request" | "never"
+# sandbox_mode = "workspace-write"          # 可选: "read-only" | "workspace-write" | "danger-full-access"
+# allow_login_shell = true                  # 是否允许工具以 login shell 运行（默认 true）
+# background_terminal_max_timeout = 300000  # integer，后台终端轮询最长等待毫秒（默认 5 分钟）
+web_search = "live"                   # 可选: "disabled" | "cached" | "live"
+# file_opener = "vscode"                    # 可选: "vscode" | "vscode-insiders" | "windsurf" | "cursor" | "none"
+
+# 目录/文件
+# log_dir = "/abs/path/logs"                # 绝对路径，日志目录
+# sqlite_home = "/abs/path/codex-state"     # 绝对路径，SQLite 状态库目录
+# experimental_compact_prompt_file = "/abs/path/compact-prompt.md"  # 绝对路径
+
+# 其他顶层开关
+check_for_update_on_startup = false
+# disable_paste_burst = false
+hide_agent_reasoning = false
+show_raw_agent_reasoning = true
+suppress_unstable_features_warning = true
+personality = "pragmatic"            # none|friendly|pragmatic
+# commit_attribution = "Co-authored-by: Your Name <you@example.com>" # commit 署名尾注文本；设为空字符串可禁用
+# js_repl_node_path = "/abs/path/node"      # 绝对路径，js_repl 使用的 Node 可执行文件
+# js_repl_node_module_dirs = ["/abs/path/node_modules"] # js_repl 依赖搜索目录（绝对路径）
+# zsh_path = "/abs/path/zsh"                # 绝对路径，指定 zsh-exec-bridge 使用的 zsh
+# windows_wsl_setup_acknowledged = true
+# experimental_use_freeform_apply_patch = true
+# experimental_use_unified_exec_tool = true
+# experimental_realtime_ws_backend_prompt = "..." # 实验项，不建议启用
+# experimental_realtime_ws_base_url = "wss://..." # 实验项，不建议启用
+
+# 通知命令（外部程序）
+notify = ["/Users/bytedance/.config/tmux/tmux-status/codex_notify_mark_done.sh"]
+
+[tui]
+status_line = ["model-with-reasoning", "context-remaining", "total-input-tokens", "total-output-tokens", "five-hour-limit", "weekly-limit"]
+notifications = true
+
+[mcp_servers.github]
+url = "https://api.githubcopilot.com/mcp/"
+bearer_token_env_var = "GITHUB_PAT_TOKEN"
+enabled = true
+required = false
+startup_timeout_sec = 3.0
+
+[mcp_servers.context7]
+command = "bash"
+args = ["-lc", "/Users/bytedance/.nvm/versions/node/v25.2.0/bin/context7-mcp --api-key \"$CONTEXT7_API_KEY\""]
+env_vars = ["CONTEXT7_API_KEY"]
+enabled = true
+required = false
+startup_timeout_sec = 6.0
+
+[notice.model_migrations]
+"gpt-5.2" = "gpt-5.3-codex"
+
+[projects."/Volumes/code/vibecoding/assistant"]
+trust_level = "trusted"
+
+# 项目文档读取策略
+# project_doc_fallback_filenames = ["AGENTS.md", "README.md"]
+# project_doc_max_bytes = 65536
+# project_root_markers = [".git", ".hg"]
+
+# profile 选择
+# profile = "default"
+
+# tool 输出预算
+# tool_output_token_limit = 12000
+
+# ChatGPT base URL
+# chatgpt_base_url = "https://chatgpt.com"
+
+
+# =========================
+# [agents]
+# =========================
+# 作用：agent 并发线程限制
+#[agents]
+# max_threads = 4   # integer，>=1
+# max_depth = 3     # integer，子 agent 最大递归深度
+# job_max_runtime_seconds = 1800  # integer，单个 agent 任务最长运行秒数
+
+
+# =========================
+# [analytics]
+# =========================
+# 作用：分析埋点
+#[analytics]
+# enabled = true
+
+
+# =========================
+# [feedback]
+# =========================
+# 作用：反馈流程开关
+#[feedback]
+# enabled = true
+
+
+# =========================
+# [history]
+# =========================
+# 作用：历史记录写入策略（~/.codex/history.jsonl）
+#[history]
+# persistence = "save-all"   # 可选: "none" | "save-all"
+# max_bytes = 10485760        # integer，历史文件最大字节数
+
+
+# =========================
+# [ghost_snapshot]
+# =========================
+# 作用：undo 快照相关
+#[ghost_snapshot]
+# disable_warnings = false
+# ignore_large_untracked_dirs = 2000   # integer，目录文件数阈值
+# ignore_large_untracked_files = 5242880  # integer，文件字节阈值
+
+
+# =========================
+# [sandbox_workspace_write]
+# =========================
+# 作用：sandbox_mode="workspace-write" 时的额外写权限配置
+#[sandbox_workspace_write]
+# network_access = false
+# exclude_slash_tmp = false
+# exclude_tmpdir_env_var = false
+# writable_roots = ["/abs/path/project", "/abs/path/cache"]
+
+
+# =========================
+# [shell_environment_policy]
+# =========================
+# 作用：shell/local_shell 启动时环境变量构造策略
+#[shell_environment_policy]
+# inherit = "core"                     # 可选: "all" | "core" | "none"
+# include_only = ["^PATH$", "^HOME$"]  # regex 列表
+# exclude = ["^AWS_", "^GCP_"]          # regex 列表
+# ignore_default_excludes = false
+# experimental_use_profile = false
+
+# [shell_environment_policy.set]
+# 作用：强制设置变量
+# PATH = "/usr/local/bin:/usr/bin:/bin"
+# LANG = "en_US.UTF-8"
+
+
+# =========================
+# [tools]
+# =========================
+# 作用：工具级别开关（非 features）
+#[tools]
+# view_image = true
+# web_search = false
+
+
+# =========================
+# [tui]
+# =========================
+# 作用：TUI 行为配置
+#[tui]
+# alternate_screen = "auto"        # 可选: "auto" | "always" | "never"
+# animations = true
+# experimental_mode = "default"    # 可选: "default" | "plan"
+# notification_method = "auto"     # 可选: "auto" | "osc9" | "bel"
+# notifications = true               # 可为 boolean
+# notifications = ["task_complete"] # 或 string[]（高级用法）
+# show_tooltips = true
+# status_line = ["model", "sandbox", "approval", "tokens"]
+# theme = "one-dark-pro"            # 主题名（kebab-case）
+
+
+# =========================
+# [otel]
+# =========================
+# 作用：OpenTelemetry 导出相关
+#[otel]
+# environment = "dev"
+# exporter = "none"         # 可选: "none" | "statsig"
+# metrics_exporter = "none" # 可选: "none" | "statsig"
+# trace_exporter = "none"   # 可选: "none" | "statsig"
+# log_user_prompt = false
+
+
+# =========================
+# [memories]
+# =========================
+# 作用：memories 子系统参数（用于线程记忆生成与汇总）
+#[memories]
+# phase_1_model = "gpt-5"              # 线程摘要模型
+# phase_2_model = "gpt-5"              # 记忆汇总模型
+# min_rollout_idle_hours = 12          # integer，最小空闲小时数（建议 >12）
+# max_rollout_age_days = 30            # integer，参与记忆线程的最大天数
+# max_unused_days = 30                 # integer，记忆未使用淘汰阈值（天）
+# max_rollouts_per_startup = 200       # integer，单次启动最多处理 rollout 数
+# max_raw_memories_for_global = 200    # integer，全局汇总保留的原始记忆数
+
+
+# =========================
+# [permissions]
+# =========================
+# 作用：权限系统细粒度配置（当前主要是网络代理）
+# [permissions]
+#[permissions.network]
+# enabled = false
+# mode = "limited"                     # 可选: "limited" | "full"
+# proxy_url = "http://127.0.0.1:7890"
+# socks_url = "socks5://127.0.0.1:1080"
+# admin_url = "http://127.0.0.1:9090"
+# allow_local_binding = false
+# allow_upstream_proxy = false
+# enable_socks5 = false
+# enable_socks5_udp = false
+# allowed_domains = ["api.openai.com"]
+# denied_domains = ["example.com"]
+# allow_unix_sockets = ["/var/run/docker.sock"]
+# dangerously_allow_all_unix_sockets = false
+# dangerously_allow_non_loopback_admin = false
+# dangerously_allow_non_loopback_proxy = false
+
+
+# =========================
+# [windows]
+# =========================
+# 作用：Windows 专属配置
+#[windows]
+# sandbox = "unelevated"               # 可选: "elevated" | "unelevated"
+
+
+# =========================
+# [notice]
+# =========================
+# 作用：产品内提示（NUX/警告）“已读状态”
+#[notice]
+# hide_full_access_warning = true
+# "hide_gpt-5.1-codex-max_migration_prompt" = true
+# hide_gpt5_1_migration_prompt = true
+# hide_rate_limit_model_nudge = true
+# hide_world_writable_warning = true
+
+# [notice.model_migrations]
+# 作用：记录旧模型 -> 新模型的迁移提示已读状态
+# "gpt-4.1" = "gpt-5"
+
+
+# =========================
+# [features]
+# =========================
+# 作用：功能 flag（集中控制）
+#[features]
+# apply_patch_freeform = false
+# apps = false
+# child_agents_md = false
+# collab = false
+# collaboration_modes = true
+# connectors = false
+# elevated_windows_sandbox = false
+# enable_experimental_windows_sandbox = false
+# enable_request_compression = true
+# experimental_use_freeform_apply_patch = false
+# experimental_use_unified_exec_tool = true
+# experimental_windows_sandbox = false
+# include_apply_patch_tool = true
+# memory_tool = false
+# personality = true
+# powershell_utf8 = false
+# remote_models = true
+# request_rule = true
+# responses_websockets = false
+# responses_websockets_v2 = false
+# runtime_metrics = false
+# search_tool = false
+# shell_snapshot = false
+# shell_tool = true
+# skill_env_var_dependency_prompt = false
+# skill_mcp_dependency_install = true
+# sqlite = false
+# steer = true
+# undo = false
+# unified_exec = true
+# use_linux_sandbox_bwrap = false
+# web_search = false
+# web_search_cached = false   # deprecated
+# web_search_request = false  # deprecated
+
+
+# =========================
+# [skills]
+# =========================
+# 作用：用户级技能配置（数组）
+# [[skills.config]]
+# path = "/abs/path/to/SKILL.md"
+# enabled = true
+
+
+# =========================
+# [apps._default]
+# =========================
+# 作用：所有 app/connector 的默认策略
+# [apps._default]
+# enabled = true
+# destructive_enabled = false
+# open_world_enabled = false
+
+
+# =========================
+# [apps.<app_id>]
+# =========================
+# 作用：按 app/connector 逐个启停
+# [apps."github"]
+# enabled = true
+# destructive_enabled = false
+# open_world_enabled = false
+# default_tools_enabled = true
+# default_tools_approval_mode = "auto"   # 可选: "auto" | "prompt" | "approve"
+# disabled_reason = "user"    # 可选: "unknown" | "user"
+
+# [apps."github".tools."create_issue"]
+# enabled = true
+# approval_mode = "prompt"              # 可选: "auto" | "prompt" | "approve"
+
+
+# =========================
+# [mcp_servers.<name>]
+# =========================
+# 作用：定义 MCP Server
+# [mcp_servers."my-mcp"]
+# command = "npx"
+# args = ["-y", "@modelcontextprotocol/server-filesystem", "/abs/path/project"]
+# cwd = "/abs/path/project"
+# url = "http://127.0.0.1:8080/mcp"      # command/url 取决于 server 类型
+# enabled = true
+# required = false
+# startup_timeout_ms = 15000
+# startup_timeout_sec = 15.0
+# tool_timeout_sec = 60.0
+# env_vars = ["GITHUB_TOKEN", "OPENAI_API_KEY"]
+# scopes = ["read", "write"]
+# enabled_tools = ["read_file", "list_dir"]
+# disabled_tools = ["delete_file"]
+# bearer_token = "token"
+# bearer_token_env_var = "MCP_TOKEN"
+
+# [mcp_servers."my-mcp".env]
+# HTTP_PROXY = "http://127.0.0.1:7890"
+
+# [mcp_servers."my-mcp".http_headers]
+# X_TEAM = "infra"
+
+# [mcp_servers."my-mcp".env_http_headers]
+# Authorization = "MCP_AUTH_HEADER_ENV"
+
+
+# =========================
+# [model_providers.<name>]
+# =========================
+# 作用：自定义/覆盖模型提供方
+# [model_providers."my-provider"]
+# name = "My Provider"                 # 必填
+# base_url = "https://api.example.com/v1"
+# env_key = "MY_PROVIDER_API_KEY"
+# env_key_instructions = "请在控制台创建 API Key 并写入环境变量"
+# experimental_bearer_token = "token"  # 不建议，优先 env_key
+# request_max_retries = 3
+# stream_max_retries = 10
+# stream_idle_timeout_ms = 300000
+# requires_openai_auth = false
+# supports_websockets = false
+# wire_api = "responses"               # 当前仅此可选值
+
+# [model_providers."my-provider".http_headers]
+# X_ORG = "my-org"
+
+# [model_providers."my-provider".env_http_headers]
+# Authorization = "MY_PROVIDER_AUTH_HEADER_ENV"
+
+# [model_providers."my-provider".query_params]
+# api-version = "2025-01-01"
+
+
+# =========================
+# [profiles.<name>]
+# =========================
+# 作用：预设配置集合，可通过顶层 `profile = "<name>"` 切换
+# [profiles."safe"]
+# model_provider = "openai"
+# model_catalog_json = "/abs/path/model-catalog.json"
+# model_instructions_file = "/abs/path/model-instructions.md"
+# model_reasoning_effort = "medium"       # none|minimal|low|medium|high|xhigh
+# plan_mode_reasoning_effort = "high" # none|minimal|low|medium|high|xhigh
+# model_reasoning_summary = "auto"  # auto|concise|detailed|none
+# model_verbosity = "medium"              # low|medium|high
+# web_search = "cached"                # disabled|cached|live
+# approval_policy = "untrusted"        # untrusted|on-failure|on-request|never
+# sandbox_mode = "read-only"           # read-only|workspace-write|danger-full-access
+# personality = "pragmatic"            # none|friendly|pragmatic
+
+# oss_provider = "ollama"
+# chatgpt_base_url = "https://chatgpt.com"
+# include_apply_patch_tool = true
+# tools_view_image = true
+# tools_web_search = false
+# js_repl_node_path = "/abs/path/node"
+# js_repl_node_module_dirs = ["/abs/path/node_modules"]
+# zsh_path = "/abs/path/zsh"
+# experimental_compact_prompt_file = "/abs/path/compact-prompt.md"
+# experimental_use_freeform_apply_patch = false
+# experimental_use_unified_exec_tool = true
+
+# [profiles."safe".windows]
+# sandbox = "unelevated"               # 可选: "elevated" | "unelevated"
+
+# [profiles."safe".analytics]
+# enabled = true
+
+# [profiles."safe".features]
+# shell_tool = true
+# unified_exec = true
+# undo = false
+# (可写的 feature key 与顶层 [features] 相同)
+
+
+# =========================
+# [projects.<absolute_path>]
+# =========================
+# 作用：按项目目录设置信任级别
+# [projects."/abs/path/project-a"]
+# trust_level = "trusted"    # 可选: "trusted" | "untrusted"

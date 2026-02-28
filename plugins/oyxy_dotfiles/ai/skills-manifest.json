@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "generatedAt": "2026-02-28T11:50:38.694Z",
+  "sourceLockFile": "/Users/bytedance/.agents/.skill-lock.json",
+  "skills": [
+    {
+      "name": "find-skills",
+      "source": "vercel-labs/skills"
+    },
+    {
+      "name": "frontend-design",
+      "source": "anthropics/skills"
+    },
+    {
+      "name": "git-commit",
+      "source": "github/awesome-copilot"
+    },
+    {
+      "name": "playwright-cli",
+      "source": "microsoft/playwright-cli"
+    },
+    {
+      "name": "vercel-react-best-practices",
+      "source": "vercel-labs/agent-skills"
+    },
+    {
+      "name": "web-design-guidelines",
+      "source": "vercel-labs/agent-skills"
+    },
+    {
+      "name": "webapp-testing",
+      "source": "anthropics/skills"
+    }
+  ]
+}
