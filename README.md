@@ -113,6 +113,9 @@ ad
 - 可通过环境变量覆盖：`AD_EXTERNAL_DIR=/path/to/awesome_devops`
 - 若外部目录存在 `ad`，主仓库 `ad` 会自动转发到外部 `ad`（可用 `AD_DISABLE_EXTERNAL_AD=1` 关闭）
 - 同名冲突优先级：内置目录优先，外部目录只补充缺失工具
+- `latest_version` 使用 `v2` 结构化签名：`v2|bct=...|bsha=...|ect=...|esha=...`
+- 当外部目录存在且是 git 仓库时，版本同时绑定主仓与外部仓提交；任一侧提交变化都视为新版本
+- 当外部目录不存在或非 git 仓库时，自动降级为主仓单边版本（`ect=0`、`esha=absent`）
 
 示例：
 

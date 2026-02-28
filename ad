@@ -138,6 +138,91 @@ fi
 #     CURL="curl -g -6"
 # fi
 
+version_resolve_repo_meta()
+{
+    _repo="$1"
+    if [[ -z "$_repo" ]] || [[ ! -d "$_repo" ]]; then
+        return 1
+    fi
+
+    if ! (cd "$_repo" && git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
+        return 1
+    fi
+
+    _repo_ct="$(cd "$_repo" && git log -1 --pretty=format:"%ct" 2>/dev/null || true)"
+    _repo_sha="$(cd "$_repo" && git rev-parse --short=12 HEAD 2>/dev/null || true)"
+    if [[ ! "$_repo_ct" =~ ^[0-9]+$ ]] || [[ ! "$_repo_sha" =~ ^[0-9a-f]{7,40}$ ]]; then
+        return 1
+    fi
+    printf "%s|%s" "$_repo_ct" "$_repo_sha"
+}
+
+version_resolve_external_root()
+{
+    _ext_root="${EXTERNAL_ROOT:-}"
+    if [[ -z "$_ext_root" ]] || [[ ! -d "$_ext_root" ]]; then
+        return 1
+    fi
+
+    _base_real="$(readlink -f "$CURDIR" 2>/dev/null || echo "$CURDIR")"
+    _ext_real="$(readlink -f "$_ext_root" 2>/dev/null || echo "$_ext_root")"
+    if [[ "$_base_real" == "$_ext_real" ]]; then
+        return 1
+    fi
+    printf "%s" "$_ext_real"
+}
+
+version_collect_components()
+{
+    _base_ct=0
+    _base_sha="absent"
+    _ext_ct=0
+    _ext_sha="absent"
+
+    _base_meta="$(version_resolve_repo_meta "$CURDIR" || true)"
+    if [[ -n "$_base_meta" ]]; then
+        _base_ct="${_base_meta%%|*}"
+        _base_sha="${_base_meta##*|}"
+    fi
+
+    _ext_root="$(version_resolve_external_root || true)"
+    if [[ -n "$_ext_root" ]]; then
+        _ext_meta="$(version_resolve_repo_meta "$_ext_root" || true)"
+        if [[ -n "$_ext_meta" ]]; then
+            _ext_ct="${_ext_meta%%|*}"
+            _ext_sha="${_ext_meta##*|}"
+        fi
+    fi
+
+    printf "%s|%s|%s|%s" "$_base_ct" "$_base_sha" "$_ext_ct" "$_ext_sha"
+}
+
+version_build_latest_v2()
+{
+    _components="$(version_collect_components)"
+    IFS='|' read -r _base_ct _base_sha _ext_ct _ext_sha <<< "$_components"
+    printf "v2|bct=%s|bsha=%s|ect=%s|esha=%s" "$_base_ct" "$_base_sha" "$_ext_ct" "$_ext_sha"
+}
+
+version_build_default_version_str()
+{
+    _components="$(version_collect_components)"
+    IFS='|' read -r _base_ct _base_sha _ext_ct _ext_sha <<< "$_components"
+    printf "v2_b%s_%s_e%s_%s" "$_base_ct" "$_base_sha" "$_ext_ct" "$_ext_sha"
+}
+
+version_is_v2()
+{
+    [[ "$1" =~ ^v2\|bct=[0-9]+\|bsha=[0-9a-f]{7,40}\|ect=[0-9]+\|esha=([0-9a-f]{7,40}|absent)$ ]]
+}
+
+version_read_local()
+{
+    _local_version="$(cat "$CURDIR/latest_version" 2>/dev/null || true)"
+    _local_version="$(tr -d '\r\n' <<< "$_local_version")"
+    printf "%s" "$_local_version"
+}
+
 put()
 {
     if [[ ! -f $1 ]]; then
@@ -351,6 +436,10 @@ publish()
     source "$CURDIR/config"
     restore_caller_exported_env
     cd "$CURDIR"
+    _latest_version_v2="$(version_build_latest_v2)"
+    if [[ -z "$VERSION_STR" ]]; then
+        VERSION_STR="$(version_build_default_version_str)"
+    fi
 
     if [[ $_fast_mode -eq 1 ]]; then
         _fast_exclude_str="--exclude=not_in_ad_tar"
@@ -365,7 +454,7 @@ publish()
     echo ". Recent changes:" >changelog.log
     git log -5 --pretty=format:"%ct %cI %s" >>changelog.log
     echo "" >>changelog.log
-    git log -1 --pretty=format:"%ct" >latest_version
+    echo "$_latest_version_v2" >latest_version
 
     rm -rf dist
     mkdir -p dist
@@ -438,19 +527,20 @@ publish()
 
 new_version_detect()
 {
-    _old=`cat $CURDIR/latest_version`
-    _new=`$CURL --connect-timeout 1 -sS $GETURL/'@latest_version@' 2>/dev/null`
+    _old="$(version_read_local)"
+    _new="$($CURL --connect-timeout 1 -sS "$GETURL/@latest_version@" 2>/dev/null || true)"
+    _new="$(tr -d '\r\n' <<< "$_new")"
 
-    if [[ ! $? -eq 0 ]]; then
+    if [[ -z "$_new" ]]; then
         cecho -Gy 'Unable to connect to ad server'
         return
     fi
 
-    if [[ ! "$_new" =~ ^[0-9]+$ ]]; then
+    if ! version_is_v2 "$_new"; then
         return
     fi
 
-    if [[ $_new -gt $_old ]]; then
+    if [[ "$_new" != "$_old" ]]; then
         cecho -g 'A new version is available! Run "ad upgrade"'
     fi
 }
