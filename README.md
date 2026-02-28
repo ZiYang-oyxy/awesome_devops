@@ -48,7 +48,7 @@ ad get <file>
 下面的流程描述了执行 `ad` 时，主仓与 external 的协作方式：
 
 ```mermaid
-flowchart TD
+flowchart LR
     A[用户执行 ad] --> B[主仓 ad 启动]
     B --> C{external 目录存在且包含 ad?}
     C -- 否 --> D[继续在主仓 ad 执行]
