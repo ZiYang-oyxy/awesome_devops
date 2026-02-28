@@ -22,7 +22,8 @@ _ln $curdir/.tmux.conf ~/.tmux.conf
 _ln $curdir/.tmux-powerlinerc ~/.tmux-powerlinerc
 
 log "Configure codex ..."
-_ln $curdir/ai/config.toml ~/.codex.toml
+mkdir -p ~/.codex
+_ln $curdir/ai/config.toml ~/.codex/config.toml
 
 # font
 #git clone https://github.com/supermarin/powerline-fonts.git
@@ -30,7 +31,7 @@ _ln $curdir/ai/config.toml ~/.codex.toml
 brew install shellcheck curl gnu-tar clang-format starship
 
 log "Install codex skills ..."
-bash $curdir/ai/scripts/install-skills.sh $curdir/ai/skills-manifest.json
+"$curdir/ai/scripts/install-skills.sh" "$curdir/ai/skills-manifest.json"
 
 # :CocInstall coc-sh
 # :CocInstall coc-json

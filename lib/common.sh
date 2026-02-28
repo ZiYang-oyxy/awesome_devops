@@ -33,11 +33,11 @@ function log_error {
 }
 
 _ln(){
-    if [[ -e $2 ]]; then
-        rm -rf $2.bak
-        mv -f $2 $2.bak
+    if [[ -e "$2" ]]; then
+        rm -rf -- "$2.bak"
+        mv -f -- "$2" "$2.bak"
     fi
-    ln -sf $1 $2
+    ln -sf -- "$1" "$2"
 }
 
 cecho(){
