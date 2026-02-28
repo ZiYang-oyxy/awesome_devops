@@ -451,9 +451,17 @@ publish()
         exit 1
     }
 
-    echo ". Recent changes:" >changelog.log
+    echo ". awesome_devops changes:" >changelog.log
     git log -5 --pretty=format:"%ct %cI %s" >>changelog.log
     echo "" >>changelog.log
+
+    _ext_root="$(version_resolve_external_root || true)"
+    if [[ -n "$_ext_root" ]] && (cd "$_ext_root" && git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
+        echo ". ad_external changes:" >>changelog.log
+        (cd "$_ext_root" && git log -5 --pretty=format:"%ct %cI %s") >>changelog.log
+        echo "" >>changelog.log
+    fi
+
     echo "$_latest_version_v2" >latest_version
 
     rm -rf dist
