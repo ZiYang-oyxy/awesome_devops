@@ -12,6 +12,97 @@ ad是我工作以来持续积累的研发&运维工具和dotfile，做到尽量�
 
 > 工具介绍可能远落后于最新版本，ad tree可以看到所有工具的路径，大部分都是脚本，可自行摸索。有些开发工具可能会自动安装rpm，只适配了centos
 
+## 快速体验
+
+```bash
+# 安装
+SERVER_IP=1.1.1.1; bash <(curl -s http://Awesome:Devops@$SERVER_IP:8890/@aadi@) && source ~/.bashrc
+
+# 查看help（会触发版本检查）
+ad
+
+# 上传/下载文件
+ad put <file>
+ad get <file>
+```
+
+详细参数和无服务端用法见下方“基础用法”章节。
+
+## 项目框架与设计哲学
+
+`awesome_devops` 采用“主仓稳定内核 + 外部仓按需覆盖”的双层结构：
+
+- 主仓：`/Volumes/code/awesome_devops`，承载通用工具、基础命令、默认安装与发布流程。
+- 外部仓：`/Volumes/code/ad_external/awesome_devops`，承载特定网络/组织环境能力（例如 `ph-fts`）。
+
+这样可以把环境定制能力和个人通用工具解耦，既保证主仓长期可维护，也允许 external 仓快速迭代，不把定制逻辑反向污染回主仓。
+
+### 为什么存在 ad_external
+
+- **边界清晰**：主仓保持原生能力与可移植性，external 只负责场景化增强。
+- **最小侵入**：运行时通过叠加与转发生效，不需要频繁改主仓主路径。
+- **可回退**：通过环境变量可临时关闭 external 转发，快速回到主仓行为。
+
+### 运行时框架流程（命令执行）
+
+下面的流程描述了执行 `ad` 时，主仓与 external 的协作方式：
+
+```mermaid
+flowchart TD
+    A[用户执行 ad] --> B[主仓 ad 启动]
+    B --> C{external 目录存在且包含 ad?}
+    C -- 否 --> D[继续在主仓 ad 执行]
+    C -- 是 --> E{是否关闭转发?}
+    E -- 是 --> D
+    E -- 否 --> F[转发到 external/ad 执行]
+    D --> G[命令解析与工具查找]
+    F --> G
+    G --> H[主仓 tools/plugins 优先]
+    G --> I[external 只补充缺失项]
+```
+
+关键点：
+
+- 默认 external 目录：`../ad_external/awesome_devops`（可用 `AD_EXTERNAL_DIR` 覆盖）。
+- 默认会自动转发到 external `ad`；可用 `AD_DISABLE_EXTERNAL_AD=1` 临时关闭。
+- 命令解析遵循“主仓优先，external 补充”的策略，避免同名覆盖带来行为漂移。
+
+### 发布与版本探测流程（双仓绑定）
+
+`ad publish` 会同时考虑主仓与 external 仓的状态，确保发布产物与版本提示反映完整组合。
+
+```mermaid
+sequenceDiagram
+    participant Dev as 开发者
+    participant Base as 主仓 awesome_devops
+    participant Ext as external 仓
+    participant Pub as ad publish
+    participant Srv as 远端存储
+    participant Cli as 用户侧 ad/help
+
+    Dev->>Pub: 在主仓执行 ad publish
+    Pub->>Base: 读取主仓 git 元信息(bct,bsha)
+    Pub->>Ext: 若可用则读取 external 元信息(ect,esha)
+    Pub->>Pub: 生成 latest_version: v2|bct|bsha|ect|esha
+    Pub->>Pub: 打包主仓并叠加 external 内容
+    Pub->>Srv: 上传 tar/install/latest_version
+    Cli->>Srv: 触发版本检查
+    Srv-->>Cli: 返回 latest_version
+    Cli-->>Cli: 若远端与本地不一致则提示 ad upgrade
+```
+
+降级语义：
+
+- 当 external 目录不存在或不是 git 仓库时，版本自动降级为主仓单边：`ect=0`、`esha=absent`。
+- 当 external 为有效 git 仓库时，主仓或 external 任一侧提交变化都视为新版本。
+
+### 设计原则总结
+
+- **主仓稳定**：主仓是通用能力的长期维护面。
+- **external 敏捷**：environment-specific 能力在 external 独立迭代。
+- **组合发布**：发布产物由“主仓 + external”在打包阶段合成。
+- **显式可控**：通过 `AD_EXTERNAL_DIR` / `AD_DISABLE_EXTERNAL_AD` 实现启停与定位控制。
+
 ## ad help
 
 ```
