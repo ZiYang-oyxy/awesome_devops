@@ -61,11 +61,42 @@ alias sed='gsed'
 alias chrome="open -a 'Google Chrome'"
 alias tree="tree -C"
 
-# AI Summary aliases
-alias cx="printenv OPENAI_API_KEY | codex login --with-api-key; codex"
-alias cx1="printenv OPENAI_API_KEY | codex login --with-api-key; codex --dangerously-bypass-approvals-and-sandbox -m gpt-5.3-codex-spark"
-alias cx2="printenv OPENAI_API_KEY | codex login --with-api-key; codex --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=medium"
-alias cx3="printenv OPENAI_API_KEY | codex login --with-api-key; codex --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=xhigh"
+_cx_collect_mcp_names() {
+  local cfg="$HOME/.codex/config.toml"
+  [ -f "$cfg" ] || return 0
+  awk '
+    /^\[mcp_servers\./ {
+      name=$0
+      sub(/^\[mcp_servers\./, "", name)
+      sub(/\]$/, "", name)
+      gsub(/"/, "", name)
+      print name
+    }
+  ' "$cfg" | sort -u
+}
+
+_cx_build_mcp_flags() {
+  local state="$1"
+  CX_MCP_FLAGS=()
+  local name
+  while IFS= read -r name; do
+    [ -n "$name" ] || continue
+    CX_MCP_FLAGS+=("-c" "mcp_servers.${name}.enabled=${state}")
+  done < <(_cx_collect_mcp_names)
+}
+
+_cx_run() {
+  local enable_mcp="$1"
+  shift
+  printenv OPENAI_API_KEY | codex login --with-api-key
+  _cx_build_mcp_flags "$enable_mcp"
+  codex "${CX_MCP_FLAGS[@]}" "$@"
+}
+
+alias cx="_cx_run false"
+alias cx1="_cx_run false --dangerously-bypass-approvals-and-sandbox -m gpt-5.3-codex-spark"
+alias cx2="_cx_run false --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=medium"
+alias cx3="_cx_run true --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=xhigh"
 alias cc="claude"
 alias cc2="claude --dangerously-skip-permissions"
 alias oc="opencode"
