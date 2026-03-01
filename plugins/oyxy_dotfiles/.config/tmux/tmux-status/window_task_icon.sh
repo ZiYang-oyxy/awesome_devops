@@ -4,6 +4,7 @@ set -euo pipefail
 window_id="$1"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENGINE="$SCRIPT_DIR/status_engine.sh"
+source "$SCRIPT_DIR/lib_render.sh"
 
 [[ -z "$window_id" ]] && exit 0
 
@@ -13,4 +14,4 @@ count=$("$ENGINE" query count --scope window --id "$window_id" --kind bell 2>/de
 if ((count <= 0)); then
     exit 0
 fi
-printf '%s󰅖🔔' "$count"
+printf '🔔%s' "$(to_superscript_digits "$count")"

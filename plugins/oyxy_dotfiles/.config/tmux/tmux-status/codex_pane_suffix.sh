@@ -5,6 +5,7 @@ scope="${1:-}"
 target_id="${2:-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENGINE="$SCRIPT_DIR/status_engine.sh"
+source "$SCRIPT_DIR/lib_render.sh"
 
 [[ -z "$scope" || -z "$target_id" ]] && exit 0
 [[ "$scope" != "session" && "$scope" != "window" ]] && exit 0
@@ -12,9 +13,10 @@ ENGINE="$SCRIPT_DIR/status_engine.sh"
 count=$("$ENGINE" query count --scope "$scope" --id "$target_id" --kind robot 2>/dev/null || echo 0)
 [[ "$count" =~ ^[0-9]+$ ]] || count=0
 ((count > 0)) || exit 0
+superscript="$(to_superscript_digits "$count")"
 
 if [[ "$scope" == "window" ]]; then
-    printf ' %s󰅖🤖' "$count"
+    printf ' 🤖%s' "$superscript"
 else
-    printf ' %s󰅖🤖' "$count"
+    printf '  🤖%s' "$superscript"
 fi

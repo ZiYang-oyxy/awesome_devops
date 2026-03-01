@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENGINE="$SCRIPT_DIR/status_engine.sh"
+source "$SCRIPT_DIR/lib_render.sh"
 
 current_session_id="${1:-}"
 current_session_name="${2:-}"
@@ -17,11 +18,10 @@ IFS=$'\t' read -r detect_session_id detect_session_name term_width status_bg < <
 [[ -z "$status_bg" || "$status_bg" == "default" ]] && status_bg=black
 term_width="${term_width:-100}"
 
-inactive_bg="colour244"
-inactive_fg="#000000"
-active_bg=$(tmux show -gqv @theme_color 2>/dev/null || true)
-[[ -z "$active_bg" ]] && active_bg="#9A2600"
-active_fg="#ffffff"
+inactive_bg="#414868"
+inactive_fg="#C0CAF5"
+active_bg="#B8BB26"
+active_fg="#1A1B26"
 separator=""
 left_cap=""
 hollow_separator=" "
@@ -61,7 +61,7 @@ session_robot_icon() {
     count=$("$ENGINE" query count --scope session --id "$sid" --kind robot 2>/dev/null || echo 0)
     [[ "$count" =~ ^[0-9]+$ ]] || count=0
     ((count > 0)) || return 0
-    printf ' %s󰅖🤖' "$count"
+    printf '🤖%s' "$(to_superscript_digits "$count")"
 }
 
 session_bell_icon() {
@@ -70,7 +70,7 @@ session_bell_icon() {
     count=$("$ENGINE" query count --scope session --id "$sid" --kind bell 2>/dev/null || echo 0)
     [[ "$count" =~ ^[0-9]+$ ]] || count=0
     ((count > 0)) || return 0
-    printf ' %s󰅖🔔' "$count"
+    printf ' 🔔%s' "$(to_superscript_digits "$count")"
 }
 
 sessions=$(tmux list-sessions -F '#{session_id}::#{session_name}' 2>/dev/null || true)
@@ -131,7 +131,7 @@ while IFS= read -r entry; do
     else
         rendered+="#[fg=${prev_bg},bg=${segment_bg}]${separator}"
     fi
-    rendered+="#[fg=${segment_fg},bg=${segment_bg},${segment_attr}] ${label}${robot_icon}${bell_icon} "
+    rendered+="#[fg=${segment_fg},bg=${segment_bg},${segment_attr}] ${label} ${robot_icon}${bell_icon}"
     prev_bg="$segment_bg"
 done <<< "$sessions"
 

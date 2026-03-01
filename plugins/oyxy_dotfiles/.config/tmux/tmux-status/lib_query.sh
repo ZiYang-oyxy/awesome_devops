@@ -21,8 +21,22 @@ query_robot_count() {
     }
 
     printf '%s\n' "$panes" | awk -F '\t' -v scope="$scope" -v target="$target_id" '
-        (scope == "session" && $1 == target && $3 == "codex") { count++ }
-        (scope == "window" && $2 == target && $3 == "codex") { count++ }
+        function is_codex_command(cmd, normalized) {
+            normalized = tolower(cmd)
+            if (normalized == "codex") {
+                return 1
+            }
+            if (index(normalized, "codex-") == 1) {
+                return 1
+            }
+            if (index(normalized, "codex_") == 1) {
+                return 1
+            }
+            return 0
+        }
+
+        (scope == "session" && $1 == target && is_codex_command($3)) { count++ }
+        (scope == "window" && $2 == target && is_codex_command($3)) { count++ }
         END { print count + 0 }
     '
 }
