@@ -13,10 +13,4 @@ source "$SCRIPT_DIR/lib_render.sh"
 count=$("$ENGINE" query count --scope "$scope" --id "$target_id" --kind robot 2>/dev/null || echo 0)
 [[ "$count" =~ ^[0-9]+$ ]] || count=0
 ((count > 0)) || exit 0
-superscript="$(to_superscript_digits "$count")"
-
-if [[ "$scope" == "window" ]]; then
-    printf ' 🤖%s' "$superscript"
-else
-    printf '  🤖%s' "$superscript"
-fi
+render_robot_suffix "$scope" "$count"

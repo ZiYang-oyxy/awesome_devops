@@ -15,5 +15,5 @@ source "$SCRIPT_DIR/lib_render.sh"
 unset pane_active pane_cmd
 pane_match=$("$ENGINE" query flag --scope pane --id "$pane_id" --kind bell 2>/dev/null || echo 0)
 if [[ "$pane_match" == "1" ]]; then
-    printf '🔔%s' "$(to_superscript_digits 1)"
+    render_bell_pane_icon "$pane_match"
 fi

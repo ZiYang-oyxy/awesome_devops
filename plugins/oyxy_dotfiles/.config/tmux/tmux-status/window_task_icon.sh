@@ -14,4 +14,4 @@ count=$("$ENGINE" query count --scope window --id "$window_id" --kind bell 2>/de
 if ((count <= 0)); then
     exit 0
 fi
-printf '🔔%s' "$(to_superscript_digits "$count")"
+printf '%s' "$(icon_with_optional_superscript '🔔' "$count")"

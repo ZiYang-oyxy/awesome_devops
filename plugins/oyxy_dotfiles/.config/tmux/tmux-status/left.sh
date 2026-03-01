@@ -18,8 +18,8 @@ IFS=$'\t' read -r detect_session_id detect_session_name term_width status_bg < <
 [[ -z "$status_bg" || "$status_bg" == "default" ]] && status_bg=black
 term_width="${term_width:-100}"
 
-inactive_bg="#414868"
-inactive_fg="#C0CAF5"
+inactive_bg="#3A3D45"
+inactive_fg="#A7ACB8"
 active_bg="#B8BB26"
 active_fg="#1A1B26"
 separator=""
@@ -61,7 +61,7 @@ session_robot_icon() {
     count=$("$ENGINE" query count --scope session --id "$sid" --kind robot 2>/dev/null || echo 0)
     [[ "$count" =~ ^[0-9]+$ ]] || count=0
     ((count > 0)) || return 0
-    printf '🤖%s' "$(to_superscript_digits "$count")"
+    icon_with_optional_superscript '🤖' "$count"
 }
 
 session_bell_icon() {
@@ -70,7 +70,7 @@ session_bell_icon() {
     count=$("$ENGINE" query count --scope session --id "$sid" --kind bell 2>/dev/null || echo 0)
     [[ "$count" =~ ^[0-9]+$ ]] || count=0
     ((count > 0)) || return 0
-    printf ' 🔔%s' "$(to_superscript_digits "$count")"
+    printf ' %s' "$(icon_with_optional_superscript '🔔' "$count")"
 }
 
 sessions=$(tmux list-sessions -F '#{session_id}::#{session_name}' 2>/dev/null || true)

@@ -24,42 +24,55 @@ to_superscript_digits() {
     printf '%s' "$output"
 }
 
+icon_with_optional_superscript() {
+    local icon="$1"
+    local count="$2"
+    [[ "$count" =~ ^[0-9]+$ ]] || count=0
+    ((count > 0)) || return 0
+
+    if ((count == 1)); then
+        printf '%s' "$icon"
+    else
+        printf '%s%s' "$icon" "$(to_superscript_digits "$count")"
+    fi
+}
+
 render_robot_suffix() {
     local scope="${1:-}"
     local count="$2"
-    local superscript
+    local icon
     [[ "$count" =~ ^[0-9]+$ ]] || count=0
     ((count > 0)) || return 0
-    superscript="$(to_superscript_digits "$count")"
+    icon="$(icon_with_optional_superscript '🤖' "$count")"
 
     if [[ "$scope" == "window" ]]; then
-        printf ' 🤖%s' "$superscript"
+        printf ' %s' "$icon"
     else
-        printf '  🤖%s' "$superscript"
+        printf '  %s' "$icon"
     fi
 }
 
 render_bell_session_suffix() {
     local count="$1"
-    local superscript
+    local icon
     [[ "$count" =~ ^[0-9]+$ ]] || count=0
     ((count > 0)) || return 0
-    superscript="$(to_superscript_digits "$count")"
-    printf '  🔔%s' "$superscript"
+    icon="$(icon_with_optional_superscript '🔔' "$count")"
+    printf '  %s' "$icon"
 }
 
 render_bell_window_suffix() {
     local count="$1"
-    local superscript
+    local icon
     [[ "$count" =~ ^[0-9]+$ ]] || count=0
     ((count > 0)) || return 0
-    superscript="$(to_superscript_digits "$count")"
-    printf ' 🔔%s' "$superscript"
+    icon="$(icon_with_optional_superscript '🔔' "$count")"
+    printf ' %s' "$icon"
 }
 
 render_bell_pane_icon() {
     local flag="$1"
     if [[ "$flag" == "1" ]]; then
-        printf '🔔¹'
+        printf '🔔'
     fi
 }
