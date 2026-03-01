@@ -105,6 +105,10 @@ render_suffix() {
     if ((count <= 0)); then
         return 0
     fi
+    if [[ "$scope" == "window" ]]; then
+        printf ' %s󰅖🤖' "$count"
+        return 0
+    fi
     printf ' %s󰅖🤖' "$count"
 }
 

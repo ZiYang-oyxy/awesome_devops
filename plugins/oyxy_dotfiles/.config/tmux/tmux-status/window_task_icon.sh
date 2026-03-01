@@ -21,4 +21,4 @@ count=$(echo "$state" | jq -r --arg wid "$window_id" '
 if ((count <= 0)); then
   exit 0
 fi
-printf ' %s󰅖🔔' "$count"
+printf '%s󰅖🔔' "$count"
