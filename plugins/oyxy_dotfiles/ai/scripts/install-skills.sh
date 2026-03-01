@@ -8,7 +8,10 @@ if [[ ! -f "$MANIFEST_FILE" ]]; then
     exit 1
 fi
 
-mapfile -t LINES < <(node - "$MANIFEST_FILE" <<'NODE'
+LINES=()
+while IFS= read -r line; do
+    LINES+=("$line")
+done < <(node - "$MANIFEST_FILE" <<'NODE'
 const fs = require('fs');
 
 const manifestFile = process.argv[2];

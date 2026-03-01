@@ -144,5 +144,3 @@ source /Volumes/code/awesome_devops/plugins/xfinder/xfinder.source #@ad_plugins@
 source ~/.awesome_devops/ad-completion.bash
 
 export PATH="$HOME/.local/bin:$PATH"
-
-source /Volumes/code/ad_external/awesome_devops/plugins/boe/.bashrc_boe #@boe_plugins@
