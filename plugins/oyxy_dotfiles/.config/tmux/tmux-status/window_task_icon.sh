@@ -10,13 +10,19 @@ CACHE_FILE="/tmp/tmux-tracker-cache.json"
 state=$(cat "$CACHE_FILE" 2>/dev/null || true)
 [[ -z "$state" ]] && exit 0
 
-result=$(echo "$state" | jq -r --arg wid "$window_id" '
-  .tasks // [] | .[] | select(.window_id == $wid) |
-  if .status == "completed" and .acknowledged != true then "waiting"
-  else empty
-  end
-' 2>/dev/null | head -1 || true)
+count=$(echo "$state" | jq -r --arg wid "$window_id" '
+  [
+    (.tasks // [])[]?
+    | select(.window_id == $wid and .status == "completed" and .acknowledged != true)
+  ] | length
+' 2>/dev/null || echo 0)
+[[ "$count" =~ ^[0-9]+$ ]] || count=0
 
-case "$result" in
-  waiting) printf '🔔' ;;
-esac
+if ((count <= 0)); then
+  exit 0
+fi
+if ((count == 1)); then
+  printf ' 🔔'
+else
+  printf ' 🔔(%s)' "$count"
+fi

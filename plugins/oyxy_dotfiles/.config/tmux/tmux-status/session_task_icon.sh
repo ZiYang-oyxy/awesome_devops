@@ -10,15 +10,34 @@ tracker_client="$HOME/.config/agent-tracker/bin/tracker-client"
 state=$("$tracker_client" state 2>/dev/null || true)
 [[ -z "$state" ]] && exit 0
 
-# Check for in_progress or unacknowledged completed tasks in this session
-result=$(echo "$state" | jq -r --arg sid "$session_id" '
-  .tasks // [] | .[] | select(.session_id == $sid) |
-  if .status == "in_progress" then "in_progress"
-  elif .status == "completed" and .acknowledged != true then "waiting"
-  else empty end
-' 2>/dev/null | head -1 || true)
+in_progress_count=$(echo "$state" | jq -r --arg sid "$session_id" '
+  [
+    (.tasks // [])[]?
+    | select(.session_id == $sid and .status == "in_progress")
+  ] | length
+' 2>/dev/null || echo 0)
+waiting_count=$(echo "$state" | jq -r --arg sid "$session_id" '
+  [
+    (.tasks // [])[]?
+    | select(.session_id == $sid and .status == "completed" and .acknowledged != true)
+  ] | length
+' 2>/dev/null || echo 0)
 
-case "$result" in
-  in_progress) printf '⏳' ;;
-  waiting) printf '🔔' ;;
-esac
+[[ "$in_progress_count" =~ ^[0-9]+$ ]] || in_progress_count=0
+[[ "$waiting_count" =~ ^[0-9]+$ ]] || waiting_count=0
+
+if ((in_progress_count > 0)); then
+  if ((in_progress_count == 1)); then
+    printf ' ⏳'
+  else
+    printf ' ⏳(%s)' "$in_progress_count"
+  fi
+fi
+
+if ((waiting_count > 0)); then
+  if ((waiting_count == 1)); then
+    printf ' 🔔'
+  else
+    printf ' 🔔(%s)' "$waiting_count"
+  fi
+fi

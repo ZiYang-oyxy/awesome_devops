@@ -70,16 +70,22 @@ fi
 get_session_icon() {
   local sid="$1"
   [[ -z "$tracker_state" ]] && return
-  local result
-  result=$(echo "$tracker_state" | jq -r --arg sid "$sid" '
-    .tasks // [] | .[] | select(.session_id == $sid) |
-    if .status == "completed" and .acknowledged != true then "waiting"
-    else empty
-    end
-  ' 2>/dev/null | head -1 || true)
-  case "$result" in
-  waiting) printf '🔔' ;;
-  esac
+  local count
+  count=$(echo "$tracker_state" | jq -r --arg sid "$sid" '
+    [
+      (.tasks // [])[]?
+      | select(.session_id == $sid and .status == "completed" and .acknowledged != true)
+    ] | length
+  ' 2>/dev/null || echo 0)
+  [[ "$count" =~ ^[0-9]+$ ]] || count=0
+  if ((count <= 0)); then
+    return
+  fi
+  if ((count == 1)); then
+    printf ' 🔔'
+  else
+    printf ' 🔔(%s)' "$count"
+  fi
 }
 
 rendered=""
@@ -127,6 +133,7 @@ while IFS= read -r entry; do
     label="${label:0:max_width-1}…"
   fi
 
+  codex_suffix=$("$HOME/.config/tmux/tmux-status/codex_pane_suffix.sh" session "$session_id" 2>/dev/null || true)
   task_icon=$(get_session_icon "$session_id")
 
   if [[ -z "$prev_bg" ]]; then
@@ -134,7 +141,7 @@ while IFS= read -r entry; do
   else
     rendered+="#[fg=${prev_bg},bg=${segment_bg}]${separator}"
   fi
-  rendered+="#[fg=${segment_fg},bg=${segment_bg},${segment_attr}] ${label}${task_icon} "
+  rendered+="#[fg=${segment_fg},bg=${segment_bg},${segment_attr}] ${label}${codex_suffix}${task_icon} "
   prev_bg="$segment_bg"
 done <<<"$sessions"
 
