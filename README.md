@@ -246,8 +246,16 @@ ad dget <REMOTE_DIR_NAME>
 
 ### xfinder —— 高效查找、检索工具
 
-包装了grep和find命令，能区分文件类型进行检索，选择匹配结果后可实现快速跳转，长久以来辅助我高效完成任何编程语言的代码流程分析
+包装了`rg`和`find`命令，能区分文件类型进行检索，选择匹配结果后可实现快速跳转，长久以来辅助我高效完成任何编程语言的代码流程分析
 ![xfinder.gif](./docs/xfinder.gif)
+
+```mermaid
+flowchart LR
+    A["xgrep/cgrep/mgrep/..."] --> B["rg --vimgrep --hidden --no-ignore"]
+    B --> C["grep_ed 编号选择"]
+    C --> D["$EDITOR +line file"]
+    E["xfind/xfindi"] --> F["find 路径枚举<br/>（保留目录命中语义）"]
+```
 
 ```bash
 # 安装
@@ -266,6 +274,23 @@ xfindi #不区分大小写
 _xfind #直接打印结果
 
 # 更多用法特别是如果要使用正则表达式，参考源码 ~/.awesome_devops/plugins/xfinder/xfinder.source
+```
+
+> 说明：
+>
+> - `*grep` 系列默认使用 `rg --hidden --no-ignore`，并排除 `.git/.repo`。
+> - `xfind/xfindi` 保留 `find` 实现，以保留“目录也可命中”的原有语义。
+> - 正则语法以 `rg` 为准（与 GNU grep 在少量边缘语法上可能有差异）。
+> - 交互命令（`xfind/xfindi/xgrep/...`）默认会在 TTY 中启用彩色输出，编号、路径/行号更易读，`rg` 命中高亮保留。
+> - 颜色开关支持：默认等价 `XFINDER_COLOR=1`；可通过 `XFINDER_COLOR=0` 强制关闭。
+> - 下划线命令（如 `_xgrep/_xfind`）默认无色，保持管道和脚本场景稳定。
+
+```bash
+# xfinder 回归验证（默认跑非交互断言）
+bash plugins/xfinder/verify.sh
+
+# 额外启用交互烟测（会自动模拟选择和退出）
+XFINDER_RUN_INTERACTIVE=1 bash plugins/xfinder/verify.sh
 ```
 
 ### ssh多机并行执行
