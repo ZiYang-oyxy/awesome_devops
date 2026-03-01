@@ -20,7 +20,6 @@
 	delbranch = "!f() { git branch | grep sandbox | xargs git branch -D; }; f"
 [core]
 	quotepath = off
-	excludesfile = /Users/bytedance/.gitignore_global
 	editor = nvim
 [credential]
 	helper = cache --timeout=3600
@@ -45,12 +44,9 @@
 #[http]
 #	proxy = http://127.0.0.1:1087
 [init]
-	templatedir = /Users/bytedance/.gittemplates
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path = 
 [mergetool "sourcetree"]
 	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
 	trustExitCode = true
-[commit]
-	template = /Users/bytedance/.stCommitMsg
