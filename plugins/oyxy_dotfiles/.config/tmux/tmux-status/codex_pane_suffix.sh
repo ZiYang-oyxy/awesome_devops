@@ -105,11 +105,7 @@ render_suffix() {
     if ((count <= 0)); then
         return 0
     fi
-    if ((count == 1)); then
-        printf ' 🤖'
-        return 0
-    fi
-    printf ' 🤖(%s)' "$count"
+    printf ' %s󰅖🤖' "$count"
 }
 
 refresh_cache_if_needed

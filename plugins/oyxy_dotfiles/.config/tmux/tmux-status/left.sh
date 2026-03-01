@@ -81,11 +81,7 @@ get_session_icon() {
   if ((count <= 0)); then
     return
   fi
-  if ((count == 1)); then
-    printf ' 🔔'
-  else
-    printf ' 🔔(%s)' "$count"
-  fi
+  printf ' %s󰅖🔔' "$count"
 }
 
 rendered=""

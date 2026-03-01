@@ -27,17 +27,9 @@ waiting_count=$(echo "$state" | jq -r --arg sid "$session_id" '
 [[ "$waiting_count" =~ ^[0-9]+$ ]] || waiting_count=0
 
 if ((in_progress_count > 0)); then
-  if ((in_progress_count == 1)); then
-    printf ' ⏳'
-  else
-    printf ' ⏳(%s)' "$in_progress_count"
-  fi
+  printf ' %s󰅖⏳' "$in_progress_count"
 fi
 
 if ((waiting_count > 0)); then
-  if ((waiting_count == 1)); then
-    printf ' 🔔'
-  else
-    printf ' 🔔(%s)' "$waiting_count"
-  fi
+  printf ' %s󰅖🔔' "$waiting_count"
 fi
