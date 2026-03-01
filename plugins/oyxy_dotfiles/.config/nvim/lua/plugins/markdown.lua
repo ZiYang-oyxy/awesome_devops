@@ -1,7 +1,6 @@
 return {
   {
-    dir = "~/code/markdown-preview.nvim",
-    name = "markdown-preview.nvim",
+    "ZiYang-oyxy/markdown-preview.nvim",
     keys = {
       { "<leader>cp", false },
       {
