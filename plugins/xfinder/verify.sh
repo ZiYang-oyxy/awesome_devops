@@ -216,14 +216,37 @@ assert_has_ansi "$out" "默认开色策略下 XFINDER_COLOR=1 保持 ANSI"
 out="$(XFINDER_COLOR=1 _xgrep KEY_ALPHA | head -n 1 || true)"
 assert_no_ansi "$out" "_xgrep 在 XFINDER_COLOR=1 下仍无色"
 
+out="$(TERM=xterm grep_ed _xgrep KEY_ALPHA . <<'EOF'
+q
+EOF
+)"
+assert_has_ansi "$out" "xgrep 默认路径在非TTY抓取时仍保留 rg 分色"
+
 out="$(printf '\033[35mabc\033[0m:12:3:text\n' | _xf_strip_ansi)"
 assert_contains "$out" "abc:12:3:text" "_xf_strip_ansi 去色正确"
+
+# palette detail for 256-color terminals
+tput() { echo 256; }
+XFINDER_COLOR=1 _xf_init_palette
+out="${XF_RG_COLOR_ARGS[*]}"
+assert_contains "$out" "path:fg:111" "256 色终端 path 颜色配置"
+assert_contains "$out" "line:fg:180" "256 色终端 line 颜色配置"
+assert_contains "$out" "column:fg:180" "256 色终端 column 颜色配置"
+assert_contains "$out" "highlight:fg:244" "256 色终端代码行颜色配置"
+assert_contains "$out" "match:fg:203" "256 色终端命中高亮配置"
+assert_not_contains "$out" "line:fg:111" "256 色终端 path 与 line 颜色区分"
+unset -f tput
 
 # palette downgrade
 tput() { echo 8; }
 XFINDER_COLOR=1 _xf_init_palette
 out="${XF_RG_COLOR_ARGS[*]}"
 assert_contains "$out" "path:fg:magenta" "低色终端降级到 ANSI 调色参数"
+assert_contains "$out" "line:fg:cyan" "低色终端 line 颜色配置"
+assert_contains "$out" "column:fg:cyan" "低色终端 column 颜色配置"
+assert_contains "$out" "highlight:fg:white" "低色终端代码行颜色配置"
+assert_contains "$out" "match:fg:red" "低色终端命中高亮配置"
+assert_not_contains "$out" "line:fg:magenta" "低色终端 path 与 line 颜色区分"
 unset -f tput
 
 if [ "${XFINDER_RUN_INTERACTIVE:-0}" = "1" ]; then

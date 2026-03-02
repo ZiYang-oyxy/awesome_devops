@@ -281,7 +281,7 @@ _xfind #直接打印结果
 > - `*grep` 系列默认使用 `rg --hidden --no-ignore`，并排除 `.git/.repo`。
 > - `xfind/xfindi` 保留 `find` 实现，以保留“目录也可命中”的原有语义。
 > - 正则语法以 `rg` 为准（与 GNU grep 在少量边缘语法上可能有差异）。
-> - 交互命令（`xfind/xfindi/xgrep/...`）默认会在 TTY 中启用彩色输出，编号、路径/行号更易读，`rg` 命中高亮保留。
+> - 交互命令（`xfind/xfindi/xgrep/...`）默认会在 TTY 中启用彩色输出；文件名、行号+列号、代码行、命中字符串分色展示，更容易快速扫读。
 > - 颜色开关支持：默认等价 `XFINDER_COLOR=1`；可通过 `XFINDER_COLOR=0` 强制关闭。
 > - 下划线命令（如 `_xgrep/_xfind`）默认无色，保持管道和脚本场景稳定。
 

@@ -111,8 +111,9 @@ _xf_init_palette() {
         XF_RG_COLOR_ARGS=(
             --color=always
             --colors "path:fg:111"
-            --colors "line:fg:111"
-            --colors "column:fg:111"
+            --colors "line:fg:180"
+            --colors "column:fg:180"
+            --colors "highlight:fg:244"
             --colors "match:fg:203"
             --colors "match:style:bold"
         )
@@ -123,8 +124,9 @@ _xf_init_palette() {
         XF_RG_COLOR_ARGS=(
             --color=always
             --colors "path:fg:magenta"
-            --colors "line:fg:magenta"
-            --colors "column:fg:magenta"
+            --colors "line:fg:cyan"
+            --colors "column:fg:cyan"
+            --colors "highlight:fg:white"
             --colors "match:fg:red"
             --colors "match:style:bold"
         )
@@ -371,9 +373,19 @@ grep_ed() {
     local -a lines=()
     local line=""
     if [ -n "$profile" ]; then
-        while IFS= read -r line; do
-            lines+=("$line")
-        done < <(_rg_search "$ignore_case" "$profile" interactive "$@")
+        # grep_ed reads rg output through process substitution (pipe),
+        # so default TTY checks inside _rg_search would disable color.
+        # Force default-on color for interactive aliases unless user
+        # explicitly sets XFINDER_COLOR.
+        if [ -z "${XFINDER_COLOR:-}" ]; then
+            while IFS= read -r line; do
+                lines+=("$line")
+            done < <(XFINDER_COLOR=1 _rg_search "$ignore_case" "$profile" interactive "$@")
+        else
+            while IFS= read -r line; do
+                lines+=("$line")
+            done < <(_rg_search "$ignore_case" "$profile" interactive "$@")
+        fi
     else
         while IFS= read -r line; do
             lines+=("$line")
