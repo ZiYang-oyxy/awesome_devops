@@ -77,13 +77,6 @@ render_bell_session_suffix() {
     printf ' %s' "$icon"
 }
 
-render_bell_pane_icon() {
-    local flag="$1"
-    if [[ "$flag" == "1" ]]; then
-        printf '🔔'
-    fi
-}
-
 normalize_session_id() {
     local value="$1"
     value="${value#\$}"
@@ -288,14 +281,21 @@ render_pane_icon() {
     local pane_id="${1:-}"
     [[ -z "$pane_id" ]] && return 0
 
-    local summary bell_count
+    local summary robot_count bell_count rendered_icon
     summary=$("$ENGINE" query summary --scope pane --id "$pane_id" 2>/dev/null || echo 'robot=0	bell=0')
+    robot_count="$(summary_value "$summary" robot)"
     bell_count="$(summary_value "$summary" bell)"
+    [[ "$robot_count" =~ ^[0-9]+$ ]] || robot_count=0
     [[ "$bell_count" =~ ^[0-9]+$ ]] || bell_count=0
 
-    if ((bell_count > 0)); then
-        render_bell_pane_icon 1
+    if ((robot_count > 0)); then
+        rendered_icon+="$(icon_with_optional_superscript '🤖' "$robot_count")"
     fi
+    if ((bell_count > 0)); then
+        rendered_icon+="$(icon_with_optional_superscript '🔔' "$bell_count")"
+    fi
+
+    printf '%s' "$rendered_icon"
 }
 
 main() {

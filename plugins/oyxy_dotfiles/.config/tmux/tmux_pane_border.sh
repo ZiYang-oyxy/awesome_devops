@@ -142,6 +142,11 @@ simple_title() {
     printf '%s' "$pane_path"
 }
 
+trim_title_leading_spaces() {
+    # Keep tmux style tags at the beginning, but remove spaces after them.
+    perl -pe 's/^(?:#\[[^]]*\])*\K +//'
+}
+
 make_fill() {
     local count="$1"
     local out=""
@@ -199,6 +204,7 @@ format_border() {
     local title pane_icon title_plain
     if [[ "$active" == "1" ]]; then
         title="$(STARSHIP_TMUX_BASE_FG="$text_color" starship_title "$pid" "$inner_width" "$pane_path" "$pane_cmd")"
+        title="$(printf '%s' "$title" | trim_title_leading_spaces)"
     else
         title="$(simple_title "$pane_path" "$pane_cmd")"
     fi
