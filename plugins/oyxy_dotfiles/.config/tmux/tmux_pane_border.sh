@@ -135,6 +135,13 @@ starship_title() {
     fi
 }
 
+simple_title() {
+    local pane_path="$1"
+    [[ -z "$pane_path" ]] && pane_path="~"
+
+    printf '%s' "$pane_path"
+}
+
 make_fill() {
     local count="$1"
     local out=""
@@ -190,7 +197,11 @@ format_border() {
     fi
 
     local title pane_icon title_plain
-    title="$(STARSHIP_TMUX_BASE_FG="$text_color" starship_title "$pid" "$inner_width" "$pane_path" "$pane_cmd")"
+    if [[ "$active" == "1" ]]; then
+        title="$(STARSHIP_TMUX_BASE_FG="$text_color" starship_title "$pid" "$inner_width" "$pane_path" "$pane_cmd")"
+    else
+        title="$(simple_title "$pane_path" "$pane_cmd")"
+    fi
     pane_icon="$("$RENDER" pane-icon "$pane_id" "$window_id" "$active" "$pane_cmd" 2>/dev/null || true)"
     if [[ -n "$pane_icon" ]]; then
         pane_icon="${pane_icon} "
