@@ -156,12 +156,12 @@ _print_indexed_results() {
     for line in "$@"; do
         if [ "$XF_COLOR_ACTIVE" -eq 1 ]; then
             if [ "$mode" = "find" ]; then
-                printf "%s[%d]%s %s%s%s\n" "$XF_C_INDEX" "$i" "$XF_C_RESET" "$XF_C_FIND_PATH" "$line" "$XF_C_RESET"
+                printf "%s%d%s %s%s%s\n" "$XF_C_INDEX" "$i" "$XF_C_RESET" "$XF_C_FIND_PATH" "$line" "$XF_C_RESET"
             else
-                printf "%s[%d]%s %s\n" "$XF_C_INDEX" "$i" "$XF_C_RESET" "$line"
+                printf "%s%d%s %s\n" "$XF_C_INDEX" "$i" "$XF_C_RESET" "$line"
             fi
         else
-            printf "[%d] %s\n" "$i" "$line"
+            printf "%d %s\n" "$i" "$line"
         fi
         i=$((i + 1))
     done
