@@ -76,7 +76,7 @@ personality = "pragmatic"            # none|friendly|pragmatic
 # experimental_realtime_ws_base_url = "wss://..." # 实验项，不建议启用
 
 # 通知命令（外部程序）
-notify = ["/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/.config/tmux/tmux-status/codex_notify_mark_done.sh"]
+notify = ["/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/.config/tmux/tmux_status_hook.sh", "notify-done"]
 
 [tui]
 status_line = ["model-with-reasoning", "context-remaining", "total-input-tokens", "total-output-tokens", "five-hour-limit", "weekly-limit"]
