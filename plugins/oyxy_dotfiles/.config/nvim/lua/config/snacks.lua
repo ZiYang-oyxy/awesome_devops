@@ -245,6 +245,12 @@ M.opts = {
       },
     },
     sources = {
+      files = {
+        hidden = true,
+      },
+      grep = {
+        hidden = true,
+      },
       explorer = {
         finder = explorer_with_inline_bookmarks,
         hidden = true,
