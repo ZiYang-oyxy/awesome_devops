@@ -105,29 +105,29 @@ _xf_init_palette() {
     XF_C_RESET=$'\033[0m'
 
     if [ "$(_xf_detect_color_level)" -ge 256 ]; then
-        XF_C_INDEX=$'\033[38;5;81m'
-        XF_C_FIND_PATH=$'\033[38;5;110m'
-        XF_C_PROMPT=$'\033[38;5;214m'
+        XF_C_INDEX=$'\033[38;5;141m'      # 紫色
+        XF_C_FIND_PATH=$'\033[38;5;39m'   # 蓝色
+        XF_C_PROMPT=$'\033[38;5;226m'     # 黄色
         XF_RG_COLOR_ARGS=(
             --color=always
-            --colors "path:fg:111"
-            --colors "line:fg:180"
-            --colors "column:fg:180"
-            --colors "highlight:fg:244"
-            --colors "match:fg:203"
+            --colors "path:fg:39"         # 蓝色
+            --colors "line:fg:76"          # 绿色
+            --colors "column:fg:76"        # 绿色
+            --colors "highlight:fg:244"    # 灰色
+            --colors "match:fg:203"       # 红色
             --colors "match:style:bold"
         )
     else
-        XF_C_INDEX=$'\033[1;36m'
-        XF_C_FIND_PATH=$'\033[1;37m'
-        XF_C_PROMPT=$'\033[1;33m'
+        XF_C_INDEX=$'\033[1;35m'          # 亮紫色
+        XF_C_FIND_PATH=$'\033[34m'       # 蓝色
+        XF_C_PROMPT=$'\033[1;33m'       # 亮黄色
         XF_RG_COLOR_ARGS=(
             --color=always
-            --colors "path:fg:magenta"
-            --colors "line:fg:cyan"
-            --colors "column:fg:cyan"
+            --colors "path:fg:blue"      # 蓝色
+            --colors "line:fg:green"     # 绿色
+            --colors "column:fg:green"   # 绿色
             --colors "highlight:fg:white"
-            --colors "match:fg:red"
+            --colors "match:fg:red"      # 红色
             --colors "match:style:bold"
         )
     fi
