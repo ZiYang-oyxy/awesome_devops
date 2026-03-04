@@ -254,6 +254,10 @@ RG_PY_GLOBS=(
     "*.py"
 )
 
+RG_GO_GLOBS=(
+    "*.go"
+)
+
 RG_MAKE_GLOBS=(
     "Makefile"
     "makefile"
@@ -333,6 +337,11 @@ _rg_search() {
             cmd+=(-g "$glob")
         done
         ;;
+    g)
+        for glob in "${RG_GO_GLOBS[@]}"; do
+            cmd+=(-g "$glob")
+        done
+        ;;
     *)
         echo "xfinder: unknown grep profile '$profile'" >&2
         return 2
@@ -368,6 +377,8 @@ grep_ed() {
     _ogrepi) profile="o"; ignore_case="1" ;;
     _pgrep) profile="p" ;;
     _pgrepi) profile="p"; ignore_case="1" ;;
+    _ggrep) profile="g" ;;
+    _ggrepi) profile="g"; ignore_case="1" ;;
     esac
 
     local -a lines=()
@@ -495,4 +506,14 @@ function _pgrepi()
     _rg_search 1 p plain "$@"
 }
 
-grep_fact c o m s x p
+function _ggrep()
+{
+    _rg_search 0 g plain "$@"
+}
+
+function _ggrepi()
+{
+    _rg_search 1 g plain "$@"
+}
+
+grep_fact c g o m s x p
