@@ -9,6 +9,15 @@ resolve_pane_meta() {
     tmux display-message -p -t "$pane_id" $'#{session_id}\t#{window_id}\t#{pane_id}\t#{session_name}' 2>/dev/null || true
 }
 
+resolve_active_pane_meta() {
+    local meta
+    meta=$(tmux display-message -p $'#{pane_id}\t#{window_id}\t#{session_id}' 2>/dev/null || true)
+    if [[ -z "$meta" ]]; then
+        meta=$(tmux list-clients -F $'#{pane_id}\t#{window_id}\t#{session_id}' 2>/dev/null | awk 'NF { print; exit }' || true)
+    fi
+    printf '%s' "$meta"
+}
+
 summary_value() {
     local summary="$1"
     local key="$2"
@@ -28,19 +37,28 @@ ack_focus() {
     local pane_id="${1:-}"
     local window_id="${2:-}"
     local session_id="${3:-}"
+    local pane_meta=""
 
-    [[ -z "$pane_id" ]] && return 0
+    if [[ -n "$pane_id" ]]; then
+        pane_meta=$(resolve_pane_meta "$pane_id")
+    fi
 
-    if [[ -z "$session_id" || -z "$window_id" ]]; then
-        local meta resolved_sid resolved_wid
-        meta=$(tmux display-message -p -t "$pane_id" $'#{session_id}\t#{window_id}' 2>/dev/null || true)
-        if [[ -n "$meta" ]]; then
-            resolved_sid="${meta%%$'\t'*}"
-            resolved_wid="${meta#*$'\t'}"
-            [[ -z "$session_id" ]] && session_id="$resolved_sid"
-            [[ -z "$window_id" ]] && window_id="$resolved_wid"
+    if [[ -z "$pane_id" || -z "$pane_meta" ]]; then
+        local active_meta
+        active_meta=$(resolve_active_pane_meta)
+        if [[ -n "$active_meta" ]]; then
+            IFS=$'\t' read -r pane_id window_id session_id <<< "$active_meta"
+            pane_meta=$(resolve_pane_meta "$pane_id")
         fi
     fi
+
+    [[ -z "$pane_id" || -z "$pane_meta" ]] && return 0
+
+    local resolved_sid resolved_wid resolved_pid
+    IFS=$'\t' read -r resolved_sid resolved_wid resolved_pid _ <<< "$pane_meta"
+    [[ -n "$resolved_pid" ]] && pane_id="$resolved_pid"
+    [[ -z "$session_id" ]] && session_id="$resolved_sid"
+    [[ -z "$window_id" ]] && window_id="$resolved_wid"
 
     local summary bell_count
     summary=$("$ENGINE" query summary --scope pane --id "$pane_id" 2>/dev/null || echo 'robot=0	bell=0')
@@ -54,6 +72,12 @@ ack_focus() {
             --window-id "$window_id" || true
         tmux refresh-client -S 2>/dev/null || true
     fi
+}
+
+pane_closed() {
+    "$ENGINE" gc prune || true
+    ack_focus "$@" || true
+    tmux refresh-client -S 2>/dev/null || true
 }
 
 select_pane_by_payload() {
@@ -149,6 +173,9 @@ main() {
     case "$action" in
         ack-focus)
             ack_focus "$@"
+            ;;
+        pane-closed)
+            pane_closed "$@"
             ;;
         notify-done)
             notify_done "$@"

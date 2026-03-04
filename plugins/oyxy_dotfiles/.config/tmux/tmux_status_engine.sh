@@ -128,9 +128,8 @@ state_prune_json() {
                 select(
                     (
                         .status == "completed"
-                        and .acknowledged == true
                         and (.pane_id // "") != ""
-                        and ($all_panes | contains((.pane_id // "") + "\t") | not)
+                        and ((.pane_id // "") as $pid | ($all_panes | contains($pid + "\t") | not))
                     ) | not
                 )
             )
@@ -209,11 +208,16 @@ query_build_bell_lines() {
         return 0
     fi
 
-    local state
+    local state all_panes
     state=$(state_read_json)
-    printf '%s' "$state" | jq -r '
+    all_panes=$(tmux list-panes -a -F '#{pane_id}' 2>/dev/null | tr '\n' '\t' || true)
+
+    printf '%s' "$state" | jq -r --arg all_panes "$all_panes" '
         (.tasks // [])[]?
         | select(.status == "completed" and .acknowledged != true)
+        | (.pane_id // "") as $pid
+        | select($pid != "")
+        | select($all_panes | contains($pid + "\t"))
         | [(.session_id // ""), (.window_id // ""), (.pane_id // "")]
         | @tsv
     ' 2>/dev/null | awk -F '\t' '
