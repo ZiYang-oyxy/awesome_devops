@@ -24,6 +24,11 @@ _ln $curdir/.tmux-powerlinerc ~/.tmux-powerlinerc
 log "Configure codex ..."
 mkdir -p ~/.codex
 _ln $curdir/ai/config.toml ~/.codex/config.toml
+_ln $curdir/ai/AGENTS.md ~/.codex/AGENTS.md
+
+log "Configure claude ..."
+mkdir -p ~/.claude
+_ln $curdir/ai/AGENTS.md ~/.claude/CLAUDE.md
 
 # font
 #git clone https://github.com/supermarin/powerline-fonts.git
