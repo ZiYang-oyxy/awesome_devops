@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-02-28T11:50:38.694Z",
+  "generatedAt": "2026-03-09T05:46:44.979Z",
   "sourceLockFile": "/Users/bytedance/.agents/.skill-lock.json",
   "skills": [
     {
@@ -14,6 +14,10 @@
     {
       "name": "git-commit",
       "source": "github/awesome-copilot"
+    },
+    {
+      "name": "mermaid-sop-check",
+      "source": "ZiYang-oyxy/agent-skills"
     },
     {
       "name": "playwright-cli",

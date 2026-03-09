@@ -85,9 +85,23 @@ _cx_build_mcp_flags() {
   done < <(_cx_collect_mcp_names)
 }
 
+_cx_refresh_github_token() {
+  command -v gh >/dev/null 2>&1 || return 0
+  local gh_token
+  gh_token="$(gh auth token 2>/dev/null || true)"
+  if [ -n "$gh_token" ]; then
+    export GITHUB_PAT_TOKEN="$gh_token"
+    export GH_TOKEN="$gh_token"
+  fi
+}
+
+# Keep github MCP token in sync for direct `codex` usage.
+_cx_refresh_github_token
+
 _cx_run() {
   local enable_mcp="$1"
   shift
+  _cx_refresh_github_token
   printenv OPENAI_API_KEY | codex login --with-api-key
   _cx_build_mcp_flags "$enable_mcp"
   codex "${CX_MCP_FLAGS[@]}" "$@"
