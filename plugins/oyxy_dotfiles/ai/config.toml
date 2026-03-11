@@ -48,10 +48,12 @@ model_verbosity = "medium"              # low|medium|high
 
 # 运行策略
 # approval_policy = "on-request"            # 可选: "untrusted" | "on-failure" | "on-request" | "never"
+# approval_policy = { reject = { mcp_elicitations = true, rules = false, sandbox_approval = false, request_permissions = false } } # 精细拒绝策略
 # sandbox_mode = "workspace-write"          # 可选: "read-only" | "workspace-write" | "danger-full-access"
 # allow_login_shell = true                  # 是否允许工具以 login shell 运行（默认 true）
 # background_terminal_max_timeout = 300000  # integer，后台终端轮询最长等待毫秒（默认 5 分钟）
 web_search = "live"                   # 可选: "disabled" | "cached" | "live"
+# default_permissions = "default"      # 选择 [permissions.<name>] 中的默认权限档位
 # file_opener = "vscode"                    # 可选: "vscode" | "vscode-insiders" | "windsurf" | "cursor" | "none"
 
 # 目录/文件
@@ -76,6 +78,7 @@ personality = "pragmatic"            # none|friendly|pragmatic
 # experimental_realtime_ws_backend_prompt = "..." # 实验项，不建议启用
 # experimental_realtime_ws_base_url = "wss://..." # 实验项，不建议启用
 # experimental_realtime_ws_model = "..."          # 实验项，不建议启用
+# experimental_realtime_ws_startup_context = "..." # 实验项，不建议启用
 
 # 通知命令（外部程序）
 notify = ["/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/.config/tmux/tmux_status_hook.sh", "notify-done"]
@@ -101,11 +104,10 @@ enabled = true
 required = false
 startup_timeout_sec = 6.0
 
-[notice.model_migrations]
-"gpt-5.2" = "gpt-5.3-codex"
-"gpt-5.2-codex" = "gpt-5.3-codex"
-
 [projects."/Volumes/code/vibecoding/assistant"]
+trust_level = "trusted"
+
+[projects."/Volumes/code/vibecoding/chat"]
 trust_level = "trusted"
 
 # 项目文档读取策略
@@ -131,6 +133,11 @@ trust_level = "trusted"
 # max_threads = 4   # integer，>=1
 # max_depth = 3     # integer，子 agent 最大递归深度
 # job_max_runtime_seconds = 1800  # integer，单个 agent 任务最长运行秒数
+
+# [agents.explorer]
+# description = "Read-only code explorer"
+# nickname_candidates = ["Scout", "Atlas"]
+# config_file = "/abs/path/agents/explorer.toml"
 
 
 # =========================
@@ -202,7 +209,14 @@ trust_level = "trusted"
 # 作用：工具级别开关（非 features）
 #[tools]
 # view_image = true
-# web_search = false
+# [tools.web_search]
+# allowed_domains = ["openai.com", "docs.github.com"]
+# context_size = "medium"         # 可选: "low" | "medium" | "high"
+# [tools.web_search.location]
+# city = "San Francisco"
+# region = "CA"
+# country = "US"
+# timezone = "America/Los_Angeles"
 
 
 # =========================
@@ -221,13 +235,14 @@ trust_level = "trusted"
 #[tui]
 # alternate_screen = "auto"        # 可选: "auto" | "always" | "never"
 # animations = true
-# experimental_mode = "default"    # 可选: "default" | "plan"
 # notification_method = "auto"     # 可选: "auto" | "osc9" | "bel"
 # notifications = true               # 可为 boolean
 # notifications = ["task_complete"] # 或 string[]（高级用法）
 # show_tooltips = true
 # status_line = ["model", "sandbox", "approval", "tokens"]
 # theme = "one-dark-pro"            # 主题名（kebab-case）
+# [tui.model_availability_nux]
+# "gpt-5.4" = 1   # integer，记录某模型提示已显示次数
 
 
 # =========================
@@ -247,26 +262,27 @@ log_user_prompt = false
 # =========================
 # 作用：memories 子系统参数（用于线程记忆生成与汇总）
 #[memories]
-# phase_1_model = "gpt-5"              # 线程摘要模型
-# phase_2_model = "gpt-5"              # 记忆汇总模型
+# extract_model = "gpt-5"              # 线程摘要模型
+# consolidation_model = "gpt-5"        # 记忆汇总模型
+# use_memories = true                  # 是否在提示词中注入记忆使用说明
+# generate_memories = true             # 是否为新线程生成记忆
+# no_memories_if_mcp_or_web_search = true # MCP 或 web search 参与后标记为 polluted
 # min_rollout_idle_hours = 12          # integer，最小空闲小时数（建议 >12）
 # max_rollout_age_days = 30            # integer，参与记忆线程的最大天数
 # max_unused_days = 30                 # integer，记忆未使用淘汰阈值（天）
 # max_rollouts_per_startup = 200       # integer，单次启动最多处理 rollout 数
-# max_raw_memories_for_global = 200    # integer，全局汇总保留的原始记忆数
+# max_raw_memories_for_consolidation = 200    # integer，全局汇总保留的原始记忆数
 
 
 # =========================
 # [permissions]
 # =========================
-# 作用：权限系统细粒度配置（当前主要是网络代理）
-# [permissions]
-#[permissions.network]
+# 作用：命名权限档位（通过顶层 default_permissions 选择默认档位）
+# [permissions.default.network]
 # enabled = false
 # mode = "limited"                     # 可选: "limited" | "full"
 # proxy_url = "http://127.0.0.1:7890"
 # socks_url = "socks5://127.0.0.1:1080"
-# admin_url = "http://127.0.0.1:9090"
 # allow_local_binding = false
 # allow_upstream_proxy = false
 # enable_socks5 = false
@@ -275,8 +291,12 @@ log_user_prompt = false
 # denied_domains = ["example.com"]
 # allow_unix_sockets = ["/var/run/docker.sock"]
 # dangerously_allow_all_unix_sockets = false
-# dangerously_allow_non_loopback_admin = false
 # dangerously_allow_non_loopback_proxy = false
+
+# [permissions.default.filesystem]
+# "/" = "read"                   # 可选: "none" | "read" | "write"
+# "/Volumes/code" = "write"
+# "/tmp" = "write"
 
 
 # =========================
@@ -311,21 +331,39 @@ log_user_prompt = false
 multi_agent = true
 # apply_patch_freeform = false
 # apps = false
+# apps_mcp_gateway = false
+# artifact = false
 # child_agents_md = false
+# code_mode = false
+# codex_git_commit = false
+# codex_hooks = false
 # collab = false
 # collaboration_modes = true
 # connectors = false
+# default_mode_request_user_input = false
 # elevated_windows_sandbox = false
 # enable_experimental_windows_sandbox = false
 # enable_request_compression = true
 # experimental_use_freeform_apply_patch = false
 # experimental_use_unified_exec_tool = true
 # experimental_windows_sandbox = false
+# fast_mode = false
+# guardian_approval = false
+# image_detail_original = false
+# image_generation = false
 # include_apply_patch_tool = true
+# js_repl = false
+# js_repl_tools_only = false
+# memories = false
 # memory_tool = false
 # personality = true
+# plugins = false
 # powershell_utf8 = false
+# prevent_idle_sleep = false
+# realtime_conversation = false
 # remote_models = true
+# request_permissions = false
+# request_permissions_tool = false
 # request_rule = true
 # responses_websockets = false
 # responses_websockets_v2 = false
@@ -333,13 +371,16 @@ multi_agent = true
 # search_tool = false
 # shell_snapshot = false
 # shell_tool = true
+# shell_zsh_fork = false
 # skill_env_var_dependency_prompt = false
 # skill_mcp_dependency_install = true
 # sqlite = false
 # steer = true
+# tool_call_mcp_elicitation = false
 # undo = false
 # unified_exec = true
 # use_linux_sandbox_bwrap = false
+# voice_transcription = false
 # web_search = false
 # web_search_cached = false   # deprecated
 # web_search_request = false  # deprecated
@@ -349,6 +390,9 @@ multi_agent = true
 # [skills]
 # =========================
 # 作用：用户级技能配置（数组）
+# [skills.bundled]
+# enabled = true
+#
 # [[skills.config]]
 # path = "/abs/path/to/SKILL.md"
 # enabled = true
@@ -374,7 +418,6 @@ multi_agent = true
 # open_world_enabled = false
 # default_tools_enabled = true
 # default_tools_approval_mode = "auto"   # 可选: "auto" | "prompt" | "approve"
-# disabled_reason = "user"    # 可选: "unknown" | "user"
 
 # [apps."github".tools."create_issue"]
 # enabled = true
@@ -401,6 +444,7 @@ multi_agent = true
 # disabled_tools = ["delete_file"]
 # bearer_token = "token"
 # bearer_token_env_var = "MCP_TOKEN"
+# oauth_resource = "https://api.example.com/.default"
 
 # [mcp_servers."my-mcp".env]
 # HTTP_PROXY = "http://127.0.0.1:7890"
@@ -444,6 +488,7 @@ multi_agent = true
 # =========================
 # 作用：预设配置集合，可通过顶层 `profile = "<name>"` 切换
 # [profiles."safe"]
+# model = "gpt-5.3-codex"
 # model_provider = "openai"
 # model_catalog_json = "/abs/path/model-catalog.json"
 # model_instructions_file = "/abs/path/model-instructions.md"
@@ -451,6 +496,7 @@ multi_agent = true
 # plan_mode_reasoning_effort = "high" # none|minimal|low|medium|high|xhigh
 # model_reasoning_summary = "auto"  # auto|concise|detailed|none
 # model_verbosity = "medium"              # low|medium|high
+# service_tier = "flex"                   # fast|flex
 # web_search = "cached"                # disabled|cached|live
 # approval_policy = "untrusted"        # untrusted|on-failure|on-request|never
 # sandbox_mode = "read-only"           # read-only|workspace-write|danger-full-access
@@ -460,13 +506,16 @@ multi_agent = true
 # chatgpt_base_url = "https://chatgpt.com"
 # include_apply_patch_tool = true
 # tools_view_image = true
-# tools_web_search = false
 # js_repl_node_path = "/abs/path/node"
 # js_repl_node_module_dirs = ["/abs/path/node_modules"]
 # zsh_path = "/abs/path/zsh"
 # experimental_compact_prompt_file = "/abs/path/compact-prompt.md"
 # experimental_use_freeform_apply_patch = false
 # experimental_use_unified_exec_tool = true
+
+# [profiles."safe".tools.web_search]
+# allowed_domains = ["openai.com"]
+# context_size = "low"
 
 # [profiles."safe".windows]
 # sandbox = "unelevated"               # 可选: "elevated" | "unelevated"
@@ -479,6 +528,14 @@ multi_agent = true
 # unified_exec = true
 # undo = false
 # (可写的 feature key 与顶层 [features] 相同)
+
+
+# =========================
+# [plugins.<name>]
+# =========================
+# 作用：用户级插件开关（按插件名）
+# [plugins."my-plugin"]
+# enabled = true
 
 
 # =========================
