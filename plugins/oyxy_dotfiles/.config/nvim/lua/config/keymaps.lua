@@ -119,17 +119,20 @@ vim.api.nvim_create_autocmd("FileType", {
 keymap("n", "<C-p>", function()
   require("config.telescope").toggle_oldfiles()
 end, { desc = "Toggle Recent" })
-keymap("n", "<F7>", function()
+local function toggle_trouble_lsp()
   require("trouble").toggle({
     mode = "lsp",
     warn_no_results = false,
     open_no_results = true,
     win = {
-      position = "left",
-      size = 0.3,
+      position = "bottom",
+      size = 12,
     },
   })
-end, { desc = "Trouble LSP (toggle)" })
+end
+
+keymap("n", "<F7>", "<cmd>Outline<cr>", { desc = "Outline (toggle)" })
+keymap("n", "<F9>", toggle_trouble_lsp, { desc = "Trouble LSP (toggle)" })
 local diagnostic_virtual_text_on_config = vim.deepcopy(vim.diagnostic.config().virtual_text)
 if diagnostic_virtual_text_on_config == nil or diagnostic_virtual_text_on_config == false then
   diagnostic_virtual_text_on_config = true

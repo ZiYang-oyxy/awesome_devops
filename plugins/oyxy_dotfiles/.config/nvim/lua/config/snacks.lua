@@ -400,7 +400,7 @@ function M.setup(opts)
     LazyVim.pick("lsp_symbols")()
   end
 
-  vim.keymap.set("n", "<F9>", toggle_symbols_picker, { desc = "Toggle Symbols" })
+  vim.keymap.set("n", "<leader><F9>", toggle_symbols_picker, { desc = "Toggle Symbols" })
   vim.keymap.set("n", "<leader><F8>", function()
     explorer_reveal_or_open_root(snacks)
   end, { desc = "Snacks explorer (reveal/root fallback)" })
