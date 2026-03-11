@@ -1,7 +1,11 @@
 return {
   {
     "hat0uma/csvview.nvim",
-    opts = {},
+    opts = {
+      view = {
+        display_mode = "border",
+      },
+    },
     cmd = { "CsvViewEnable", "CsvViewToggle" },
   }
 }
