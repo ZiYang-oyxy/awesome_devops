@@ -83,6 +83,8 @@ notify = ["/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/.config/tmux/tmux_
 [tui]
 status_line = ["model-with-reasoning", "context-remaining", "total-input-tokens", "total-output-tokens", "five-hour-limit", "weekly-limit"]
 notifications = true
+alternate_screen = "never"
+animations = false
 
 [mcp_servers.github]
 url = "https://api.githubcopilot.com/mcp/"
