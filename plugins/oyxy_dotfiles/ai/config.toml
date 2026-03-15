@@ -82,6 +82,7 @@ personality = "pragmatic"            # none|friendly|pragmatic
 
 # 通知命令（外部程序）
 notify = ["/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/.config/tmux/tmux_status_hook.sh", "notify-done"]
+service_tier = "fast"
 
 [tui]
 status_line = ["model-with-reasoning", "context-remaining", "total-input-tokens", "total-output-tokens", "five-hour-limit", "weekly-limit"]
@@ -103,12 +104,6 @@ env_vars = ["CONTEXT7_API_KEY"]
 enabled = true
 required = false
 startup_timeout_sec = 6.0
-
-[projects."/Volumes/code/vibecoding/assistant"]
-trust_level = "trusted"
-
-[projects."/Volumes/code/vibecoding/chat"]
-trust_level = "trusted"
 
 # 项目文档读取策略
 # project_doc_fallback_filenames = ["AGENTS.md", "README.md"]
@@ -329,6 +324,9 @@ log_user_prompt = false
 # 作用：功能 flag（集中控制）
 [features]
 multi_agent = true
+
+[notice.model_migrations]
+"gpt-5.3-codex" = "gpt-5.4"
 # apply_patch_freeform = false
 # apps = false
 # apps_mcp_gateway = false
