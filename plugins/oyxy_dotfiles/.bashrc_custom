@@ -82,6 +82,7 @@ _cx_run() {
   fi
 
   if [ "${T:-0}" = "1" ]; then
+    echo "[cx] T=1, apply T_OPENAI_* overrides"
     [ -n "${T_OPENAI_API_KEY:-}" ] && export OPENAI_API_KEY="$T_OPENAI_API_KEY"
     [ -n "${T_OPENAI_BASE_URL:-}" ] && export OPENAI_BASE_URL="$T_OPENAI_BASE_URL"
   fi
