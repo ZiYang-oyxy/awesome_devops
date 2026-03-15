@@ -5,6 +5,48 @@
 curdir="`dirname $(readlink -f $0)`"
 source $curdir/../../lib/common.sh
 
+usage() {
+    echo "Usage: $0 [config]" >&2
+    echo "  no args : full install" >&2
+    echo "  config  : link ~/.config entries only" >&2
+}
+
+link_config_entries() {
+    local config_src_root="$curdir/.config"
+    local config_dst_root="$HOME/.config"
+
+    if [[ ! -d "$config_src_root" ]]; then
+        log "Skip .config linking: $config_src_root not found"
+        return 0
+    fi
+
+    mkdir -p "$config_dst_root"
+
+    while IFS= read -r -d '' src; do
+        local name
+        name="$(basename "$src")"
+        log "Link .config/$name ..."
+        _ln "$src" "$config_dst_root/$name"
+    done < <(find "$config_src_root" -mindepth 1 -maxdepth 1 -print0 | sort -z)
+}
+
+if [[ $# -gt 1 ]]; then
+    usage
+    exit 1
+fi
+
+if [[ $# -eq 1 ]]; then
+    if [[ "$1" != "config" ]]; then
+        usage
+        exit 1
+    fi
+
+    log "Configure .config only ..."
+    link_config_entries
+    log "Done!"
+    exit 0
+fi
+
 log "Configure bash ..."
 _ln $curdir/.bashrc ~/.bashrc
 _ln $curdir/.bashrc_custom ~/.bashrc_custom
@@ -20,6 +62,9 @@ curl https://raw.githubusercontent.com/git/git/master/contrib/completion/git-com
 log "Configure tmux ..."
 _ln $curdir/.tmux.conf ~/.tmux.conf
 _ln $curdir/.tmux-powerlinerc ~/.tmux-powerlinerc
+
+log "Configure .config ..."
+link_config_entries
 
 log "Configure codex ..."
 mkdir -p ~/.codex
