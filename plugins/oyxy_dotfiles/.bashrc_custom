@@ -137,14 +137,47 @@ _cx_run() {
   if [ "${T:-0}" = "1" ]; then
     echo "[cx] T=1, apply T_OPENAI_* overrides"
     [ -n "${T_OPENAI_API_KEY:-}" ] && export OPENAI_API_KEY="$T_OPENAI_API_KEY"
-    [ -n "${T_OPENAI_BASE_URL:-}" ] && export OPENAI_BASE_URL="$T_OPENAI_BASE_URL"
   fi
 
   printenv OPENAI_API_KEY | codex login --with-api-key
 
   local cfg="$HOME/.codex/config.toml"
   local name
+  local trust_root
+  local trust_root_escaped
+  local openai_base_url_escaped
+  local -a cx_flags=()
   local -a cx_mcp_flags=()
+
+  if command -v git >/dev/null 2>&1; then
+    trust_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  fi
+  if [ -z "$trust_root" ]; then
+    trust_root="$(pwd -P 2>/dev/null || pwd)"
+  fi
+  trust_root_escaped="${trust_root//\\/\\\\}"
+  trust_root_escaped="${trust_root_escaped//\"/\\\"}"
+  cx_flags+=(
+    "-c"
+    "projects={\"${trust_root_escaped}\"={ trust_level = \"trusted\" }}"
+  )
+
+  if [ -n "${T_OPENAI_BASE_URL:-}" ]; then
+    openai_base_url_escaped="${T_OPENAI_BASE_URL//\\/\\\\}"
+    openai_base_url_escaped="${openai_base_url_escaped//\"/\\\"}"
+    cx_flags+=(
+      "-c"
+      "openai_base_url=\"${openai_base_url_escaped}\""
+    )
+  elif [ -n "${OPENAI_BASE_URL:-}" ]; then
+    openai_base_url_escaped="${OPENAI_BASE_URL//\\/\\\\}"
+    openai_base_url_escaped="${openai_base_url_escaped//\"/\\\"}"
+    cx_flags+=(
+      "-c"
+      "openai_base_url=\"${openai_base_url_escaped}\""
+    )
+  fi
+
   if [ -f "$cfg" ]; then
     while IFS= read -r name; do
       [ -n "$name" ] || continue
@@ -162,7 +195,7 @@ _cx_run() {
     )
   fi
 
-  codex "${cx_mcp_flags[@]}" "$@"
+  codex "${cx_flags[@]}" "${cx_mcp_flags[@]}" "$@"
 }
 
 alias cx="_cx_run false"
