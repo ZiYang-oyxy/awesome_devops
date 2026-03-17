@@ -1,7 +1,7 @@
 # OPENSPEC:START
 # OpenSpec shell completions configuration
-if [ -d "/Users/bytedance/.local/share/bash-completion/completions" ]; then
-  for f in "/Users/bytedance/.local/share/bash-completion/completions"/*; do
+if [ -d "$HOME/.local/share/bash-completion/completions" ]; then
+  for f in "$HOME/.local/share/bash-completion/completions"/*; do
     [ -f "$f" ] && . "$f"
   done
 fi
@@ -133,14 +133,18 @@ if [ -f ~/.bashrc_custom ]; then
   . ~/.bashrc_custom
 fi
 
-source /Volumes/code/awesome_devops/plugins/xfinder/xfinder.source #@ad_plugins@
+[ -f /Volumes/code/awesome_devops/plugins/xfinder/xfinder.source ] && . /Volumes/code/awesome_devops/plugins/xfinder/xfinder.source #@ad_plugins@
 
-. "$HOME/.cargo/env"
-
-
-[[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path bash)"
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
 
-source ~/.awesome_devops/ad-completion.bash
+if [[ "$TERM_PROGRAM" == "kiro" ]] && command -v kiro >/dev/null 2>&1; then
+  _kiro_shell_integration="$(kiro --locate-shell-integration-path bash 2>/dev/null || true)"
+  [ -n "$_kiro_shell_integration" ] && [ -f "$_kiro_shell_integration" ] && . "$_kiro_shell_integration"
+  unset _kiro_shell_integration
+fi
+
+
+[ -f ~/.awesome_devops/ad-completion.bash ] && . ~/.awesome_devops/ad-completion.bash
 
 export PATH="$HOME/.local/bin:$PATH"

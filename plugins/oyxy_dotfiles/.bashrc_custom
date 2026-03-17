@@ -3,31 +3,68 @@
 #export http_proxy=http://127.0.0.1:1087;export https_proxy=http://127.0.0.1:1087;export ALL_PROXY=socks5://127.0.0.1:1080
 export LANG=en_US.UTF-8
 
-# for mbp m1
-export BASH_SILENCE_DEPRECATION_WARNING=1
+_shell_os="$(uname -s 2>/dev/null || echo unknown)"
+_is_macos=0
+_is_linux=0
+
+case "$_shell_os" in
+Darwin)
+  _is_macos=1
+  ;;
+Linux)
+  _is_linux=1
+  ;;
+esac
+
+prepend_path() {
+  [ -n "$1" ] || return 0
+  [ -d "$1" ] || return 0
+  case ":$PATH:" in
+  *":$1:"*) ;;
+  *)
+    PATH="$1:$PATH"
+    ;;
+  esac
+}
+
+if [ "$_is_macos" -eq 1 ]; then
+  export BASH_SILENCE_DEPRECATION_WARNING=1
+fi
 
 export VISUAL=nvim
 export EDITOR="$VISUAL"
-export PATH=/sbin:~/bin:$PATH
-export PATH=/opt/homebrew/bin:$PATH
-# brew install bash coreutils binutils findutils grep gawk gnu-sed
-export PATH=/opt/homebrew/opt/coreutils/libexec/gnubin:$PATH
-export PATH=/opt/homebrew/opt/binutils/bin:$PATH
-export PATH=/opt/homebrew/opt/findutils/libexec/gnubin:$PATH
-export PATH=/opt/homebrew/opt/grep/libexec/gnubin/:$PATH
-export PATH=/opt/homebrew/opt/ctags/bin:$PATH
-export PATH=/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH
+prepend_path "/sbin"
+prepend_path "$HOME/bin"
+
+if [ "$_is_macos" -eq 1 ]; then
+  prepend_path "/opt/homebrew/bin"
+  # brew install bash coreutils binutils findutils grep gawk gnu-sed
+  prepend_path "/opt/homebrew/opt/coreutils/libexec/gnubin"
+  prepend_path "/opt/homebrew/opt/binutils/bin"
+  prepend_path "/opt/homebrew/opt/findutils/libexec/gnubin"
+  prepend_path "/opt/homebrew/opt/grep/libexec/gnubin"
+  prepend_path "/opt/homebrew/opt/ctags/bin"
+  prepend_path "/opt/homebrew/opt/gnu-tar/libexec/gnubin"
+fi
+
+export PATH
 
 #TERM=xterm
 export STARSHIP_CONFIG="$HOME/.config/starship.toml"
-eval "$(starship init bash)"
+if command -v starship >/dev/null 2>&1; then
+  eval "$(starship init bash)"
+fi
 #PS1='${debian_chroot:+($debian_chroot)}\[\033[1;35m\]\w\[\033[00m\]\n>> '
 
 # for git information of tmux-powerline
 #PS1="$PS1"'$([ -n "$TMUX" ] && tmux setenv TMUXPWD_$(tmux display -p "#D" | tr -d %) "$PWD")'
 
-if [ -f $(brew --prefix)/etc/bash_completion ]; then
-  . $(brew --prefix)/etc/bash_completion
+if [ "$_is_macos" -eq 1 ] && command -v brew >/dev/null 2>&1; then
+  _brew_prefix="$(brew --prefix 2>/dev/null || true)"
+  if [ -n "$_brew_prefix" ] && [ -f "$_brew_prefix/etc/bash_completion" ]; then
+    . "$_brew_prefix/etc/bash_completion"
+  fi
+  unset _brew_prefix
 fi
 
 #All commands have been installed with the prefix 'g'.
@@ -44,28 +81,44 @@ fi
 #    MANPATH="/usr/local/opt/make/libexec/gnuman:$MANPATH"
 
 #curl https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash -o ~/.git-completion.bash
-source ~/.git-completion.bash
+[ -f ~/.git-completion.bash ] && . ~/.git-completion.bash
 
 alias vim="nvim"
 alias vi="nvim"
 alias d="sdcv"
-alias ls='gls --color=auto'
-alias ll='gls --color=auto -l'
-alias la='gls --color=auto -A'
-alias l='gls --color=auto -CF'
-alias rr='xset r rate 250 50'
-alias rm='grm'
-alias cp='gcp'
-alias sed='gsed'
 #alias rsync='rsync --filter=":- ~/.gitignore_global"'
-alias chrome="open -a 'Google Chrome'"
 alias tree="tree -C"
 
-# Keep github MCP token in sync for direct `codex` usage.
-command -v gh >/dev/null 2>&1 && {
-  gh_token="$(gh auth token 2>/dev/null || true)"
-  [ -n "$gh_token" ] && export GITHUB_PAT_TOKEN="$gh_token" GH_TOKEN="$gh_token"
-}
+if command -v gls >/dev/null 2>&1; then
+  alias ls='gls --color=auto'
+  alias ll='gls --color=auto -l'
+  alias la='gls --color=auto -A'
+  alias l='gls --color=auto -CF'
+else
+  alias ll='ls -l'
+  alias la='ls -A'
+  alias l='ls -CF'
+fi
+
+if command -v grm >/dev/null 2>&1; then
+  alias rm='grm'
+fi
+
+if command -v gcp >/dev/null 2>&1; then
+  alias cp='gcp'
+fi
+
+if command -v gsed >/dev/null 2>&1; then
+  alias sed='gsed'
+fi
+
+if [ "$_is_linux" -eq 1 ] && command -v xset >/dev/null 2>&1; then
+  alias rr='xset r rate 250 50'
+fi
+
+if [ "$_is_macos" -eq 1 ] && command -v open >/dev/null 2>&1; then
+  alias chrome="open -a 'Google Chrome'"
+fi
 
 _cx_run() {
   local enable_mcp="$1"
@@ -121,12 +174,13 @@ alias cc="claude"
 alias cc2="claude --dangerously-skip-permissions"
 alias oc="opencode"
 
-#OS X Terminal equivalent of Ctrl+Left / Ctrl+Right
-#https://apple.stackexchange.com/questions/1626/os-x-terminal-equivalent-of-ctrlleft-ctrlright
-bind '"\e[5C": forward-word'
-bind '"\e[5D": backward-word'
-bind '"\e[1;5C": forward-word'
-bind '"\e[1;5D": backward-word'
+# OS X Terminal equivalent of Ctrl+Left / Ctrl+Right.
+if [ "$_is_macos" -eq 1 ]; then
+  bind '"\e[5C": forward-word'
+  bind '"\e[5D": backward-word'
+  bind '"\e[1;5C": forward-word'
+  bind '"\e[1;5D": backward-word'
+fi
 
 [ -e ~/.bashrc_ignored ] && . ~/.bashrc_ignored
 [ -e ~/.config/.env ] && . ~/.config/.env
@@ -151,3 +205,5 @@ g() {
 [[ -s ~/.autojump/etc/profile.d/autojump.sh ]] && source ~/.autojump/etc/profile.d/autojump.sh
 [ -f /opt/homebrew/etc/profile.d/autojump.sh ] && . /opt/homebrew/etc/profile.d/autojump.sh
 alias s='j -s'
+
+unset _shell_os _is_macos _is_linux
