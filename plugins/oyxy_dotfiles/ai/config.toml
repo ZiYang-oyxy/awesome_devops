@@ -23,7 +23,7 @@
 # compact_prompt = "Compact prompt text"
 
 # 模型相关
-model = "gpt-5.3-codex"
+model = "gpt-5.4"
 model_reasoning_effort = "medium"       # none|minimal|low|medium|high|xhigh
 plan_mode_reasoning_effort = "high"     # none|minimal|low|medium|high|xhigh
 model_reasoning_summary = "auto"        # auto|concise|detailed|none
@@ -85,7 +85,7 @@ notify = ["/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/.config/tmux/tmux_
 service_tier = "fast"
 
 [tui]
-status_line = ["model-with-reasoning", "context-remaining", "total-input-tokens", "total-output-tokens", "five-hour-limit", "weekly-limit"]
+status_line = ["model-with-reasoning", "context-remaining", "total-input-tokens", "total-output-tokens", "five-hour-limit", "weekly-limit", "fast-mode"]
 notifications = true
 alternate_screen = "never"
 animations = false
