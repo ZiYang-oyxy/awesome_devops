@@ -162,7 +162,7 @@ _cx_run() {
     "projects={\"${trust_root_escaped}\"={ trust_level = \"trusted\" }}"
   )
 
-  if [ -n "${T_OPENAI_BASE_URL:-}" ]; then
+  if [ "${T:-0}" = "1" ] && [ -n "${T_OPENAI_BASE_URL:-}" ]; then
     openai_base_url_escaped="${T_OPENAI_BASE_URL//\\/\\\\}"
     openai_base_url_escaped="${openai_base_url_escaped//\"/\\\"}"
     cx_flags+=(
