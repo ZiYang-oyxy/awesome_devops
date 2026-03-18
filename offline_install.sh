@@ -3,9 +3,8 @@
 _curdir="`dirname $(readlink -f $0)`"
 source $_curdir/lib/common.sh
 
-if [[ -e ~/.awesome_devops ]]; then
-    rm -rf ~/.awesome_devops.bak
-    mv ~/.awesome_devops ~/.awesome_devops.bak
+if [[ -e ~/.awesome_devops || -L ~/.awesome_devops ]]; then
+    _backup_path ~/.awesome_devops ~/.awesome_devops.bak
 fi
 _ln $_curdir/../awesome_devops ~/.awesome_devops
 

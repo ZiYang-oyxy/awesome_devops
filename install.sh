@@ -2,11 +2,30 @@
 
 set -e
 
+backup_path() {
+    local src="$1"
+    local bak="$2"
+
+    if [[ ! -e "$src" && ! -L "$src" ]]; then
+        return 0
+    fi
+
+    rm -rf -- "$bak"
+    if [[ -L "$src" ]]; then
+        if ! cp -aL -- "$src" "$bak"; then
+            mv -f -- "$src" "$bak"
+        else
+            rm -f -- "$src"
+        fi
+    else
+        mv -f -- "$src" "$bak"
+    fi
+}
+
 mkdir -p ~/tmp/
 curl @GETURL@/@awesome_devopsVERSION_STR.tar@ -o ~/tmp/awesome_devops.tar
-if [[ -e ~/.awesome_devops ]]; then
-    rm -rf ~/.awesome_devops.bak
-    mv ~/.awesome_devops ~/.awesome_devops.bak
+if [[ -e ~/.awesome_devops || -L ~/.awesome_devops ]]; then
+    backup_path ~/.awesome_devops ~/.awesome_devops.bak
 fi
 
 cd ~/tmp
