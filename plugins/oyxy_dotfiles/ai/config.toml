@@ -17,6 +17,7 @@
 # compact_prompt = "Compact prompt text"
 
 model = "gpt-5.4"
+model_provider = "openai-http"
 service_tier = "fast"                  # fast|flex
 model_reasoning_effort = "medium"      # none|minimal|low|medium|high|xhigh
 plan_mode_reasoning_effort = "high"    # none|minimal|low|medium|high|xhigh
@@ -208,6 +209,9 @@ multi_agent = true
 # [notice]
 # =========================
 [notice]
+
+[projects."/Volumes/code"]
+trust_level = "trusted"
 # hide_full_access_warning = true
 # hide_gpt-5.1-codex-max_migration_prompt = true
 # hide_gpt5_1_migration_prompt = true
@@ -248,3 +252,11 @@ multi_agent = true
 # - [plugins."<name>"]
 # - [apps._default] / [apps."<app_id>"] / [apps."<app_id>".tools."<tool_name>"]
 # - [skills.bundled] / [[skills.config]]
+
+[model_providers.openai-http]
+name = "OpenAI Compatible HTTP"
+base_url = "https://oyxy.top:9443/v1"
+env_key = "OPENAI_API_KEY"
+wire_api = "responses"
+supports_websockets = false
+requires_openai_auth = false

@@ -84,7 +84,9 @@ fi
 [ -f ~/.git-completion.bash ] && . ~/.git-completion.bash
 
 alias vim="nvim"
-alias vi="nvim"
+vi() {
+    command vim "$@"
+}
 alias d="sdcv"
 #alias rsync='rsync --filter=":- ~/.gitignore_global"'
 alias tree="tree -C"
@@ -134,20 +136,15 @@ _cx_run() {
     fi
   fi
 
-  if [ "${T:-0}" = "1" ]; then
-    echo "[cx] T=1, apply T_OPENAI_* overrides"
-    [ -n "${T_OPENAI_API_KEY:-}" ] && export OPENAI_API_KEY="$T_OPENAI_API_KEY"
-  fi
-
-  printenv OPENAI_API_KEY | codex login --with-api-key
-
   local cfg="$HOME/.codex/config.toml"
   local name
   local trust_root
   local trust_root_escaped
-  local openai_base_url_escaped
+  local provider_base_url
+  local provider_base_url_escaped
   local -a cx_flags=()
   local -a cx_mcp_flags=()
+  local -a cx_env=()
 
   if command -v git >/dev/null 2>&1; then
     trust_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
@@ -162,20 +159,26 @@ _cx_run() {
     "projects={\"${trust_root_escaped}\"={ trust_level = \"trusted\" }}"
   )
 
-  if [ "${T:-0}" = "1" ] && [ -n "${T_OPENAI_BASE_URL:-}" ]; then
-    openai_base_url_escaped="${T_OPENAI_BASE_URL//\\/\\\\}"
-    openai_base_url_escaped="${openai_base_url_escaped//\"/\\\"}"
+  if [ "${T:-0}" = "1" ]; then
+    [ -n "${T_OPENAI_API_KEY:-}" ] && cx_env+=("OPENAI_API_KEY=$T_OPENAI_API_KEY")
+    provider_base_url="${T_OPENAI_BASE_URL:-}"
+  else
+    [ -n "${OPENAI_API_KEY:-}" ] && cx_env+=("OPENAI_API_KEY=$OPENAI_API_KEY")
+    provider_base_url="${OPENAI_BASE_URL:-}"
+  fi
+
+  if [ -n "$provider_base_url" ]; then
+    provider_base_url_escaped="${provider_base_url//\\/\\\\}"
+    provider_base_url_escaped="${provider_base_url_escaped//\"/\\\"}"
     cx_flags+=(
       "-c"
-      "openai_base_url=\"${openai_base_url_escaped}\""
+      "model_providers.openai-http.base_url=\"${provider_base_url_escaped}\""
     )
-  elif [ -n "${OPENAI_BASE_URL:-}" ]; then
-    openai_base_url_escaped="${OPENAI_BASE_URL//\\/\\\\}"
-    openai_base_url_escaped="${openai_base_url_escaped//\"/\\\"}"
-    cx_flags+=(
-      "-c"
-      "openai_base_url=\"${openai_base_url_escaped}\""
-    )
+  fi
+
+  if [ "${#cx_env[@]}" -eq 0 ]; then
+    echo "missing OPENAI_API_KEY: set T=1 T_OPENAI_API_KEY=... for one-shot runs, or export OPENAI_API_KEY in your shell" >&2
+    return 1
   fi
 
   if [ -f "$cfg" ]; then
@@ -195,7 +198,7 @@ _cx_run() {
     )
   fi
 
-  codex "${cx_flags[@]}" "${cx_mcp_flags[@]}" "$@"
+  env -u OPENAI_BASE_URL "${cx_env[@]}" codex "${cx_flags[@]}" "${cx_mcp_flags[@]}" "$@"
 }
 
 alias cx="_cx_run false"
