@@ -2,35 +2,25 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENGINE="$SCRIPT_DIR/tmux_status_engine.sh"
+STATUSD="$SCRIPT_DIR/tmux_statusd.sh"
+
+statusd_emit() {
+    [[ -x "$STATUSD" ]] || return 0
+    "$STATUSD" emit "$@" || true
+}
 
 resolve_pane_meta() {
     local pane_id="$1"
-    tmux display-message -p -t "$pane_id" $'#{session_id}\t#{window_id}\t#{pane_id}\t#{session_name}' 2>/dev/null || true
+    tmux display-message -p -t "$pane_id" $'#{session_id}\t#{window_id}\t#{pane_id}\t#{client_tty}\t#{session_name}' 2>/dev/null || true
 }
 
 resolve_active_pane_meta() {
     local meta
-    meta=$(tmux display-message -p $'#{pane_id}\t#{window_id}\t#{session_id}' 2>/dev/null || true)
+    meta=$(tmux display-message -p $'#{pane_id}\t#{window_id}\t#{session_id}\t#{client_tty}' 2>/dev/null || true)
     if [[ -z "$meta" ]]; then
-        meta=$(tmux list-clients -F $'#{pane_id}\t#{window_id}\t#{session_id}' 2>/dev/null | awk 'NF { print; exit }' || true)
+        meta=$(tmux list-clients -F $'#{pane_id}\t#{window_id}\t#{session_id}\t#{client_tty}' 2>/dev/null | awk 'NF { print; exit }' || true)
     fi
     printf '%s' "$meta"
-}
-
-summary_value() {
-    local summary="$1"
-    local key="$2"
-    printf '%s\n' "$summary" | awk -v key="$key" -F '[=\t]' '
-        {
-            for (i = 1; i <= NF; i += 2) {
-                if ($i == key && (i + 1) <= NF) {
-                    print $(i + 1)
-                    exit
-                }
-            }
-        }
-    '
 }
 
 ack_focus() {
@@ -38,6 +28,7 @@ ack_focus() {
     local window_id="${2:-}"
     local session_id="${3:-}"
     local pane_meta=""
+    local client_tty=""
 
     if [[ -n "$pane_id" ]]; then
         pane_meta=$(resolve_pane_meta "$pane_id")
@@ -47,37 +38,39 @@ ack_focus() {
         local active_meta
         active_meta=$(resolve_active_pane_meta)
         if [[ -n "$active_meta" ]]; then
-            IFS=$'\t' read -r pane_id window_id session_id <<< "$active_meta"
+            IFS=$'\t' read -r pane_id window_id session_id client_tty <<< "$active_meta"
             pane_meta=$(resolve_pane_meta "$pane_id")
         fi
     fi
 
     [[ -z "$pane_id" || -z "$pane_meta" ]] && return 0
 
-    local resolved_sid resolved_wid resolved_pid
-    IFS=$'\t' read -r resolved_sid resolved_wid resolved_pid _ <<< "$pane_meta"
+    local resolved_sid resolved_wid resolved_pid resolved_tty
+    IFS=$'\t' read -r resolved_sid resolved_wid resolved_pid resolved_tty _ <<< "$pane_meta"
     [[ -n "$resolved_pid" ]] && pane_id="$resolved_pid"
     [[ -z "$session_id" ]] && session_id="$resolved_sid"
     [[ -z "$window_id" ]] && window_id="$resolved_wid"
+    [[ -z "$client_tty" ]] && client_tty="$resolved_tty"
 
-    local summary bell_count
-    summary=$("$ENGINE" query summary --scope pane --id "$pane_id" 2>/dev/null || echo 'robot=0	bell=0')
-    bell_count="$(summary_value "$summary" bell)"
-    [[ "$bell_count" =~ ^[0-9]+$ ]] || bell_count=0
-
-    if ((bell_count > 0)); then
-        "$ENGINE" event ack \
-            --pane-id "$pane_id" \
-            --session-id "$session_id" \
-            --window-id "$window_id" || true
-        tmux refresh-client -S 2>/dev/null || true
-    fi
+    statusd_emit focus_changed \
+        --pane "$pane_id" \
+        --window "$window_id" \
+        --session "$session_id" \
+        --client-tty "$client_tty" \
+        --source "tmux:focus"
 }
 
 pane_closed() {
-    "$ENGINE" gc prune || true
+    local pane_id="${1:-}"
+    local window_id="${2:-}"
+    local session_id="${3:-}"
+
+    statusd_emit pane_closed \
+        --pane "$pane_id" \
+        --window "$window_id" \
+        --session "$session_id" \
+        --source "tmux:pane-closed"
     ack_focus "$@" || true
-    tmux refresh-client -S 2>/dev/null || true
 }
 
 select_pane_by_payload() {
@@ -125,32 +118,33 @@ notify_done() {
 
     [[ -z "$pane_id" ]] && return 0
 
-    local meta session_id window_id session_name
+    local meta session_id window_id session_name client_tty
     meta=$(resolve_pane_meta "$pane_id")
     [[ -z "$meta" ]] && return 0
 
-    IFS=$'\t' read -r session_id window_id pane_id session_name <<< "$meta"
+    IFS=$'\t' read -r session_id window_id pane_id client_tty session_name <<< "$meta"
     [[ -z "$session_id" || -z "$window_id" || -z "$pane_id" ]] && return 0
     [[ -z "$session_name" ]] && session_name="$session_id"
 
     local task_id="pane:${pane_id}"
-    "$ENGINE" event complete \
-        --session-id "$session_id" \
-        --window-id "$window_id" \
-        --pane-id "$pane_id" \
+    statusd_emit task_complete \
+        --session "$session_id" \
+        --window "$window_id" \
+        --pane "$pane_id" \
         --task-id "$task_id" \
-        --source "codex-notify" || true
+        --source "codex-notify"
 
     local active_client_panes
     active_client_panes=$(tmux list-clients -F '#{pane_id}' 2>/dev/null | awk 'NF { print }' | tr '\n' '\t' || true)
     if [[ "$active_client_panes" == *"${pane_id}"$'\t'* ]]; then
-        "$ENGINE" event ack \
-            --pane-id "$pane_id" \
-            --session-id "$session_id" \
-            --window-id "$window_id" || true
+        statusd_emit task_ack \
+            --session "$session_id" \
+            --window "$window_id" \
+            --pane "$pane_id" \
+            --client-tty "$client_tty" \
+            --task-id "$task_id" \
+            --source "codex-notify"
     fi
-
-    tmux refresh-client -S 2>/dev/null || true
 
     if command -v osascript >/dev/null 2>&1; then
         local notify_title notify_body notify_title_escaped notify_body_escaped

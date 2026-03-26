@@ -54,7 +54,6 @@ export STARSHIP_CONFIG="$HOME/.config/starship.toml"
 if command -v starship >/dev/null 2>&1; then
   eval "$(starship init bash)"
 fi
-#PS1='${debian_chroot:+($debian_chroot)}\[\033[1;35m\]\w\[\033[00m\]\n>> '
 
 # for git information of tmux-powerline
 #PS1="$PS1"'$([ -n "$TMUX" ] && tmux setenv TMUXPWD_$(tmux display -p "#D" | tr -d %) "$PWD")'
@@ -202,8 +201,7 @@ _cx_run() {
 }
 
 alias cx="_cx_run false"
-#alias cx1="_cx_run false --dangerously-bypass-approvals-and-sandbox -m gpt-5.3-codex-spark"
-alias cx1="_cx_run false --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=low"
+alias cx1="_cx_run false --dangerously-bypass-approvals-and-sandbox -m gpt-5.4-mini -c model_reasoning_effort=medium"
 alias cx2="_cx_run false --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=medium"
 alias cx3="_cx_run true --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=xhigh"
 alias cc="claude"
@@ -235,6 +233,90 @@ g() {
   eval "ssh ${!target}"
   set +x
 }
+
+_append_prompt_command() {
+  local command_name="$1"
+  case ";${PROMPT_COMMAND:-};" in
+  *";${command_name};"*) ;;
+  *)
+    if [ -n "${PROMPT_COMMAND:-}" ]; then
+      PROMPT_COMMAND="${PROMPT_COMMAND%;};${command_name}"
+    else
+      PROMPT_COMMAND="${command_name}"
+    fi
+    ;;
+  esac
+}
+
+_trim_prompt_command_entry() {
+  local value="$1"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
+}
+
+_remove_prompt_command() {
+  local command_name="$1"
+  local entry trimmed updated=""
+  local -a entries=()
+
+  IFS=';' read -r -a entries <<< "${PROMPT_COMMAND:-}"
+  for entry in "${entries[@]}"; do
+    trimmed="$(_trim_prompt_command_entry "$entry")"
+    if [ -z "$trimmed" ] || [ "$trimmed" = "$command_name" ]; then
+      continue
+    fi
+    if [ -n "$updated" ]; then
+      updated="${updated};${trimmed}"
+    else
+      updated="$trimmed"
+    fi
+  done
+
+  PROMPT_COMMAND="$updated"
+}
+
+__tmux_statusd_prompt_hook() {
+  [ -n "${TMUX:-}" ] || return 0
+  [ -n "${TMUX_PANE:-}" ] || return 0
+  [ -x "$HOME/.config/tmux/tmux_statusd.sh" ] || return 0
+  [ "${__TMUX_STATUSD_PROMPT_HOOK_ACTIVE:-0}" = "0" ] || return 0
+
+  local meta session_id window_id client_tty shell_name title state_key
+  meta="$(tmux display-message -p -t "$TMUX_PANE" $'#{session_id}\t#{window_id}\t#{client_tty}' 2>/dev/null || true)"
+  [ -n "$meta" ] || return 0
+
+  IFS=$'\t' read -r session_id window_id client_tty <<< "$meta"
+  [ -n "$session_id" ] || return 0
+  [ -n "$window_id" ] || return 0
+
+  shell_name="${SHELL##*/}"
+  [ -n "$shell_name" ] || shell_name="bash"
+  title="$PWD"
+  state_key="${TMUX_PANE}"$'\t'"${session_id}"$'\t'"${window_id}"$'\t'"${client_tty}"$'\t'"${PWD}"$'\t'"${VIRTUAL_ENV:-}"$'\t'"${CONDA_DEFAULT_ENV:-}"$'\t'"${shell_name}"$'\t'"${title}"
+
+  if [ "${state_key}" = "${__TMUX_STATUSD_LAST_PROMPT_STATE:-}" ]; then
+    return 0
+  fi
+
+  __TMUX_STATUSD_LAST_PROMPT_STATE="${state_key}"
+  __TMUX_STATUSD_PROMPT_HOOK_ACTIVE=1
+  "$HOME/.config/tmux/tmux_statusd.sh" emit shell_update \
+    --pane "$TMUX_PANE" \
+    --window "$window_id" \
+    --session "$session_id" \
+    --client-tty "$client_tty" \
+    --cwd "$PWD" \
+    --venv "${VIRTUAL_ENV:-}" \
+    --conda-env "${CONDA_DEFAULT_ENV:-}" \
+    --shell "$shell_name" \
+    --title "$title" \
+    --source "bash:prompt" >/dev/null 2>&1 || true
+  __TMUX_STATUSD_PROMPT_HOOK_ACTIVE=0
+}
+
+_remove_prompt_command "__tmux_statusd_prompt_hook"
+_append_prompt_command "__tmux_statusd_prompt_hook"
 
 # XXX KNOWN ISSUES
 # For bash users, autojump keeps track of directories by modifying $PROMPT_COMMAND. Do not overwrite $PROMPT_COMMAND

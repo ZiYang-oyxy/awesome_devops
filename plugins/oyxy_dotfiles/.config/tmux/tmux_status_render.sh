@@ -2,7 +2,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENGINE="$SCRIPT_DIR/tmux_status_engine.sh"
+STATUSD="$SCRIPT_DIR/tmux_statusd.sh"
+
+statusd_query() {
+    [[ -x "$STATUSD" ]] || return 1
+    "$STATUSD" query "$@"
+}
 
 to_superscript_digits() {
     local input="$1"
@@ -172,7 +177,7 @@ render_left() {
     [[ -z "$sessions" ]] && return 0
 
     local session_batch
-    session_batch=$("$ENGINE" query batch --scope session 2>/dev/null || true)
+    session_batch="$(statusd_query batch --scope session 2>/dev/null || true)"
 
     local rendered=""
     local prev_bg=""
@@ -263,7 +268,7 @@ render_window_suffix() {
     [[ -z "$window_id" ]] && return 0
 
     local summary robot_count bell_count
-    summary=$("$ENGINE" query summary --scope window --id "$window_id" 2>/dev/null || echo 'robot=0	bell=0')
+    summary="$(statusd_query summary --scope window --id "$window_id" 2>/dev/null || echo 'robot=0	bell=0')"
     robot_count="$(summary_value "$summary" robot)"
     bell_count="$(summary_value "$summary" bell)"
     [[ "$robot_count" =~ ^[0-9]+$ ]] || robot_count=0
@@ -281,8 +286,8 @@ render_pane_icon() {
     local pane_id="${1:-}"
     [[ -z "$pane_id" ]] && return 0
 
-    local summary robot_count bell_count rendered_icon
-    summary=$("$ENGINE" query summary --scope pane --id "$pane_id" 2>/dev/null || echo 'robot=0	bell=0')
+    local summary robot_count bell_count rendered_icon=""
+    summary="$(statusd_query summary --scope pane --id "$pane_id" 2>/dev/null || echo 'robot=0	bell=0')"
     robot_count="$(summary_value "$summary" robot)"
     bell_count="$(summary_value "$summary" bell)"
     [[ "$robot_count" =~ ^[0-9]+$ ]] || robot_count=0

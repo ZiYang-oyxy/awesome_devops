@@ -83,6 +83,15 @@ brew install shellcheck curl gnu-tar clang-format starship
 log "Install codex skills ..."
 "$curdir/ai/scripts/install-skills.sh" "$curdir/ai/skills-manifest.json"
 
+if command -v go >/dev/null 2>&1 && [[ -x "$curdir/tmux-statusd/scripts/install.sh" ]]; then
+    log "Build tmux-statusd ..."
+    "$curdir/tmux-statusd/scripts/install.sh" "$HOME/bin"
+elif [[ ! -x "$curdir/tmux-statusd/scripts/install.sh" ]]; then
+    log "Skip tmux-statusd build: source repo not present"
+else
+    log "Skip tmux-statusd build: go not found"
+fi
+
 # :CocInstall coc-sh
 # :CocInstall coc-json
 

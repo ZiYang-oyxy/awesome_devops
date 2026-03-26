@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RENDER="$SCRIPT_DIR/tmux_status_render.sh"
-
 contrast_text_for_bg() {
     local bg="${1:-}"
     local r g b
@@ -56,95 +53,34 @@ contrast_text_for_bg() {
     fi
 }
 
-strip_wrappers() {
-    sed -E 's/\\\[|\\\]//g; s/%\{|%\}//g'
-}
+collapse_home_text() {
+    local input="${1:-}"
+    local physical_home=""
 
-ansi_to_tmux_styles() {
-    perl -Mstrict -Mwarnings -pe '
-        my $base_fg = $ENV{STARSHIP_TMUX_BASE_FG} // "default";
-        sub sgr_to_tmux {
-            my ($seq) = @_;
-            my @codes = split /;/, $seq;
-            my $out = "";
-            for (my $i = 0; $i < @codes; $i++) {
-                my $c = $codes[$i];
-                $c = 0 if !defined($c) || $c eq "";
-                if ($c == 0) { $out .= "#[fg=$base_fg]#[nobold]"; next; }
-                if ($c == 1) { $out .= "#[bold]"; next; }
-                if ($c == 22) { $out .= "#[nobold]"; next; }
-                if ($c == 39) { $out .= "#[fg=$base_fg]"; next; }
-                if ($c >= 30 && $c <= 37) { $out .= "#[fg=colour" . ($c - 30) . "]"; next; }
-                if ($c >= 90 && $c <= 97) { $out .= "#[fg=colour" . ($c - 90 + 8) . "]"; next; }
-                if ($c == 38) {
-                    my $mode = $codes[$i + 1] // "";
-                    if ($mode eq "5") {
-                        my $idx = $codes[$i + 2] // "";
-                        if ($idx =~ /^\d+$/) { $out .= "#[fg=colour$idx]"; }
-                        $i += 2;
-                        next;
-                    }
-                    if ($mode eq "2") {
-                        my ($r, $g, $b) = @codes[$i + 2, $i + 3, $i + 4];
-                        if (defined($r) && defined($g) && defined($b) &&
-                            $r =~ /^\d+$/ && $g =~ /^\d+$/ && $b =~ /^\d+$/) {
-                            $out .= sprintf("#[fg=#%02X%02X%02X]", $r, $g, $b);
-                        }
-                        $i += 4;
-                        next;
-                    }
-                }
-            }
-            return $out;
+    if [[ -n "${HOME:-}" ]]; then
+        physical_home="$(cd "$HOME" 2>/dev/null && pwd -P || true)"
+    fi
+
+    INPUT_TEXT="$input" HOME_TEXT="${HOME:-}" PHYSICAL_HOME_TEXT="$physical_home" perl -e '
+        use strict;
+        use warnings;
+
+        my $text = $ENV{INPUT_TEXT} // q{};
+        my @homes = grep { defined($_) && $_ ne q{} } ($ENV{HOME_TEXT}, $ENV{PHYSICAL_HOME_TEXT});
+        my %seen;
+        @homes = grep { !$seen{$_}++ } @homes;
+        for my $home (@homes) {
+            $text =~ s/\Q$home\E(?=\/|$)/~/g;
         }
-        s/\e\[([0-9;]*)m/sgr_to_tmux($1)/ge;
+        print $text;
     '
-}
-
-starship_title() {
-    local pid="$1"
-    local width="$2"
-    local pane_path="$3"
-    local pane_cmd="$4"
-
-    if [[ -n "$pid" ]]; then
-        local ps_line
-        ps_line=$(ps e -p "$pid" -o command= 2>/dev/null || true)
-        if [[ -n "$ps_line" ]]; then
-            local venv conda_env conda_prefix
-            venv=$(printf '%s' "$ps_line" | sed -n 's/.*[[:space:]]VIRTUAL_ENV=\([^[:space:]]*\).*/\1/p' | tail -n1)
-            conda_env=$(printf '%s' "$ps_line" | sed -n 's/.*[[:space:]]CONDA_DEFAULT_ENV=\([^[:space:]]*\).*/\1/p' | tail -n1)
-            conda_prefix=$(printf '%s' "$ps_line" | sed -n 's/.*[[:space:]]CONDA_PREFIX=\([^[:space:]]*\).*/\1/p' | tail -n1)
-            [[ -n "$venv" ]] && export VIRTUAL_ENV="$venv"
-            [[ -n "$conda_env" ]] && export CONDA_DEFAULT_ENV="$conda_env"
-            [[ -n "$conda_prefix" ]] && export CONDA_PREFIX="$conda_prefix"
-        fi
-    fi
-
-    local cfg
-    cfg="${STARSHIP_TMUX_CONFIG:-$HOME/.config/starship-tmux.toml}"
-
-    if command -v starship >/dev/null 2>&1; then
-        (
-            cd "$pane_path"
-            STARSHIP_LOG=error STARSHIP_CONFIG="$cfg" \
-                starship prompt --terminal-width "$width" | strip_wrappers | ansi_to_tmux_styles | tr -d '\n'
-        ) || printf '%s — %s' "$pane_cmd" "${pane_path##*/}"
-    else
-        printf '%s — %s' "$pane_cmd" "${pane_path##*/}"
-    fi
 }
 
 simple_title() {
     local pane_path="$1"
     [[ -z "$pane_path" ]] && pane_path="~"
 
-    printf '%s' "$pane_path"
-}
-
-trim_title_leading_spaces() {
-    # Keep tmux style tags at the beginning, but remove spaces after them.
-    perl -pe 's/^(?:#\[[^]]*\])*\K +//'
+    collapse_home_text "$pane_path"
 }
 
 make_fill() {
@@ -167,6 +103,7 @@ format_border() {
     local zoomed_flag="${7:-0}"
     local pane_id="${8:-}"
     local window_id="${9:-}"
+    local pane_icon_raw="${10:-}"
 
     [[ -z "$theme_color" ]] && theme_color="#9A2600"
 
@@ -193,22 +130,9 @@ format_border() {
         zoomed_prefix="⛶ "
     fi
 
-    local inner_width=$((width - 4))
-    if [[ -n "$zoomed_prefix" ]]; then
-        inner_width=$((inner_width - 2))
-    fi
-    if ((inner_width < 10)); then
-        inner_width="$width"
-    fi
-
     local title pane_icon title_plain
-    if [[ "$active" == "1" ]]; then
-        title="$(STARSHIP_TMUX_BASE_FG="$text_color" starship_title "$pid" "$inner_width" "$pane_path" "$pane_cmd")"
-        title="$(printf '%s' "$title" | trim_title_leading_spaces)"
-    else
-        title="$(simple_title "$pane_path" "$pane_cmd")"
-    fi
-    pane_icon="$("$RENDER" pane-icon "$pane_id" "$window_id" "$active" "$pane_cmd" 2>/dev/null || true)"
+    title="$(simple_title "$pane_path")"
+    pane_icon="$pane_icon_raw"
     if [[ -n "$pane_icon" ]]; then
         pane_icon="${pane_icon} "
     fi
