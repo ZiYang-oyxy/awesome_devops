@@ -83,6 +83,34 @@ simple_title() {
     collapse_home_text "$pane_path"
 }
 
+trim_text() {
+    local input="${1:-}"
+    input="${input#"${input%%[![:space:]]*}"}"
+    input="${input%"${input##*[![:space:]]}"}"
+    printf '%s' "$input"
+}
+
+codex_title_segment() {
+    local pane_id="${1:-}"
+    local pane_cmd="${2:-}"
+    local pane_title host_short pane_meta
+
+    [[ -n "$pane_id" ]] || return 0
+    [[ "$pane_cmd" == codex* ]] || return 0
+
+    pane_meta="$(tmux display-message -p -t "$pane_id" $'#{pane_title}\t#{host_short}' 2>/dev/null || true)"
+    [[ -n "$pane_meta" ]] || return 0
+
+    IFS=$'\t' read -r pane_title host_short <<< "$pane_meta"
+    pane_title="$(trim_text "$pane_title")"
+    pane_title="$(collapse_home_text "$pane_title")"
+
+    [[ -n "$pane_title" ]] || return 0
+    [[ -n "$host_short" && "$pane_title" == "$host_short" ]] && return 0
+
+    printf '  %s' "$pane_title"
+}
+
 make_fill() {
     local count="$1"
     local out=""
@@ -130,13 +158,17 @@ format_border() {
         zoomed_prefix="⛶ "
     fi
 
-    local title pane_icon title_plain
+    local title pane_icon title_plain codex_segment
     title="$(simple_title "$pane_path")"
+    codex_segment="$(codex_title_segment "$pane_id" "$pane_cmd")"
     pane_icon="$pane_icon_raw"
     if [[ -n "$pane_icon" ]]; then
         pane_icon="${pane_icon} "
     fi
 
+    if [[ -n "$codex_segment" ]]; then
+        title="${codex_segment#  }  ${title}"
+    fi
     title_plain="$(printf '%s' "$title" | sed -E 's/#\[[^]]*\]//g')"
 
     local left_cap=""
