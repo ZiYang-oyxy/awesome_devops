@@ -122,9 +122,6 @@ if [ "$_is_macos" -eq 1 ] && command -v open >/dev/null 2>&1; then
 fi
 
 _cx_run() {
-  local enable_mcp="$1"
-  shift
-
   command -v gh >/dev/null 2>&1
   if [ $? -eq 0 ]; then
     local gh_token
@@ -135,14 +132,11 @@ _cx_run() {
     fi
   fi
 
-  local cfg="$HOME/.codex/config.toml"
-  local name
   local trust_root
   local trust_root_escaped
   local provider_base_url
   local provider_base_url_escaped
   local -a cx_flags=()
-  local -a cx_mcp_flags=()
   local -a cx_env=()
 
   if command -v git >/dev/null 2>&1; then
@@ -180,30 +174,13 @@ _cx_run() {
     return 1
   fi
 
-  if [ -f "$cfg" ]; then
-    while IFS= read -r name; do
-      [ -n "$name" ] || continue
-      cx_mcp_flags+=("-c" "mcp_servers.${name}.enabled=${enable_mcp}")
-    done < <(
-      awk '
-        /^\[mcp_servers\./ {
-          name=$0
-          sub(/^\[mcp_servers\./, "", name)
-          sub(/\]$/, "", name)
-          gsub(/"/, "", name)
-          print name
-        }
-      ' "$cfg" | sort -u
-    )
-  fi
-
-  env -u OPENAI_BASE_URL "${cx_env[@]}" codex "${cx_flags[@]}" "${cx_mcp_flags[@]}" "$@"
+  env -u OPENAI_BASE_URL "${cx_env[@]}" codex "${cx_flags[@]}" "$@"
 }
 
-alias cx="_cx_run false"
-alias cx1="_cx_run false --dangerously-bypass-approvals-and-sandbox -m gpt-5.4-mini -c model_reasoning_effort=medium"
-alias cx2="_cx_run false --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=medium"
-alias cx3="_cx_run true --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=xhigh"
+alias cx="_cx_run"
+alias cx1="_cx_run --dangerously-bypass-approvals-and-sandbox -m gpt-5.4-mini -c model_reasoning_effort=medium"
+alias cx2="_cx_run --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=medium"
+alias cx3="_cx_run --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=xhigh"
 alias cc="claude"
 alias cc2="claude --dangerously-skip-permissions"
 alias oc="opencode"
