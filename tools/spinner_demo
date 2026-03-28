@@ -1,0 +1,234 @@
+#!/usr/bin/env python3
+"""Preview terminal spinner schemes with mixed single-width and emoji sets."""
+
+from __future__ import annotations
+
+import argparse
+import shutil
+import signal
+import sys
+import time
+import unicodedata
+from dataclasses import dataclass
+from typing import Iterable
+
+
+@dataclass(frozen=True)
+class Scheme:
+    name: str
+    frames: tuple[str, ...]
+    note: str
+
+
+SCHEMES: tuple[Scheme, ...] = (
+    Scheme("ascii", ("|", "/", "-", "\\"), "Most compatible"),
+    Scheme("quadrants", ("◐", "◓", "◑", "◒"), "Smooth and compact"),
+    Scheme("braille_a", ("⠁", "⠂", "⠄", "⡀", "⢀", "⠠", "⠐", "⠈"), "Common CLI style"),
+    Scheme("braille_b", ("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"), "Denser braille spinner"),
+    Scheme("corners", ("◜", "◠", "◝", "◞", "◡", "◟"), "Rounded sweep"),
+    Scheme("blocks", ("▏", "▎", "▍", "▌", "▋", "▊", "▉", "█", "▉", "▊", "▋", "▌", "▍", "▎"), "Ping-pong fill"),
+    Scheme("arrows", ("←", "↖", "↑", "↗", "→", "↘", "↓", "↙"), "Directional loop"),
+    Scheme("dots", ("·", "•", "●", "•"), "Visible pulse"),
+    Scheme("triangles", ("◢", "◣", "◤", "◥"), "Corner triangles"),
+    Scheme("chevrons", ("<", "^", ">", "v"), "Simple chevrons"),
+    Scheme("diamonds", ("◇", "◆", "◇", "◆"), "Diamond blink"),
+    Scheme("squares", ("□", "◧", "■", "◨"), "Square morph"),
+    Scheme("waves", ("~", "≈", "≋", "≈"), "Wave motion"),
+    Scheme("pluses", ("+", "×", "+", "×"), "Cross pulse"),
+    Scheme("barber", ("⟋", "⟍", "⟋", "⟍"), "Barber pole"),
+)
+
+EMOJI_SCHEMES: tuple[Scheme, ...] = (
+    Scheme("status", ("⏳", "🔄", "🧪", "✅"), "Task lifecycle"),
+    Scheme("signals", ("🟢", "🟡", "🔴", "🟡"), "Signal lights"),
+    Scheme("delivery", ("📦", "🛠️", "🚀", "📦"), "Build and ship"),
+    Scheme("search", ("🔍", "⚠️", "🔄", "✅"), "Inspect and resolve"),
+    Scheme("moon", ("🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"), "Moon phases"),
+    Scheme("clock", ("🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚"), "Clock sweep"),
+    Scheme("weather", ("☀", "☁", "☂", "☃", "☄", "☀"), "Weather icons"),
+    Scheme("shapes", ("◇", "◆", "○", "●", "□", "■"), "Shape pulse"),
+    Scheme("globe", ("🌍", "🌎", "🌏", "🌎"), "Earth loop"),
+    Scheme("hearts", ("🤍", "🩶", "🖤", "🩶"), "Heart pulse"),
+    Scheme("stars", ("✨", "⭐", "🌟", "⭐"), "Star shimmer"),
+    Scheme("faces", ("🙂", "😐", "😮", "😄"), "Mood cycle"),
+)
+
+
+def cell_width(char: str) -> int:
+    width = 0
+    for ch in char:
+        if unicodedata.combining(ch):
+            continue
+        width += 2 if unicodedata.east_asian_width(ch) in {"W", "F"} else 1
+    return width
+
+
+def validate_single_width(schemes: Iterable[Scheme]) -> list[str]:
+    invalid: list[str] = []
+    for scheme in schemes:
+        for frame in scheme.frames:
+            if cell_width(frame) != 1:
+                invalid.append(f"{scheme.name}:{frame}")
+    return invalid
+
+
+def max_frame_width(scheme: Scheme) -> int:
+    return max(cell_width(frame) for frame in scheme.frames)
+
+
+def clear_line() -> None:
+    width = shutil.get_terminal_size((80, 20)).columns
+    sys.stdout.write("\r" + (" " * max(0, width - 1)) + "\r")
+
+
+def clear_block(line_count: int) -> None:
+    width = shutil.get_terminal_size((80, 20)).columns
+    for index in range(line_count):
+        sys.stdout.write("\r" + (" " * max(0, width - 1)) + "\r")
+        if index != line_count - 1:
+            sys.stdout.write("\x1b[1A")
+    sys.stdout.flush()
+
+
+def animate_scheme(scheme: Scheme, fps: float, cycles: int) -> None:
+    delay = 1.0 / fps
+    total_frames = len(scheme.frames) * cycles
+    frame_column_width = max_frame_width(scheme)
+    for index in range(total_frames):
+        frame = scheme.frames[index % len(scheme.frames)]
+        sys.stdout.write(
+            f"\r[{scheme.name:<10}] {frame:<{frame_column_width}}  {scheme.note:<22}"
+        )
+        sys.stdout.flush()
+        time.sleep(delay)
+    clear_line()
+
+
+def animate_all(schemes: list[Scheme], fps: float, cycles: int) -> None:
+    delay = 1.0 / fps
+    total_frames = max(len(scheme.frames) for scheme in schemes) * cycles
+    frame_column_width = max(max_frame_width(scheme) for scheme in schemes)
+
+    sys.stdout.write("\n" * len(schemes))
+    sys.stdout.write(f"\x1b[{len(schemes)}A")
+    sys.stdout.flush()
+
+    for index in range(total_frames):
+        lines = []
+        for scheme in schemes:
+            frame = scheme.frames[index % len(scheme.frames)]
+            lines.append(
+                f"[{scheme.name:<10}] {frame:<{frame_column_width}}  {scheme.note:<22}"
+            )
+
+        clear_block(len(schemes))
+        sys.stdout.write("\n".join(lines))
+        sys.stdout.flush()
+        if index != total_frames - 1:
+            sys.stdout.write(f"\x1b[{len(schemes)}A")
+            sys.stdout.flush()
+        time.sleep(delay)
+
+    clear_block(len(schemes))
+
+
+def install_sigint_handler() -> None:
+    def _handler(signum: int, frame: object) -> None:
+        del signum, frame
+        clear_line()
+        sys.stdout.write("Stopped.\n")
+        sys.stdout.flush()
+        raise SystemExit(130)
+
+    signal.signal(signal.SIGINT, _handler)
+
+
+def parse_args() -> argparse.Namespace:
+    scheme_names = [scheme.name for scheme in SCHEMES] + [scheme.name for scheme in EMOJI_SCHEMES]
+    parser = argparse.ArgumentParser(
+        description="Preview terminal spinner schemes in the terminal."
+    )
+    parser.add_argument(
+        "--scheme",
+        choices=scheme_names,
+        help="Preview a single scheme instead of all schemes.",
+    )
+    parser.add_argument(
+        "--fps",
+        type=float,
+        default=12.0,
+        help="Frames per second. Default: 12.",
+    )
+    parser.add_argument(
+        "--cycles",
+        type=int,
+        default=3,
+        help="How many full loops to play per scheme. Default: 3.",
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List available schemes and exit.",
+    )
+    parser.add_argument(
+        "--sequential",
+        action="store_true",
+        help="Play schemes one by one instead of animating all at once.",
+    )
+    parser.add_argument(
+        "--emoji",
+        action="store_true",
+        help="Use emoji-only schemes.",
+    )
+    parser.add_argument(
+        "--single-width-only",
+        action="store_true",
+        help="Use only the single-width schemes.",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    invalid = validate_single_width(SCHEMES)
+    if invalid:
+        print("Invalid non-single-width frames found:", ", ".join(invalid), file=sys.stderr)
+        return 2
+
+    if args.emoji and args.single_width_only:
+        print("Choose either --emoji or --single-width-only, not both.", file=sys.stderr)
+        return 2
+
+    if args.emoji:
+        all_schemes = EMOJI_SCHEMES
+    elif args.single_width_only:
+        all_schemes = SCHEMES
+    else:
+        all_schemes = SCHEMES + EMOJI_SCHEMES
+
+    if args.list:
+        for scheme in all_schemes:
+            print(f"{scheme.name:<10} {' '.join(scheme.frames)}")
+        return 0
+
+    install_sigint_handler()
+    schemes = (
+        [next(scheme for scheme in all_schemes if scheme.name == args.scheme)]
+        if args.scheme
+        else list(all_schemes)
+    )
+
+    if args.scheme:
+        animate_scheme(schemes[0], fps=args.fps, cycles=args.cycles)
+    elif args.sequential:
+        for scheme in schemes:
+            animate_scheme(scheme, fps=args.fps, cycles=args.cycles)
+    else:
+        animate_all(schemes, fps=args.fps, cycles=args.cycles)
+
+    print("Done.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

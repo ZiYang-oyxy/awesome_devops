@@ -16,3 +16,4 @@ StartupGraph|linux boot流程可视化
 sshpass|显示地填密码做ssh登录
 virtionet_stat|virtio-net设备统计可视化
 youdao|有道词典CLI版
+spinner_demo|终端字符和emoji动画预览
