@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_STATE_DIR="${TMUX_STATUSD_STATE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/tmux-statusd}"
+START_LOCK_DIR=""
 
 find_binary() {
     local name="$1"
@@ -43,10 +44,15 @@ ensure_started() {
     fi
 
     mkdir -p "$DEFAULT_STATE_DIR"
+    START_LOCK_DIR="$DEFAULT_STATE_DIR/start.lock"
+    if ! mkdir "$START_LOCK_DIR" 2>/dev/null; then
+        return 0
+    fi
+    trap 'rmdir "$START_LOCK_DIR" 2>/dev/null || true' RETURN
     nohup env \
         TMUX_STATUSD_STATE_DIR="$DEFAULT_STATE_DIR" \
-        TMUX_STATUSD_TMUX_CONFIG_DIR="$SCRIPT_DIR" \
         "$daemon" serve --state-dir "$DEFAULT_STATE_DIR" >/dev/null 2>&1 &
+    sleep 0.1
 }
 
 emit() {
