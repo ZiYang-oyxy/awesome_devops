@@ -1,6 +1,6 @@
 # Codex 配置（按 schema 整理版）
 # 参考：
-# - 最新schema: https://developers.openai.com/codex/config-schema.json
+# - 最新schema: https://developers.openai.com/codex/config-schema.json （已按 2026-03-27 拉取核对）
 # - 官方文档: https://developers.openai.com/codex/config-reference
 #
 # 使用约定：
@@ -20,7 +20,7 @@ model = "gpt-5.4"
 model_provider = "openai-http"
 service_tier = "fast"                  # fast|flex
 model_reasoning_effort = "medium"      # none|minimal|low|medium|high|xhigh
-plan_mode_reasoning_effort = "high"    # none|minimal|low|medium|high|xhigh
+plan_mode_reasoning_effort = "xhigh"    # none|minimal|low|medium|high|xhigh
 model_reasoning_summary = "auto"       # auto|concise|detailed|none
 model_verbosity = "medium"             # low|medium|high
 web_search = "live"                    # disabled|cached|live
@@ -34,6 +34,7 @@ personality = "pragmatic"              # none|friendly|pragmatic
 # model_supports_reasoning_summaries = true
 # model_instructions_file = "/abs/path/instructions.md"
 # model_catalog_json = "/abs/path/model-catalog.json"
+# openai_base_url = "https://api.openai.com/v1" # 仅覆盖内建 openai provider 的 base URL
 
 # =========================
 # 顶层：认证 / 执行策略 / 通知
@@ -55,6 +56,7 @@ suppress_unstable_features_warning = true
 # approval_policy = { reject = { mcp_elicitations = true, rules = false, sandbox_approval = false, request_permissions = false } }
 # approvals_reviewer = "user"          # user|guardian_subagent
 # sandbox_mode = "workspace-write"     # read-only|workspace-write|danger-full-access
+# sandbox_workspace_write = { network_access = true, writable_roots = ["/abs/path"] }
 # allow_login_shell = true
 # background_terminal_max_timeout = 300000
 # default_permissions = "default"
@@ -70,6 +72,15 @@ suppress_unstable_features_warning = true
 # experimental_realtime_ws_base_url = "wss://..."
 # experimental_realtime_ws_model = "..."
 # experimental_realtime_ws_startup_context = "..."
+
+# [shell_environment_policy]
+# inherit = "all"                      # all|core|none
+# include_only = ["^PATH$", "^HOME$", "^SSH_AUTH_SOCK$"]
+# exclude = ["^AWS_", "^GITHUB_TOKEN$"]
+# ignore_default_excludes = false
+# experimental_use_profile = false
+# [shell_environment_policy.set]
+# EDITOR = "vim"
 
 # =========================
 # 顶层：路径 / 文档 / 预算
@@ -103,11 +114,25 @@ status_line = [
 notifications = true
 alternate_screen = "never"             # auto|always|never
 animations = true
+terminal_title = ["spinner", "project", "status", "task-progress"]
 # notification_method = "auto"         # auto|osc9|bel
 # show_tooltips = true
 # theme = "one-dark-pro"
 # 可选子表： [tui.model_availability_nux]
 # 例： "gpt-5.4" = 1
+
+# =========================
+# [tools]
+# =========================
+[tools]
+view_image = true
+[tools.web_search]
+context_size = "high"             # low|medium|high
+[tools.web_search.location]
+city = "Shanghai"
+region = "Shanghai"
+country = "CN"
+timezone = "Asia/Shanghai"
 
 # =========================
 # [mcp_servers.<name>]
@@ -134,6 +159,19 @@ enabled = true
 required = false
 startup_timeout_sec = 6.0
 
+[mcp_servers.feishu_bridge]
+command = "/Users/bytedance/.nvm/versions/node/v25.2.0/bin/node"
+args = ["/Volumes/code/feishu-bridge/server/index.mjs"]
+cwd = "/Volumes/code/feishu-bridge"
+enabled = true
+required = false
+startup_timeout_sec = 10.0
+tool_timeout_sec = 300.0
+env_vars = [
+  "FEISHU_APP_ID",
+  "FEISHU_APP_SECRET",
+]
+
 # =========================
 # [otel]
 # =========================
@@ -145,63 +183,127 @@ trace_exporter = "none"                # none|statsig
 log_user_prompt = false
 
 # =========================
+# history
+# =========================
+[history]
+persistence = "save-all"             # save-all|none
+max_bytes = 104857600
+
+# =========================
+# [analytics] / [feedback]
+# =========================
+# [analytics]
+# enabled = true
+#
+# [feedback]
+# enabled = true
+
+# =========================
+# [agents]
+# =========================
+[agents]
+max_threads = 8
+max_depth = 4
+job_max_runtime_seconds = 1800
+# 可按角色补充说明或引用独立配置：
+# [agents.worker]
+# description = "执行型子代理"
+# nickname_candidates = ["worker", "exec"]
+
+# =========================
+# [apps] / [skills] / [audio] / [realtime]
+# =========================
+# [apps._default]
+# enabled = true
+# destructive_enabled = false
+# open_world_enabled = false
+#
+# [skills.bundled]
+# enabled = true
+#
+# [[skills.config]]
+# path = "/abs/path/to/SKILL.md"
+# enabled = true
+#
+# [audio]
+# microphone = "MacBook Pro Microphone"
+# speaker = "MacBook Pro Speakers"
+#
+# [realtime]
+# version = "v2"
+# type = "conversational"
+#
+# [ghost_snapshot]
+# disable_warnings = false
+# ignore_large_untracked_dirs = 2000
+# ignore_large_untracked_files = 10485760
+#
+[memories]
+use_memories = true
+generate_memories = true
+#
+# [windows]
+# sandbox = "unelevated"              # elevated|unelevated
+# sandbox_private_desktop = true
+
+# =========================
 # [features]
 # =========================
 [features]
 multi_agent = true
-# apply_patch_freeform = false
-# apps = false
-# apps_mcp_gateway = false
-# artifact = false
-# child_agents_md = false
-# code_mode = false
+apply_patch_freeform = true
+apps = true
+apps_mcp_gateway = true
+artifact = true
+child_agents_md = true
+code_mode = true
+# code_mode_only = false
 # codex_git_commit = false
 # codex_hooks = false
-# collab = false
-# collaboration_modes = true
-# connectors = false
-# default_mode_request_user_input = false
+collaboration_modes = true
+default_mode_request_user_input = true
 # elevated_windows_sandbox = false
 # enable_experimental_windows_sandbox = false
-# enable_request_compression = true
-# experimental_use_freeform_apply_patch = false
-# experimental_use_unified_exec_tool = true
+enable_fanout = true
+enable_request_compression = true
+# exec_permission_approvals = false
 # experimental_windows_sandbox = false
-# fast_mode = false
+fast_mode = true
 # guardian_approval = false
 # image_detail_original = false
 # image_generation = false
-# include_apply_patch_tool = true
-# js_repl = false
+js_repl = true
 # js_repl_tools_only = false
-# memories = false
-# memory_tool = false
-# personality = true
-# plugins = false
-# powershell_utf8 = false
-# prevent_idle_sleep = false
-# realtime_conversation = false
-# remote_models = true
+memories = true
+multi_agent_v2 = true
+personality = true
+plugins = true
+prevent_idle_sleep = true
+realtime_conversation = true
+remote_models = true
 # request_permissions = false
 # request_permissions_tool = false
-# request_rule = true
-# responses_websockets = false
-# responses_websockets_v2 = false
-# runtime_metrics = false
-# search_tool = false
-# shell_snapshot = false
-# shell_tool = true
+request_rule = true
+responses_websockets = true
+responses_websockets_v2 = true
+runtime_metrics = true
+search_tool = true
+shell_snapshot = true
+shell_tool = true
 # shell_zsh_fork = false
 # skill_env_var_dependency_prompt = false
-# skill_mcp_dependency_install = true
-# sqlite = false
-# steer = true
+skill_mcp_dependency_install = true
+sqlite = true
+steer = true
 # tool_call_mcp_elicitation = false
-# undo = false
-# unified_exec = true
+tool_search = true
+tool_suggest = true
+tui_app_server = true
+undo = true
+unified_exec = true
+# use_legacy_landlock = false
 # use_linux_sandbox_bwrap = false
-# voice_transcription = false
-# web_search = false
+voice_transcription = true
 # web_search_cached = false            # deprecated
 # web_search_request = false           # deprecated
 
@@ -209,9 +311,6 @@ multi_agent = true
 # [notice]
 # =========================
 [notice]
-
-[projects."/Volumes/code"]
-trust_level = "trusted"
 # hide_full_access_warning = true
 # hide_gpt-5.1-codex-max_migration_prompt = true
 # hide_gpt5_1_migration_prompt = true
@@ -219,39 +318,18 @@ trust_level = "trusted"
 # hide_world_writable_warning = true
 
 # =========================
-# [projects."<absolute_path>"]
+# 动态分区
 # =========================
-# 项目信任按绝对路径设置；新增项目时请完整新增一个 [projects."<absolute_path>"] 区块。
-# trust_level 可选： trusted | untrusted
-
-# =========================
-# 其他可选分区（按 schema 支持，按需新增）
-# =========================
-# 静态分区：
-# - [agents]：max_threads / max_depth / job_max_runtime_seconds / [agents.explorer]
-# - [analytics]：enabled
-# - [feedback]：enabled
-# - [history]：persistence = "save-all"|"none"，可配 max_bytes
-# - [ghost_snapshot]：disable_warnings / ignore_large_untracked_dirs / ignore_large_untracked_files
-# - [sandbox_workspace_write]：network_access / writable_roots / exclude_slash_tmp / exclude_tmpdir_env_var
-# - [shell_environment_policy]：inherit / include_only / exclude / ignore_default_excludes /
-#   experimental_use_profile；其子表 [shell_environment_policy.set] 可强制设置环境变量
-# - [tools]：view_image；其子表 [tools.web_search] 可配 allowed_domains / context_size /
-#   [tools.web_search.location] { city, region, country, timezone }
-# - [audio]：microphone / speaker
-# - [memories]：extract_model / consolidation_model / use_memories / generate_memories /
-#   no_memories_if_mcp_or_web_search / min_rollout_idle_hours / max_rollout_age_days /
-#   max_unused_days / max_rollouts_per_startup / max_raw_memories_for_consolidation
-# - [windows]：sandbox / sandbox_private_desktop
-# - [realtime]：type = "conversation"|"transcription"，version = "v1"|"v2"（实验性）
-#
-# 动态分区：
-# - [permissions.<name>.network] / [permissions.<name>.filesystem]
-# - [model_providers.<name>]
-# - [profiles.<name>]
-# - [plugins."<name>"]
+# - [projects."<absolute_path>"]：trust_level = "trusted"|"untrusted"
+# - [model_providers.<name>]：自定义 provider
+# - [profiles.<name>]：命名配置组合
+# - [plugins."<name>"]：插件启停
+# - [permissions.<name>]：命名权限配置
 # - [apps._default] / [apps."<app_id>"] / [apps."<app_id>".tools."<tool_name>"]
 # - [skills.bundled] / [[skills.config]]
+
+[projects."/Volumes/code"]
+trust_level = "trusted"
 
 [model_providers.openai-http]
 name = "OpenAI Compatible HTTP"
