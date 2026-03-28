@@ -5,6 +5,24 @@
 curdir="`dirname $(readlink -f $0)`"
 source $curdir/../../lib/common.sh
 
+tmux_statusd_source_dir() {
+    local candidate
+
+    for candidate in \
+        "${TMUX_STATUSD_SOURCE_DIR:-}" \
+        "/Volumes/code/tmux-statusd" \
+        "$curdir/tmux-statusd"
+    do
+        [[ -n "$candidate" ]] || continue
+        if [[ -x "$candidate/scripts/install.sh" ]]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 usage() {
     echo "Usage: $0 [config]" >&2
     echo "  no args : full install" >&2
@@ -83,10 +101,12 @@ brew install shellcheck curl gnu-tar clang-format starship
 log "Install codex skills ..."
 "$curdir/ai/scripts/install-skills.sh" "$curdir/ai/skills-manifest.json"
 
-if command -v go >/dev/null 2>&1 && [[ -x "$curdir/tmux-statusd/scripts/install.sh" ]]; then
+tmux_statusd_src="$(tmux_statusd_source_dir || true)"
+
+if command -v go >/dev/null 2>&1 && [[ -n "$tmux_statusd_src" ]]; then
     log "Build tmux-statusd ..."
-    "$curdir/tmux-statusd/scripts/install.sh" "$HOME/bin"
-elif [[ ! -x "$curdir/tmux-statusd/scripts/install.sh" ]]; then
+    "$tmux_statusd_src/scripts/install.sh" "$HOME/bin"
+elif [[ -z "$tmux_statusd_src" ]]; then
     log "Skip tmux-statusd build: source repo not present"
 else
     log "Skip tmux-statusd build: go not found"
