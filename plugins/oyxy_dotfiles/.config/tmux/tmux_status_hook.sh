@@ -96,6 +96,35 @@ select_pane_by_payload() {
     printf '%s' "$pane_id"
 }
 
+trim_notify_text() {
+    local text="${1:-}"
+    local limit="${2:-80}"
+
+    text=${text//$'\r'/ }
+    text=${text//$'\n'/ }
+    text=$(printf '%s' "$text" | sed -E 's/[[:space:]]+/ /g; s/^ //; s/ $//')
+
+    if [[ -z "$text" ]]; then
+        return 0
+    fi
+
+    if ((${#text} > limit)); then
+        printf '%s…' "${text:0:limit-1}"
+    else
+        printf '%s' "$text"
+    fi
+}
+
+payload_field() {
+    local payload="${1:-}"
+    local jq_expr="${2:-}"
+
+    [[ -n "$payload" ]] || return 0
+    command -v jq >/dev/null 2>&1 || return 0
+
+    printf '%s' "$payload" | jq -r "$jq_expr // empty" 2>/dev/null || true
+}
+
 notify_done() {
     local args=("$@")
     local payload=""
@@ -147,16 +176,42 @@ notify_done() {
     fi
 
     if command -v osascript >/dev/null 2>&1; then
-        local notify_title notify_body notify_title_escaped notify_body_escaped
-        notify_title='Codex task completed'
-        notify_body="session: ${session_name}, window: ${window_id}, pane: ${pane_id}"
+        local payload_prompt payload_reply payload_client repo_name
+        payload_prompt=$(payload_field "$payload" '.["input-messages"][0]')
+        payload_reply=$(payload_field "$payload" '.["last-assistant-message"]')
+        payload_client=$(payload_field "$payload" '.client')
+
+        repo_name="$session_name"
+        if [[ -n "$payload_cwd" ]]; then
+            repo_name=$(basename "$payload_cwd")
+        fi
+
+        local notify_title notify_subtitle notify_body
+        local notify_title_escaped notify_subtitle_escaped notify_body_escaped
+
+        notify_title="Codex · $(trim_notify_text "$repo_name" 36)"
+
+        notify_subtitle=$(trim_notify_text "$payload_prompt" 72)
+        if [[ -z "$notify_subtitle" ]]; then
+            notify_subtitle="session ${session_name}"
+        fi
+
+        notify_body=$(trim_notify_text "$payload_reply" 160)
+        if [[ -z "$notify_body" ]]; then
+            notify_body="window ${window_id}, pane ${pane_id}"
+            if [[ -n "$payload_client" ]]; then
+                notify_body="${notify_body} · ${payload_client}"
+            fi
+        fi
 
         notify_title_escaped=${notify_title//\\/\\\\}
         notify_title_escaped=${notify_title_escaped//\"/\\\"}
+        notify_subtitle_escaped=${notify_subtitle//\\/\\\\}
+        notify_subtitle_escaped=${notify_subtitle_escaped//\"/\\\"}
         notify_body_escaped=${notify_body//\\/\\\\}
         notify_body_escaped=${notify_body_escaped//\"/\\\"}
 
-        osascript -e "display notification \"${notify_body_escaped}\" with title \"${notify_title_escaped}\"" >/dev/null 2>&1 || true
+        osascript -e "display notification \"${notify_body_escaped}\" with title \"${notify_title_escaped}\" subtitle \"${notify_subtitle_escaped}\"" >/dev/null 2>&1 || true
     fi
 }
 
