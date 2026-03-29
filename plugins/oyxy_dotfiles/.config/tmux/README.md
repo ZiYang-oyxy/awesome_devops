@@ -32,7 +32,7 @@ flowchart TD
 ```
 
 ## 图标口径
-- `🤖`: 由 daemon 汇总 `pane_current_command` 为 `codex*` 的 pane 数量。
+- `🧠`: 由 daemon 汇总 `pane_current_command` 为 `codex*` 的 pane 数量。
 - `🔔`: 由 daemon 汇总 `completed && !acknowledged` 的任务数量。
 - pane 级 `🔔`: 只判断当前 `pane_id` 是否存在未确认完成任务。
 
