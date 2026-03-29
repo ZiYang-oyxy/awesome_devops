@@ -13,12 +13,17 @@
 # 顶层：提示词 / 模型 / 提供方
 # =========================
 # instructions = "System instructions"
-# developer_instructions = "Developer instructions"
+developer_instructions = """
+When the deep-research skill is active, or when the user explicitly asks for deep research, comprehensive analysis, comparisons, trend analysis, sub-agents, delegation, or parallel work, treat that as authorization to use native multi-agent tools.
+Prefer Codex-native coordination primitives: `spawn_agent`, `assign_task`, `send_message`, `wait_agent`, `list_agents`, and `close_agent`.
+For independent research subtasks, prefer spawning 2-4 subagents in parallel with disjoint scopes and explicit output contracts.
+Do not spawn subagents for simple lookups, tightly coupled blocking steps, or redundant work.
+When subagents are running, continue non-overlapping synthesis locally and use `wait_agent` sparingly.
+"""
 # compact_prompt = "Compact prompt text"
 
 model = "gpt-5.4"
 model_provider = "openai-http"
-service_tier = "fast"                  # fast|flex
 model_reasoning_effort = "medium"      # none|minimal|low|medium|high|xhigh
 plan_mode_reasoning_effort = "xhigh"    # none|minimal|low|medium|high|xhigh
 model_reasoning_summary = "auto"       # auto|concise|detailed|none
@@ -31,6 +36,10 @@ personality = "pragmatic"              # none|friendly|pragmatic
 # oss_provider = "ollama"
 # model_context_window = 200000
 # model_auto_compact_token_limit = 120000
+# GPT-5.4 可实验性尝试 1M 上下文；默认保持注释，按需手动打开。
+# 注意：超过标准 272K 的部分通常会按更高额度/成本计入，且长上下文会增加延迟。
+# model_context_window = 1000000
+# model_auto_compact_token_limit = 800000
 # model_supports_reasoning_summaries = true
 # model_instructions_file = "/abs/path/instructions.md"
 # model_catalog_json = "/abs/path/model-catalog.json"
@@ -39,7 +48,7 @@ personality = "pragmatic"              # none|friendly|pragmatic
 # =========================
 # 顶层：认证 / 执行策略 / 通知
 # =========================
-notify = ["sh", "-c", "exec \"$HOME/.config/tmux/tmux_status_hook.sh\" \"$@\"", "notify", "notify-done"]
+notify = ["sh", "-c", "exec tmux-statusctl notify-done \"$@\"", "notify", "notify-done"]
 check_for_update_on_startup = true
 hide_agent_reasoning = false
 show_raw_agent_reasoning = true
@@ -114,7 +123,7 @@ status_line = [
 notifications = true
 alternate_screen = "never"             # auto|always|never
 animations = true
-terminal_title = ["spinner", "project", "status", "task-progress"]
+terminal_title = ["project", "task-progress", "status"]
 # notification_method = "auto"         # auto|osc9|bel
 # show_tooltips = true
 # theme = "one-dark-pro"
@@ -159,19 +168,6 @@ enabled = true
 required = false
 startup_timeout_sec = 6.0
 
-[mcp_servers.feishu_bridge]
-command = "/Users/bytedance/.nvm/versions/node/v25.2.0/bin/node"
-args = ["/Volumes/code/feishu-bridge/server/index.mjs"]
-cwd = "/Volumes/code/feishu-bridge"
-enabled = true
-required = false
-startup_timeout_sec = 10.0
-tool_timeout_sec = 300.0
-env_vars = [
-  "FEISHU_APP_ID",
-  "FEISHU_APP_SECRET",
-]
-
 # =========================
 # [otel]
 # =========================
@@ -202,7 +198,7 @@ max_bytes = 104857600
 # [agents]
 # =========================
 [agents]
-max_threads = 8
+max_threads = 12
 max_depth = 4
 job_max_runtime_seconds = 1800
 # 可按角色补充说明或引用独立配置：
@@ -241,6 +237,8 @@ job_max_runtime_seconds = 1800
 [memories]
 use_memories = true
 generate_memories = true
+extract_model = "gpt-5.1-codex-mini"
+consolidation_model = "gpt-5.4-mini"
 #
 # [windows]
 # sandbox = "unelevated"              # elevated|unelevated
@@ -338,3 +336,10 @@ env_key = "OPENAI_API_KEY"
 wire_api = "responses"
 supports_websockets = false
 requires_openai_auth = false
+
+# 需要实验性 1M 上下文时，可在顶层取消注释：
+# profile = "gpt54-1m"
+[profiles.gpt54-1m]
+model = "gpt-5.4"
+model_context_window = 1000000
+model_auto_compact_token_limit = 800000
