@@ -200,6 +200,7 @@ _vps="-p 33333 root@8.220.207.192"
 _vps2="-p 33333 root@8.222.225.241"
 _nas="-6 -p 33333 hh123okbb@zaozaoxixi.synology.me"
 _nas2="-6 -p 33333 hh123okbb@zaozaoxixi.top"
+_nas2r="-6 -p 33333 root@zaozaoxixi.top"
 _pve='-o ProxyCommand="ssh -6 -p 33333 hh123okbb@zaozaoxixi.top -W %h:%p" root@192.168.31.10'
 _claw=" -p 33333 root@192.168.31.4"
 _claw2="-6 -J hh123okbb@zaozaoxixi.top:33333 -p 33333 root@192.168.31.4 -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o TCPKeepAlive=yes"

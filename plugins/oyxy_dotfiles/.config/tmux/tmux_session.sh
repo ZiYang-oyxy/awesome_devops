@@ -4,7 +4,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MANAGER="$SCRIPT_DIR/tmux_session_manager.py"
 STATUSD="$SCRIPT_DIR/tmux_statusd.sh"
-STATUS_HOOK="$SCRIPT_DIR/tmux_status_hook.sh"
 
 is_non_negative_int() {
     local value="$1"
@@ -139,8 +138,13 @@ command_switch() {
     fi
 
     emit_session_selected "$pane_id" "$window_id" "$session_id" "$client_tty"
-    if [[ -n "$pane_id" && -x "$STATUS_HOOK" ]]; then
-        "$STATUS_HOOK" ack-focus "$pane_id" "$window_id" "$session_id" >/dev/null 2>&1 || true
+    if [[ -n "$pane_id" ]]; then
+        tmux-statusctl ack-focus \
+            --pane "$pane_id" \
+            --window "$window_id" \
+            --session "$session_id" \
+            --client-tty "$client_tty" \
+            --source "tmux:focus" >/dev/null 2>&1 || true
     fi
 }
 
