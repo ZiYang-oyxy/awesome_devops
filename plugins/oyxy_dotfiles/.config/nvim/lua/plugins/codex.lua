@@ -2,22 +2,34 @@ return {
   {
     "ZiYang-oyxy/codex.nvim",
     config = function()
-      local args = {
-        "--dangerously-bypass-approvals-and-sandbox",
-      }
-
-      local cwd = vim.loop.cwd() or vim.fn.getcwd()
-      local git_root = vim.fn.systemlist({ "git", "-C", cwd, "rev-parse", "--show-toplevel" })
-      local project_root = cwd
-      if vim.v.shell_error == 0 and git_root and git_root[1] and git_root[1] ~= "" then
-        project_root = git_root[1]
-      end
-      local escaped_project_root = project_root:gsub("\\", "\\\\"):gsub('"', '\\"')
-      table.insert(args, "-c")
-      table.insert(args, string.format('projects={"%s"={trust_level="trusted"}}', escaped_project_root))
-
       require("codex").setup({
-        args = args,
+        cmd = {
+          "bash",
+          "-lc",
+          [[
+cwd="$PWD"
+git_root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)"
+
+escape_toml_path() {
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  printf '%s' "$value"
+}
+
+cmd=(codex --dangerously-bypass-approvals-and-sandbox)
+projects_override="projects={\"$(escape_toml_path "$cwd")\"={trust_level=\"trusted\"}"
+
+if [ -n "$git_root" ] && [ "$git_root" != "$cwd" ]; then
+  projects_override+=",\"$(escape_toml_path "$git_root")\"={trust_level=\"trusted\"}"
+fi
+
+projects_override+="}"
+cmd+=(-c "$projects_override")
+
+exec "${cmd[@]}"
+          ]],
+        },
       })
     end,
   },
