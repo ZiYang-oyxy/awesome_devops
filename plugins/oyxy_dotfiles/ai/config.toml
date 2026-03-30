@@ -25,6 +25,7 @@ web_search = "live"                    # disabled|cached|live
 personality = "pragmatic"              # none|friendly|pragmatic
 
 # review_model = "gpt-5"
+review_model = "gpt-5.4"
 # model_provider = "openai"            # 对应 [model_providers.<name>] 的 key
 # oss_provider = "ollama"
 # model_context_window = 200000
@@ -194,10 +195,18 @@ max_bytes = 104857600
 max_threads = 12
 max_depth = 4
 job_max_runtime_seconds = 1800
-# 可按角色补充说明或引用独立配置：
-# [agents.worker]
-# description = "执行型子代理"
-# nickname_candidates = ["worker", "exec"]
+
+[agents.default]
+description = "通用型子代理，承接未显式指定 agent_type 的默认委派任务。"
+config_file = "/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/ai/default.toml"
+
+[agents.explorer]
+description = "探索型子代理，适合代码库定位、查找、归纳和并行调研。"
+config_file = "/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/ai/explorer.toml"
+
+[agents.worker]
+description = "执行型子代理，适合代码修改、修复、实现和明确 ownership 的子任务。"
+config_file = "/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/ai/worker.toml"
 
 # =========================
 # [apps] / [skills] / [audio] / [realtime]
