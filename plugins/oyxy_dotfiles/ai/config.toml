@@ -13,13 +13,6 @@
 # 顶层：提示词 / 模型 / 提供方
 # =========================
 # instructions = "System instructions"
-developer_instructions = """
-When the deep-research skill is active, or when the user explicitly asks for deep research, comprehensive analysis, comparisons, trend analysis, sub-agents, delegation, or parallel work, treat that as authorization to use native multi-agent tools.
-Prefer Codex-native coordination primitives: `spawn_agent`, `assign_task`, `send_message`, `wait_agent`, `list_agents`, and `close_agent`.
-For independent research subtasks, prefer spawning 2-4 subagents in parallel with disjoint scopes and explicit output contracts.
-Do not spawn subagents for simple lookups, tightly coupled blocking steps, or redundant work.
-When subagents are running, continue non-overlapping synthesis locally and use `wait_agent` sparingly.
-"""
 # compact_prompt = "Compact prompt text"
 
 model = "gpt-5.4"
@@ -156,7 +149,7 @@ timezone = "Asia/Shanghai"
 [mcp_servers.github]
 url = "https://api.githubcopilot.com/mcp/"
 bearer_token_env_var = "GITHUB_PAT_TOKEN"
-enabled = true
+enabled = false
 required = false
 startup_timeout_sec = 3.0
 
@@ -164,7 +157,7 @@ startup_timeout_sec = 3.0
 command = "npx"
 args = ["-y", "@upstash/context7-mcp"]
 env_vars = ["CONTEXT7_API_KEY"]
-enabled = true
+enabled = false
 required = false
 startup_timeout_sec = 6.0
 
@@ -248,21 +241,20 @@ consolidation_model = "gpt-5.4-mini"
 # [features]
 # =========================
 [features]
-multi_agent = true
+multi_agent = false
 apply_patch_freeform = true
 apps = true
 apps_mcp_gateway = true
 artifact = true
-child_agents_md = true
+child_agents_md = false
 code_mode = true
 # code_mode_only = false
 # codex_git_commit = false
 # codex_hooks = false
-collaboration_modes = true
 default_mode_request_user_input = true
 # elevated_windows_sandbox = false
 # enable_experimental_windows_sandbox = false
-enable_fanout = true
+enable_fanout = false
 enable_request_compression = true
 # exec_permission_approvals = false
 # experimental_windows_sandbox = false
@@ -272,27 +264,20 @@ fast_mode = true
 # image_generation = false
 js_repl = true
 # js_repl_tools_only = false
-memories = true
-multi_agent_v2 = true
+memories = false
+multi_agent_v2 = false
 personality = true
 plugins = true
 prevent_idle_sleep = true
 realtime_conversation = true
-remote_models = true
 # request_permissions = false
 # request_permissions_tool = false
-request_rule = true
-responses_websockets = true
-responses_websockets_v2 = true
 runtime_metrics = true
-search_tool = true
 shell_snapshot = true
 shell_tool = true
 # shell_zsh_fork = false
 # skill_env_var_dependency_prompt = false
 skill_mcp_dependency_install = true
-sqlite = true
-steer = true
 # tool_call_mcp_elicitation = false
 tool_search = true
 tool_suggest = true
@@ -301,9 +286,7 @@ undo = true
 unified_exec = true
 # use_legacy_landlock = false
 # use_linux_sandbox_bwrap = false
-voice_transcription = true
-# web_search_cached = false            # deprecated
-# web_search_request = false           # deprecated
+voice_transcription = false
 
 # =========================
 # [notice]
@@ -326,9 +309,6 @@ voice_transcription = true
 # - [apps._default] / [apps."<app_id>"] / [apps."<app_id>".tools."<tool_name>"]
 # - [skills.bundled] / [[skills.config]]
 
-[projects."/Volumes/code"]
-trust_level = "trusted"
-
 [model_providers.openai-http]
 name = "OpenAI Compatible HTTP"
 base_url = "https://oyxy.top:9443/v1"
@@ -343,3 +323,18 @@ requires_openai_auth = false
 model = "gpt-5.4"
 model_context_window = 1000000
 model_auto_compact_token_limit = 800000
+
+[profiles.cx4]
+developer_instructions = """
+When the deep-research skill is active, or when the user explicitly asks for deep research, comprehensive analysis, comparisons, trend analysis, sub-agents, delegation, or parallel work, treat that as authorization to use native multi-agent tools.
+Prefer Codex-native coordination primitives: `spawn_agent`, `assign_task`, `send_message`, `wait_agent`, `list_agents`, and `close_agent`.
+For independent research subtasks, prefer spawning 2-4 subagents in parallel with disjoint scopes and explicit output contracts.
+Do not spawn subagents for simple lookups, tightly coupled blocking steps, or redundant work.
+When subagents are running, continue non-overlapping synthesis locally and use `wait_agent` sparingly.
+"""
+
+[profiles.cx4.features]
+multi_agent = true
+multi_agent_v2 = true
+enable_fanout = true
+child_agents_md = true

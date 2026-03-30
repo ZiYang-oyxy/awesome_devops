@@ -181,6 +181,28 @@ alias cx="_cx_run"
 alias cx1="_cx_run --dangerously-bypass-approvals-and-sandbox -m gpt-5.4-mini -c model_reasoning_effort=medium"
 alias cx2="_cx_run --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=medium"
 alias cx3="_cx_run --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=xhigh"
+cx4() {
+  local config_path="${CODEX_HOME:-$HOME/.codex}/config.toml"
+  local line server_name
+  local -a mcp_flags=()
+
+  if [ -r "$config_path" ]; then
+    while IFS= read -r line; do
+      server_name="${line#\[mcp_servers.}"
+      server_name="${server_name%]}"
+      [ -n "$server_name" ] || continue
+      mcp_flags+=("-c" "mcp_servers.${server_name}.enabled=true")
+    done < <(grep -E '^\[mcp_servers\.[^]]+\]$' "$config_path")
+  fi
+
+  _cx_run \
+    --dangerously-bypass-approvals-and-sandbox \
+    --search \
+    -p cx4 \
+    -c model_reasoning_effort=xhigh \
+    "${mcp_flags[@]}" \
+    "$@"
+}
 alias cc="claude"
 alias cc2="claude --dangerously-skip-permissions"
 alias oc="opencode"
