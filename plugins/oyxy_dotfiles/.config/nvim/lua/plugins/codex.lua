@@ -17,7 +17,7 @@ escape_toml_path() {
   printf '%s' "$value"
 }
 
-cmd=(codex --dangerously-bypass-approvals-and-sandbox)
+cmd=(codex --dangerously-bypass-approvals-and-sandbox -p cx2)
 projects_override="projects={\"$(escape_toml_path "$cwd")\"={trust_level=\"trusted\"}"
 
 if [ -n "$git_root" ] && [ "$git_root" != "$cwd" ]; then

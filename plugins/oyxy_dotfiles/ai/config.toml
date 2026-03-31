@@ -326,14 +326,25 @@ wire_api = "responses"
 supports_websockets = false
 requires_openai_auth = false
 
-# 需要实验性 1M 上下文时，可在顶层取消注释：
-# profile = "gpt54-1m"
-[profiles.gpt54-1m]
+[profiles.cx1]
+model = "gpt-5.4-mini"
+model_reasoning_effort = "medium"
+
+[profiles.cx2]
 model = "gpt-5.4"
+model_reasoning_effort = "medium"
+
+[profiles.cx3]
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
 model_context_window = 1000000
 model_auto_compact_token_limit = 800000
 
 [profiles.cx4]
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
+model_context_window = 1000000
+model_auto_compact_token_limit = 800000
 developer_instructions = """
 When the deep-research skill is active, or when the user explicitly asks for deep research, comprehensive analysis, comparisons, trend analysis, sub-agents, delegation, or parallel work, treat that as authorization to use native multi-agent tools.
 Prefer Codex-native coordination primitives: `spawn_agent`, `assign_task`, `send_message`, `wait_agent`, `list_agents`, and `close_agent`.

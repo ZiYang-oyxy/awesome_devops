@@ -178,9 +178,9 @@ _cx_run() {
 }
 
 alias cx="_cx_run"
-alias cx1="_cx_run --dangerously-bypass-approvals-and-sandbox -m gpt-5.4-mini -c model_reasoning_effort=medium"
-alias cx2="_cx_run --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=medium"
-alias cx3="_cx_run --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=xhigh"
+alias cx1="_cx_run --dangerously-bypass-approvals-and-sandbox -p cx1"
+alias cx2="_cx_run --dangerously-bypass-approvals-and-sandbox -p cx2"
+alias cx3="_cx_run --dangerously-bypass-approvals-and-sandbox -p cx3"
 cx4() {
   local config_path="${CODEX_HOME:-$HOME/.codex}/config.toml"
   local line server_name
@@ -199,7 +199,6 @@ cx4() {
     --dangerously-bypass-approvals-and-sandbox \
     --search \
     -p cx4 \
-    -c model_reasoning_effort=xhigh \
     "${mcp_flags[@]}" \
     "$@"
 }
