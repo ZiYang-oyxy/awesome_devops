@@ -1,19 +1,95 @@
 {
   "version": 1,
-  "generatedAt": "2026-03-09T05:46:44.979Z",
+  "generatedAt": "2026-04-04T12:22:28.261Z",
   "sourceLockFile": "/Users/bytedance/.agents/.skill-lock.json",
   "skills": [
+    {
+      "name": "agent-xlsx",
+      "source": "apetta/agent-xlsx"
+    },
     {
       "name": "find-skills",
       "source": "vercel-labs/skills"
     },
     {
-      "name": "frontend-design",
-      "source": "anthropics/skills"
-    },
-    {
       "name": "git-commit",
       "source": "github/awesome-copilot"
+    },
+    {
+      "name": "lark-base",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-calendar",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-contact",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-doc",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-drive",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-event",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-im",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-mail",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-minutes",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-openapi-explorer",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-shared",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-sheets",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-skill-maker",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-task",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-vc",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-whiteboard",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-wiki",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-workflow-meeting-summary",
+      "source": "larksuite/cli"
+    },
+    {
+      "name": "lark-workflow-standup-report",
+      "source": "larksuite/cli"
     },
     {
       "name": "mermaid-sop-check",
@@ -22,6 +98,10 @@
     {
       "name": "playwright-cli",
       "source": "microsoft/playwright-cli"
+    },
+    {
+      "name": "release-notes",
+      "source": "tilomitra/release-kit"
     },
     {
       "name": "vercel-react-best-practices",
