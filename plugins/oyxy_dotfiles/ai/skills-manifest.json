@@ -1,11 +1,15 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-04T12:22:28.261Z",
+  "generatedAt": "2026-04-04T13:12:40.271Z",
   "sourceLockFile": "/Users/bytedance/.agents/.skill-lock.json",
   "skills": [
     {
       "name": "agent-xlsx",
       "source": "apetta/agent-xlsx"
+    },
+    {
+      "name": "deep-research",
+      "source": "199-biotechnologies/claude-deep-research-skill"
     },
     {
       "name": "find-skills",
