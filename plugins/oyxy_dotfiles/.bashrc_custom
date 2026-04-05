@@ -180,11 +180,31 @@ _cx_run() {
 alias cx="_cx_run"
 alias cx1="_cx_run --dangerously-bypass-approvals-and-sandbox -p cx1"
 alias cx2="_cx_run --dangerously-bypass-approvals-and-sandbox -p cx2"
-alias cx3="_cx_run --dangerously-bypass-approvals-and-sandbox -p cx3"
+_cx_1m_catalog_path() {
+  printf '%s\n' "/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/ai/codex-model-catalog-1m.json"
+}
+
+unalias cx3 2>/dev/null
+unalias cx4 2>/dev/null
+
+cx3() {
+  local model_catalog
+  model_catalog="$(_cx_1m_catalog_path)"
+
+  _cx_run \
+    --dangerously-bypass-approvals-and-sandbox \
+    -p cx3 \
+    -c "model_catalog_json=\"${model_catalog}\"" \
+    "$@"
+}
+
 cx4() {
   local config_path="${CODEX_HOME:-$HOME/.codex}/config.toml"
+  local model_catalog
   local line server_name
   local -a mcp_flags=()
+
+  model_catalog="$(_cx_1m_catalog_path)"
 
   if [ -r "$config_path" ]; then
     while IFS= read -r line; do
@@ -199,6 +219,7 @@ cx4() {
     --dangerously-bypass-approvals-and-sandbox \
     --search \
     -p cx4 \
+    -c "model_catalog_json=\"${model_catalog}\"" \
     "${mcp_flags[@]}" \
     "$@"
 }
