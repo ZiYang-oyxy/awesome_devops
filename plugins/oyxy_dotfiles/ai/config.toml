@@ -105,7 +105,7 @@ suppress_unstable_features_warning = true
 # [tui]
 # =========================
 [tui]
-status_line = ["model-with-reasoning", "fast-mode", "context-remaining", "five-hour-limit", "weekly-limit", "used-tokens", "context-window-size", "current-dir"]
+status_line = ["model-with-reasoning", "fast-mode", "context-usage", "five-hour-limit", "weekly-limit", "used-tokens", "context-window-size", "current-dir", "thread-title"]
 notifications = true
 alternate_screen = "never"             # auto|always|never
 animations = true
@@ -145,14 +145,6 @@ bearer_token_env_var = "GITHUB_PAT_TOKEN"
 enabled = false
 required = false
 startup_timeout_sec = 3.0
-
-[mcp_servers.context7]
-command = "npx"
-args = ["-y", "@upstash/context7-mcp"]
-env_vars = ["CONTEXT7_API_KEY"]
-enabled = false
-required = false
-startup_timeout_sec = 6.0
 
 # =========================
 # [otel]
