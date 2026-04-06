@@ -105,15 +105,7 @@ suppress_unstable_features_warning = true
 # [tui]
 # =========================
 [tui]
-status_line = [
-  "model-with-reasoning",
-  "context-remaining",
-  "total-input-tokens",
-  "total-output-tokens",
-  "five-hour-limit",
-  "weekly-limit",
-  "fast-mode",
-]
+status_line = ["model-with-reasoning", "fast-mode", "context-remaining", "five-hour-limit", "weekly-limit", "used-tokens", "context-window-size", "current-dir"]
 notifications = true
 alternate_screen = "never"             # auto|always|never
 animations = true
