@@ -28,6 +28,52 @@ ad get <file>
 
 详细参数和无服务端用法见下方“基础用法”章节。
 
+## oyxy_dotfiles 模块化安装
+
+`plugins/oyxy_dotfiles/install` 现在支持按模块安装，默认仍然是全量安装。
+
+```bash
+# 全量安装
+ad deploy oyxy_dotfiles
+
+# 只安装 bash 相关
+ad deploy oyxy_dotfiles bash
+
+# 安装多个模块
+ad deploy oyxy_dotfiles bash git
+
+# 查看可安装模块
+ad deploy oyxy_dotfiles --list
+```
+
+当前支持的模块：
+
+- `bash`：链接 `~/.bashrc` 和 `~/.bashrc_custom`
+- `git`：链接 git 配置并刷新 `~/.git-completion.bash`
+- `tmux`：安装 `~/.tmux*`、`~/.config/tmux`，并按条件构建 `tmux-statusd`
+- `config`：链接整个 `~/.config` 下的一级条目
+- `ai`：安装 codex / claude 配置并安装 codex skills
+- `system`：通过 Homebrew 安装依赖包
+
+```mermaid
+flowchart LR
+    A["ad deploy oyxy_dotfiles [module...]"] --> B{是否指定模块?}
+    B -- 否 --> C["默认执行: bash git tmux config ai system"]
+    B -- 是 --> D["仅执行指定模块"]
+    C --> E["bash: ~/.bashrc ~/.bashrc_custom"]
+    C --> F["git: ~/.gitconfig ~/.gitignore_global git-completion"]
+    C --> G["tmux: ~/.tmux* + ~/.config/tmux + tmux-statusd"]
+    C --> H["config: ~/.config/*"]
+    C --> I["ai: ~/.codex ~/.claude + skills"]
+    C --> J["system: brew install ..."]
+    D --> E
+    D --> F
+    D --> G
+    D --> H
+    D --> I
+    D --> J
+```
+
 ## 项目框架与设计哲学
 
 `awesome_devops` 采用“主仓稳定内核 + 外部仓按需覆盖”的双层结构：

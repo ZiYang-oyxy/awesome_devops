@@ -2,8 +2,13 @@
 
 #export http_proxy=http://127.0.0.1:1087;export https_proxy=http://127.0.0.1:1087;export ALL_PROXY=socks5://127.0.0.1:1080
 
-curdir="`dirname $(readlink -f $0)`"
-source $curdir/../../lib/common.sh
+set -euo pipefail
+
+curdir="$(dirname "$(readlink -f "$0")")"
+source "$curdir/../../lib/common.sh"
+
+readonly MODULES=(bash git tmux config ai system)
+readonly DEFAULT_MODULES=(bash git tmux config ai system)
 
 tmux_statusd_source_dir() {
     local candidate
@@ -24,9 +29,79 @@ tmux_statusd_source_dir() {
 }
 
 usage() {
-    echo "Usage: $0 [config]" >&2
-    echo "  no args : full install" >&2
-    echo "  config  : link ~/.config entries only" >&2
+    cat >&2 <<EOF
+Usage: $0 [module ...]
+
+Modules:
+  bash    link ~/.bashrc and ~/.bashrc_custom
+  git     link git config files and refresh git completion
+  tmux    link tmux files, link ~/.config/tmux, and build tmux-statusd if possible
+  config  link all entries under ~/.config
+  ai      link codex/claude config and install codex skills
+  system  install Homebrew packages used by these dotfiles
+
+Examples:
+  $0
+  $0 bash
+  $0 bash git
+  $0 config
+  $0 --list
+EOF
+}
+
+list_modules() {
+    cat <<EOF
+bash    link ~/.bashrc and ~/.bashrc_custom
+git     link git config files and refresh git completion
+tmux    link tmux files, link ~/.config/tmux, and build tmux-statusd if possible
+config  link all entries under ~/.config
+ai      link codex/claude config and install codex skills
+system  install Homebrew packages used by these dotfiles
+EOF
+}
+
+is_valid_module() {
+    local module="$1"
+    local item
+
+    for item in "${MODULES[@]}"; do
+        if [[ "$item" == "$module" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+append_unique_module() {
+    local module="$1"
+    local item
+
+    if [[ ${#selected_modules[@]} -gt 0 ]]; then
+        for item in "${selected_modules[@]}"; do
+            if [[ "$item" == "$module" ]]; then
+                return 0
+            fi
+        done
+    fi
+
+    selected_modules+=("$module")
+}
+
+link_config_entry() {
+    local name="$1"
+    local config_src_root="$curdir/.config"
+    local config_dst_root="$HOME/.config"
+    local src="$config_src_root/$name"
+
+    if [[ ! -e "$src" ]]; then
+        log_warn "Skip .config/$name linking: $src not found"
+        return 0
+    fi
+
+    mkdir -p "$config_dst_root"
+    log_info "Link .config/$name ..."
+    _ln "$src" "$config_dst_root/$name"
 }
 
 link_config_entries() {
@@ -34,7 +109,7 @@ link_config_entries() {
     local config_dst_root="$HOME/.config"
 
     if [[ ! -d "$config_src_root" ]]; then
-        log "Skip .config linking: $config_src_root not found"
+        log_warn "Skip .config linking: $config_src_root not found"
         return 0
     fi
 
@@ -43,76 +118,146 @@ link_config_entries() {
     while IFS= read -r -d '' src; do
         local name
         name="$(basename "$src")"
-        log "Link .config/$name ..."
+        log_info "Link .config/$name ..."
         _ln "$src" "$config_dst_root/$name"
     done < <(find "$config_src_root" -mindepth 1 -maxdepth 1 -print0 | sort -z)
 }
 
-if [[ $# -gt 1 ]]; then
-    usage
-    exit 1
-fi
+install_bash() {
+    log_info "Configure bash ..."
+    _ln "$curdir/.bashrc" "$HOME/.bashrc"
+    _ln "$curdir/.bashrc_custom" "$HOME/.bashrc_custom"
+}
 
-if [[ $# -eq 1 ]]; then
-    if [[ "$1" != "config" ]]; then
-        usage
-        exit 1
+install_git() {
+    log_info "Configure git ..."
+    _ln "$curdir/.gitconfig" "$HOME/.gitconfig"
+    _ln "$curdir/.gitignore_global" "$HOME/.gitignore_global"
+
+    if [[ ! -e "$HOME/.gitconfig_ignored" ]]; then
+        if [[ -e "$curdir/.gitconfig_work" ]]; then
+            cp -f "$curdir/.gitconfig_work" "$HOME/.gitconfig_work"
+        else
+            log_warn "Skip ~/.gitconfig_work initialization: $curdir/.gitconfig_work not found"
+        fi
     fi
 
-    log "Configure .config only ..."
+    curl https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash -o "$HOME/.git-completion.bash"
+}
+
+install_tmux() {
+    local tmux_statusd_src
+
+    log_info "Configure tmux ..."
+    _ln "$curdir/.tmux.conf" "$HOME/.tmux.conf"
+    _ln "$curdir/.tmux-powerlinerc" "$HOME/.tmux-powerlinerc"
+    link_config_entry "tmux"
+
+    tmux_statusd_src="$(tmux_statusd_source_dir || true)"
+    if command -v go >/dev/null 2>&1 && [[ -n "$tmux_statusd_src" ]]; then
+        log_info "Build tmux-statusd ..."
+        "$tmux_statusd_src/scripts/install.sh" "$HOME/bin"
+    elif [[ -z "$tmux_statusd_src" ]]; then
+        log_warn "Skip tmux-statusd build: source repo not present"
+    else
+        log_warn "Skip tmux-statusd build: go not found"
+    fi
+}
+
+install_config() {
+    log_info "Configure .config ..."
     link_config_entries
-    log "Done!"
-    exit 0
-fi
+}
 
-log "Configure bash ..."
-_ln $curdir/.bashrc ~/.bashrc
-_ln $curdir/.bashrc_custom ~/.bashrc_custom
+install_ai() {
+    log_info "Configure codex ..."
+    mkdir -p "$HOME/.codex"
+    _ln "$curdir/ai/config.toml" "$HOME/.codex/config.toml"
+    _ln "$curdir/ai/AGENTS.md" "$HOME/.codex/AGENTS.md"
 
-log "Configure git ..."
-_ln $curdir/.gitconfig ~/.gitconfig
-_ln $curdir/.gitignore_global ~/.gitignore_global
-if [[ ! -e ~/.gitconfig_ignored ]]; then
-    cp -f $curdir/.gitconfig_work ~/.gitconfig_work
-fi
-curl https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash -o ~/.git-completion.bash
+    log_info "Configure claude ..."
+    mkdir -p "$HOME/.claude"
+    _ln "$curdir/ai/AGENTS.md" "$HOME/.claude/CLAUDE.md"
 
-log "Configure tmux ..."
-_ln $curdir/.tmux.conf ~/.tmux.conf
-_ln $curdir/.tmux-powerlinerc ~/.tmux-powerlinerc
+    if command -v npx >/dev/null 2>&1; then
+        log_info "Install codex skills ..."
+        "$curdir/ai/scripts/install-skills.sh" "$curdir/ai/skills-manifest.json"
+    else
+        log_warn "Skip codex skills install: npx not found"
+    fi
+}
 
-log "Configure .config ..."
-link_config_entries
+install_system() {
+    if ! command -v brew >/dev/null 2>&1; then
+        log_warn "Skip system packages: brew not found"
+        return 0
+    fi
 
-log "Configure codex ..."
-mkdir -p ~/.codex
-_ln $curdir/ai/config.toml ~/.codex/config.toml
-_ln $curdir/ai/AGENTS.md ~/.codex/AGENTS.md
+    log_info "Install system packages ..."
+    brew install shellcheck curl gnu-tar clang-format starship
+}
 
-log "Configure claude ..."
-mkdir -p ~/.claude
-_ln $curdir/ai/AGENTS.md ~/.claude/CLAUDE.md
+run_module() {
+    local module="$1"
 
-# font
-#git clone https://github.com/supermarin/powerline-fonts.git
+    case "$module" in
+        bash)
+            install_bash
+            ;;
+        git)
+            install_git
+            ;;
+        tmux)
+            install_tmux
+            ;;
+        config)
+            install_config
+            ;;
+        ai)
+            install_ai
+            ;;
+        system)
+            install_system
+            ;;
+        *)
+            log_error "Unknown module: $module"
+            exit 1
+            ;;
+    esac
+}
 
-brew install shellcheck curl gnu-tar clang-format starship
+selected_modules=()
 
-log "Install codex skills ..."
-"$curdir/ai/scripts/install-skills.sh" "$curdir/ai/skills-manifest.json"
-
-tmux_statusd_src="$(tmux_statusd_source_dir || true)"
-
-if command -v go >/dev/null 2>&1 && [[ -n "$tmux_statusd_src" ]]; then
-    log "Build tmux-statusd ..."
-    "$tmux_statusd_src/scripts/install.sh" "$HOME/bin"
-elif [[ -z "$tmux_statusd_src" ]]; then
-    log "Skip tmux-statusd build: source repo not present"
+if [[ $# -eq 0 ]]; then
+    selected_modules=("${DEFAULT_MODULES[@]}")
 else
-    log "Skip tmux-statusd build: go not found"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            --list)
+                list_modules
+                exit 0
+                ;;
+            *)
+                if ! is_valid_module "$1"; then
+                    log_error "Unknown module: $1"
+                    usage
+                    echo >&2
+                    list_modules >&2
+                    exit 1
+                fi
+                append_unique_module "$1"
+                ;;
+        esac
+        shift
+    done
 fi
 
-# :CocInstall coc-sh
-# :CocInstall coc-json
+for module in "${selected_modules[@]}"; do
+    run_module "$module"
+done
 
-log "Done!"
+log_info "Done!"
