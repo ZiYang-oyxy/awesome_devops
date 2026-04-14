@@ -324,6 +324,12 @@ model_reasoning_effort = "xhigh"
 model_context_window = 1000000
 model_auto_compact_token_limit = 800000
 
+[profiles.cx3.features]
+multi_agent = true
+multi_agent_v2 = true
+enable_fanout = false
+child_agents_md = true
+
 [profiles.cx4]
 model = "gpt-5.4"
 model_reasoning_effort = "xhigh"

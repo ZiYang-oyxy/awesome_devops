@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-04T13:12:40.271Z",
+  "generatedAt": "2026-04-14T13:46:05.700Z",
   "sourceLockFile": "/Users/bytedance/.agents/.skill-lock.json",
   "skills": [
     {
@@ -8,12 +8,24 @@
       "source": "apetta/agent-xlsx"
     },
     {
+      "name": "conversation-html-recap",
+      "source": "ZiYang-oyxy/agent-skills"
+    },
+    {
       "name": "deep-research",
-      "source": "199-biotechnologies/claude-deep-research-skill"
+      "source": "ZiYang-oyxy/deep-research-skill"
+    },
+    {
+      "name": "drawio",
+      "source": "bahayonghang/drawio-skills"
     },
     {
       "name": "find-skills",
       "source": "vercel-labs/skills"
+    },
+    {
+      "name": "frontend-design",
+      "source": "anthropics/skills"
     },
     {
       "name": "git-commit",
