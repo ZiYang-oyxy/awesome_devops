@@ -105,7 +105,7 @@ suppress_unstable_features_warning = true
 # [tui]
 # =========================
 [tui]
-status_line = ["model-with-reasoning", "fast-mode", "context-usage", "five-hour-limit", "weekly-limit", "used-tokens", "context-window-size", "current-dir", "thread-title"]
+status_line = ["model-with-reasoning", "fast-mode", "context-used", "five-hour-limit", "weekly-limit", "used-tokens", "context-window-size", "current-dir", "thread-title"]
 notifications = true
 alternate_screen = "never"             # auto|always|never
 animations = true
@@ -223,7 +223,7 @@ config_file = "/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/ai/worker.toml
 [memories]
 use_memories = true
 generate_memories = true
-extract_model = "gpt-5.1-codex-mini"
+extract_model = "gpt-5.4-mini"
 consolidation_model = "gpt-5.4-mini"
 #
 # [windows]
@@ -318,6 +318,9 @@ model_reasoning_effort = "medium"
 model = "gpt-5.4"
 model_reasoning_effort = "medium"
 
+[profiles.cx2.features]
+multi_agent = true
+
 [profiles.cx3]
 model = "gpt-5.4"
 model_reasoning_effort = "xhigh"
@@ -348,3 +351,6 @@ multi_agent = true
 multi_agent_v2 = true
 enable_fanout = true
 child_agents_md = true
+
+[projects."/Volumes/code/vibecoding/assistant"]
+trust_level = "trusted"
