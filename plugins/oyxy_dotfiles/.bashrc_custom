@@ -121,16 +121,22 @@ if [ "$_is_macos" -eq 1 ] && command -v open >/dev/null 2>&1; then
   alias chrome="open -a 'Google Chrome'"
 fi
 
-_cx_run() {
-  command -v gh >/dev/null 2>&1
-  if [ $? -eq 0 ]; then
-    local gh_token
-    gh_token="$(gh auth token 2>/dev/null || true)"
-    if [ -n "$gh_token" ]; then
-      export GITHUB_PAT_TOKEN="$gh_token"
-      export GH_TOKEN="$gh_token"
-    fi
+_ensure_gh_auth_token() {
+  if [ -n "${GH_TOKEN:-}" ] || [ -n "${GITHUB_PAT_TOKEN:-}" ]; then
+    return 0
   fi
+  command -v gh >/dev/null 2>&1 || return 0
+
+  local gh_token=""
+  gh_token="$(gh auth token 2>/dev/null || true)"
+  [ -n "$gh_token" ] || return 0
+
+  export GITHUB_PAT_TOKEN="$gh_token"
+  export GH_TOKEN="$gh_token"
+}
+
+_cx_run() {
+  _ensure_gh_auth_token
 
   local trust_root
   local trust_root_escaped

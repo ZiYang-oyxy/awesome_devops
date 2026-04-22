@@ -18,7 +18,7 @@
 model = "gpt-5.4"
 model_provider = "openai-http"
 model_reasoning_effort = "medium"      # none|minimal|low|medium|high|xhigh
-plan_mode_reasoning_effort = "xhigh"    # none|minimal|low|medium|high|xhigh
+plan_mode_reasoning_effort = "high"     # none|minimal|low|medium|high|xhigh
 model_reasoning_summary = "auto"       # auto|concise|detailed|none
 model_verbosity = "medium"             # low|medium|high
 web_search = "live"                    # disabled|cached|live
@@ -45,7 +45,7 @@ review_model = "gpt-5.4"
 notify = ["sh", "-c", "exec tmux-statusctl notify-done \"$@\"", "notify", "notify-done"]
 check_for_update_on_startup = true
 hide_agent_reasoning = false
-show_raw_agent_reasoning = true
+show_raw_agent_reasoning = false
 suppress_unstable_features_warning = true
 
 # forced_login_method = "chatgpt"      # chatgpt|api
@@ -55,8 +55,8 @@ suppress_unstable_features_warning = true
 # mcp_oauth_callback_port = 1455
 # mcp_oauth_callback_url = "http://127.0.0.1:1455/callback"
 
-# approval_policy = "on-request"       # untrusted|on-failure|on-request|never
-# approval_policy = { reject = { mcp_elicitations = true, rules = false, sandbox_approval = false, request_permissions = false } }
+# approval_policy = "on-request"       # untrusted|on-request|never
+# approval_policy = { granular = { mcp_elicitations = true, rules = false, sandbox_approval = false, request_permissions = false, skill_approval = false } }
 # approvals_reviewer = "user"          # user|guardian_subagent
 # sandbox_mode = "workspace-write"     # read-only|workspace-write|danger-full-access
 # sandbox_workspace_write = { network_access = true, writable_roots = ["/abs/path"] }
@@ -122,7 +122,7 @@ terminal_title = ["project", "task-progress", "status"]
 [tools]
 view_image = true
 [tools.web_search]
-context_size = "high"             # low|medium|high
+context_size = "medium"           # low|medium|high
 [tools.web_search.location]
 city = "Shanghai"
 region = "Shanghai"
@@ -220,12 +220,6 @@ config_file = "/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/ai/worker.toml
 # ignore_large_untracked_dirs = 2000
 # ignore_large_untracked_files = 10485760
 #
-[memories]
-use_memories = true
-generate_memories = true
-extract_model = "gpt-5.4-mini"
-consolidation_model = "gpt-5.4-mini"
-#
 # [windows]
 # sandbox = "unelevated"              # elevated|unelevated
 # sandbox_private_desktop = true
@@ -237,8 +231,6 @@ consolidation_model = "gpt-5.4-mini"
 multi_agent = false
 apply_patch_freeform = true
 apps = true
-apps_mcp_gateway = true
-artifact = true
 child_agents_md = false
 code_mode = true
 # code_mode_only = false
@@ -279,17 +271,6 @@ undo = true
 unified_exec = true
 # use_legacy_landlock = false
 # use_linux_sandbox_bwrap = false
-voice_transcription = false
-
-# =========================
-# [notice]
-# =========================
-[notice]
-# hide_full_access_warning = true
-# hide_gpt-5.1-codex-max_migration_prompt = true
-# hide_gpt5_1_migration_prompt = true
-# hide_rate_limit_model_nudge = true
-# hide_world_writable_warning = true
 
 # =========================
 # 动态分区
