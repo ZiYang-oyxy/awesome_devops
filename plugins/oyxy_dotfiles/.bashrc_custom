@@ -230,7 +230,39 @@ cx4() {
     "$@"
 }
 alias cc="claude"
-alias cc2="claude --dangerously-skip-permissions"
+unalias cc1 2>/dev/null
+unalias cc2 2>/dev/null
+unalias cc3 2>/dev/null
+
+# cc1 — sonnet（快速轻量，无 MCP，无 bypass）
+alias cc1="claude --model sonnet"
+
+_cc_mcp_config_path() {
+  printf '%s\n' "${HOME}/.claude/mcp_servers.json"
+}
+
+# cc2 — bypass + sonnet + MCP
+cc2() {
+  local mcp_config
+  mcp_config="$(_cc_mcp_config_path)"
+  local -a mcp_flags=()
+
+  [ -r "$mcp_config" ] && mcp_flags+=("--mcp-config" "$mcp_config")
+
+  claude --dangerously-skip-permissions --model sonnet "${mcp_flags[@]}" "$@"
+}
+
+# cc3 — bypass + opus + MCP（最强，类比 cx4）
+cc3() {
+  local mcp_config
+  mcp_config="$(_cc_mcp_config_path)"
+  local -a mcp_flags=()
+
+  [ -r "$mcp_config" ] && mcp_flags+=("--mcp-config" "$mcp_config")
+
+  claude --dangerously-skip-permissions --model opus "${mcp_flags[@]}" "$@"
+}
+
 alias oc="opencode"
 
 # OS X Terminal equivalent of Ctrl+Left / Ctrl+Right.
