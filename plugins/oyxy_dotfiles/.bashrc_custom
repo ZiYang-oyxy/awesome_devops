@@ -249,7 +249,7 @@ cc2() {
 
   [ -r "$mcp_config" ] && mcp_flags+=("--mcp-config" "$mcp_config")
 
-  claude --dangerously-skip-permissions --model sonnet "${mcp_flags[@]}" "$@"
+  claude --dangerously-skip-permissions --model opus "${mcp_flags[@]}" "$@"
 }
 
 # cc3 — bypass + opus + MCP（最强，类比 cx4）
@@ -260,7 +260,11 @@ cc3() {
 
   [ -r "$mcp_config" ] && mcp_flags+=("--mcp-config" "$mcp_config")
 
-  claude --dangerously-skip-permissions --model opus "${mcp_flags[@]}" "$@"
+  claude \
+    --dangerously-skip-permissions \
+    --model claude-opus-4.6[1m] \
+    "${mcp_flags[@]}" \
+    "$@"
 }
 
 alias oc="opencode"
