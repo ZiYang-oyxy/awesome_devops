@@ -254,7 +254,15 @@ M.opts = {
       explorer = {
         finder = explorer_with_inline_bookmarks,
         hidden = true,
-        layout = { layout = { position = "right" }, cycle = false },
+        layout = {
+          preset = "sidebar",
+          layout = {
+            position = "right",
+            width = 60,
+            min_width = 50,
+          },
+          cycle = false,
+        },
         actions = {
           explorer_open_recursive = explorer_open_recursive,
           explorer_close_recursive = explorer_close_recursive,

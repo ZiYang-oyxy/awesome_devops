@@ -15,8 +15,9 @@
 # instructions = "System instructions"
 # compact_prompt = "Compact prompt text"
 
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_provider = "openai-http"
+#model_provider = "openai-ws"
 model_reasoning_effort = "medium"      # none|minimal|low|medium|high|xhigh
 plan_mode_reasoning_effort = "high"     # none|minimal|low|medium|high|xhigh
 model_reasoning_summary = "auto"       # auto|concise|detailed|none
@@ -25,7 +26,7 @@ web_search = "live"                    # disabled|cached|live
 personality = "pragmatic"              # none|friendly|pragmatic
 
 # review_model = "gpt-5"
-review_model = "gpt-5.4"
+review_model = "gpt-5.5"
 # model_provider = "openai"            # 对应 [model_providers.<name>] 的 key
 # oss_provider = "ollama"
 # model_context_window = 200000
@@ -105,11 +106,15 @@ suppress_unstable_features_warning = true
 # [tui]
 # =========================
 [tui]
-status_line = ["model-with-reasoning", "fast-mode", "context-used", "five-hour-limit", "weekly-limit", "used-tokens", "context-window-size", "current-dir", "thread-title"]
+status_line = ["model-with-reasoning", "context-used", "five-hour-limit", "weekly-limit", "used-tokens", "context-window-size", "current-dir", "thread-title", "task-progress"]
 notifications = true
-alternate_screen = "never"             # auto|always|never
+#alternate_screen = "never"             # auto|always|never
+alternate_screen = "auto"             # auto|always|never
 animations = true
 terminal_title = ["project", "task-progress", "status"]
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
 # notification_method = "auto"         # auto|osc9|bel
 # show_tooltips = true
 # theme = "one-dark-pro"
@@ -144,7 +149,7 @@ url = "https://api.githubcopilot.com/mcp/"
 bearer_token_env_var = "GITHUB_PAT_TOKEN"
 enabled = false
 required = false
-startup_timeout_sec = 3.0
+startup_timeout_sec = 10.0
 
 # =========================
 # [otel]
@@ -176,7 +181,8 @@ max_bytes = 104857600
 # [agents]
 # =========================
 [agents]
-max_threads = 12
+# multi_agent_v2 profiles cannot be combined with an explicit agents.max_threads.
+# Leave this unset so cx3/cx4 can load and non-v2 profiles use Codex's default.
 max_depth = 4
 job_max_runtime_seconds = 1800
 
@@ -228,7 +234,7 @@ config_file = "/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/ai/worker.toml
 # [features]
 # =========================
 [features]
-multi_agent = false
+multi_agent = true
 apply_patch_freeform = true
 apps = true
 child_agents_md = false
@@ -271,6 +277,7 @@ undo = true
 unified_exec = true
 # use_legacy_landlock = false
 # use_linux_sandbox_bwrap = false
+responses_websockets_v2 = true
 
 # =========================
 # 动态分区
@@ -291,19 +298,27 @@ wire_api = "responses"
 supports_websockets = false
 requires_openai_auth = false
 
+[model_providers.openai-ws]
+name = "OpenAI Websocket"
+base_url = "https://oyxy.top:999"
+env_key = "OPENAI_API_KEY"
+wire_api = "responses"
+supports_websockets = true
+requires_openai_auth = true
+
 [profiles.cx1]
 model = "gpt-5.4-mini"
 model_reasoning_effort = "medium"
 
 [profiles.cx2]
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "medium"
 
 [profiles.cx2.features]
 multi_agent = true
 
 [profiles.cx3]
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
 model_context_window = 1000000
 model_auto_compact_token_limit = 800000
@@ -315,7 +330,7 @@ enable_fanout = false
 child_agents_md = true
 
 [profiles.cx4]
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
 model_context_window = 1000000
 model_auto_compact_token_limit = 800000
@@ -333,5 +348,30 @@ multi_agent_v2 = true
 enable_fanout = true
 child_agents_md = true
 
-[projects."/Volumes/code/vibecoding/assistant"]
-trust_level = "trusted"
+[marketplaces.openai-bundled]
+last_updated = "2026-04-27T03:23:45Z"
+source_type = "local"
+source = "/Users/bytedance/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[marketplaces.openai-primary-runtime]
+last_updated = "2026-04-25T02:59:11Z"
+source_type = "local"
+source = "/Users/bytedance/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+
+[plugins."browser-use@openai-bundled"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = false
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = false
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = false
+
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[notice]
+hide_rate_limit_model_nudge = true

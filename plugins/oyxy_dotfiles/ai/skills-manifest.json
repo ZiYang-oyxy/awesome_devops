@@ -1,27 +1,31 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-14T13:46:05.700Z",
+  "generatedAt": "2026-04-28T07:27:07.762Z",
   "sourceLockFile": "/Users/bytedance/.agents/.skill-lock.json",
   "skills": [
     {
-      "name": "agent-xlsx",
-      "source": "apetta/agent-xlsx"
-    },
-    {
-      "name": "conversation-html-recap",
-      "source": "ZiYang-oyxy/agent-skills"
+      "name": "brainstorming",
+      "source": "obra/superpowers"
     },
     {
       "name": "deep-research",
       "source": "ZiYang-oyxy/deep-research-skill"
     },
     {
-      "name": "drawio",
-      "source": "bahayonghang/drawio-skills"
+      "name": "dispatching-parallel-agents",
+      "source": "obra/superpowers"
+    },
+    {
+      "name": "executing-plans",
+      "source": "obra/superpowers"
     },
     {
       "name": "find-skills",
       "source": "vercel-labs/skills"
+    },
+    {
+      "name": "finishing-a-development-branch",
+      "source": "obra/superpowers"
     },
     {
       "name": "frontend-design",
@@ -32,39 +36,7 @@
       "source": "github/awesome-copilot"
     },
     {
-      "name": "lark-base",
-      "source": "larksuite/cli"
-    },
-    {
-      "name": "lark-calendar",
-      "source": "larksuite/cli"
-    },
-    {
       "name": "lark-contact",
-      "source": "larksuite/cli"
-    },
-    {
-      "name": "lark-doc",
-      "source": "larksuite/cli"
-    },
-    {
-      "name": "lark-drive",
-      "source": "larksuite/cli"
-    },
-    {
-      "name": "lark-event",
-      "source": "larksuite/cli"
-    },
-    {
-      "name": "lark-im",
-      "source": "larksuite/cli"
-    },
-    {
-      "name": "lark-mail",
-      "source": "larksuite/cli"
-    },
-    {
-      "name": "lark-minutes",
       "source": "larksuite/cli"
     },
     {
@@ -88,22 +60,6 @@
       "source": "larksuite/cli"
     },
     {
-      "name": "lark-vc",
-      "source": "larksuite/cli"
-    },
-    {
-      "name": "lark-whiteboard",
-      "source": "larksuite/cli"
-    },
-    {
-      "name": "lark-wiki",
-      "source": "larksuite/cli"
-    },
-    {
-      "name": "lark-workflow-meeting-summary",
-      "source": "larksuite/cli"
-    },
-    {
       "name": "lark-workflow-standup-report",
       "source": "larksuite/cli"
     },
@@ -112,16 +68,52 @@
       "source": "ZiYang-oyxy/agent-skills"
     },
     {
+      "name": "pdf",
+      "source": "anthropics/skills"
+    },
+    {
       "name": "playwright-cli",
       "source": "microsoft/playwright-cli"
+    },
+    {
+      "name": "receiving-code-review",
+      "source": "obra/superpowers"
     },
     {
       "name": "release-notes",
       "source": "tilomitra/release-kit"
     },
     {
+      "name": "requesting-code-review",
+      "source": "obra/superpowers"
+    },
+    {
+      "name": "subagent-driven-development",
+      "source": "obra/superpowers"
+    },
+    {
+      "name": "systematic-debugging",
+      "source": "obra/superpowers"
+    },
+    {
+      "name": "test-driven-development",
+      "source": "obra/superpowers"
+    },
+    {
+      "name": "using-git-worktrees",
+      "source": "obra/superpowers"
+    },
+    {
+      "name": "using-superpowers",
+      "source": "obra/superpowers"
+    },
+    {
       "name": "vercel-react-best-practices",
       "source": "vercel-labs/agent-skills"
+    },
+    {
+      "name": "verification-before-completion",
+      "source": "obra/superpowers"
     },
     {
       "name": "web-design-guidelines",
@@ -130,6 +122,18 @@
     {
       "name": "webapp-testing",
       "source": "anthropics/skills"
+    },
+    {
+      "name": "wechat-article-to-markdown",
+      "source": "jackwener/wechat-article-to-markdown"
+    },
+    {
+      "name": "writing-plans",
+      "source": "obra/superpowers"
+    },
+    {
+      "name": "writing-skills",
+      "source": "obra/superpowers"
     }
   ]
 }

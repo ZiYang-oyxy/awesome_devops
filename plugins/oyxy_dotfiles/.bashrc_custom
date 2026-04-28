@@ -233,27 +233,30 @@ alias cc="claude"
 unalias cc1 2>/dev/null
 unalias cc2 2>/dev/null
 unalias cc3 2>/dev/null
+unalias cc4 2>/dev/null
 
-# cc1 — sonnet（快速轻量，无 MCP，无 bypass）
-alias cc1="claude --model sonnet"
+# cc1 — haiku（快速轻量，无 MCP，无 bypass）
+alias cc1="claude --model claude-haiku-4-5"
 
 _cc_mcp_config_path() {
   printf '%s\n' "${HOME}/.claude/mcp_servers.json"
 }
 
-# cc2 — bypass + sonnet + MCP
+# cc2 — bypass + sonnet[1m]
 cc2() {
-  local mcp_config
-  mcp_config="$(_cc_mcp_config_path)"
-  local -a mcp_flags=()
-
-  [ -r "$mcp_config" ] && mcp_flags+=("--mcp-config" "$mcp_config")
-
-  claude --dangerously-skip-permissions --model opus "${mcp_flags[@]}" "$@"
+  claude --dangerously-skip-permissions --model 'claude-sonnet-4.6[1m]' "$@"
 }
 
-# cc3 — bypass + opus + MCP（最强，类比 cx4）
+# cc3 — bypass + opus[1m]（无 MCP）
 cc3() {
+  claude \
+    --dangerously-skip-permissions \
+    --model 'claude-opus-4.7[1m]' \
+    "$@"
+}
+
+# cc4 — bypass + opus[1m] + MCP（最强，类比 cx4）
+cc4() {
   local mcp_config
   mcp_config="$(_cc_mcp_config_path)"
   local -a mcp_flags=()
@@ -262,7 +265,7 @@ cc3() {
 
   claude \
     --dangerously-skip-permissions \
-    --model claude-opus-4.6[1m] \
+    --model 'claude-opus-4.7[1m]' \
     "${mcp_flags[@]}" \
     "$@"
 }
