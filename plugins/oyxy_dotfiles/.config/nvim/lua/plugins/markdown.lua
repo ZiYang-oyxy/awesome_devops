@@ -1,7 +1,7 @@
 return {
   {
-    dir = "/Volumes/code/nvim/markdown-preview.nvim",
-    name = "markdown-preview.nvim",
+    "ZiYang-oyxy/markdown-preview.nvim",
+    build = "cd app && npx --yes yarn install",
     keys = {
       { "<leader>cp", false },
       {
