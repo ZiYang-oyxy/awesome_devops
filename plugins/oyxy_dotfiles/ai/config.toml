@@ -316,6 +316,10 @@ model_reasoning_effort = "medium"
 
 [profiles.cx2.features]
 multi_agent = true
+terminal_resize_reflow = true
+memories = false
+external_migration = false
+prevent_idle_sleep = true
 
 [profiles.cx3]
 model = "gpt-5.5"
@@ -349,7 +353,7 @@ enable_fanout = true
 child_agents_md = true
 
 [marketplaces.openai-bundled]
-last_updated = "2026-04-27T03:23:45Z"
+last_updated = "2026-04-29T10:15:51Z"
 source_type = "local"
 source = "/Users/bytedance/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
