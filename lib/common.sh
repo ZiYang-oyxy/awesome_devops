@@ -1,6 +1,8 @@
 #!/bin/bash
 
-source ~/.awesome_devops/config
+if [[ -f "$HOME/.awesome_devops/config" ]]; then
+    source "$HOME/.awesome_devops/config"
+fi
 
 curdir(){
     dirname $(readlink -f $0)

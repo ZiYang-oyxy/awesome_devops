@@ -8,6 +8,8 @@ if [[ ! -f "$MANIFEST_FILE" ]]; then
     exit 1
 fi
 
+MANIFEST_DIR="$(cd "$(dirname "$MANIFEST_FILE")" && pwd -P)"
+
 LINES=()
 while IFS= read -r line; do
     LINES+=("$line")
@@ -36,9 +38,14 @@ echo "Installing ${#LINES[@]} skills from $MANIFEST_FILE"
 for line in "${LINES[@]}"; do
     skill_name="${line%%$'\t'*}"
     skill_source="${line#*$'\t'}"
+    skill_source_arg="$skill_source"
 
-    echo "-> $skill_name ($skill_source)"
-    npx -y skills add "$skill_source" -g -s "$skill_name" -y
+    if [[ "$skill_source" != /* && -e "$MANIFEST_DIR/$skill_source" ]]; then
+        skill_source_arg="$MANIFEST_DIR/$skill_source"
+    fi
+
+    echo "-> $skill_name ($skill_source_arg)"
+    npx -y skills add "$skill_source_arg" -g -s "$skill_name" -y
 
 done
 
