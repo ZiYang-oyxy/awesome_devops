@@ -43,7 +43,6 @@ review_model = "gpt-5.5"
 # =========================
 # 顶层：认证 / 执行策略 / 通知
 # =========================
-notify = ["sh", "-c", "exec tmux-statusctl notify-done \"$@\"", "notify", "notify-done"]
 check_for_update_on_startup = true
 hide_agent_reasoning = false
 show_raw_agent_reasoning = false
@@ -105,6 +104,8 @@ suppress_unstable_features_warning = true
 # =========================
 # [tui]
 # =========================
+notify = ["/Users/bytedance/.codex/plugins/cache/openai-bundled/computer-use/1.0.758/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended", "--previous-notify", "[\"sh\",\"-c\",\"exec tmux-statusctl notify-done \\\"$@\\\"\",\"notify\",\"notify-done\"]"]
+
 [tui]
 status_line = ["model-with-reasoning", "context-used", "five-hour-limit", "weekly-limit", "used-tokens", "context-window-size", "current-dir", "thread-title", "task-progress"]
 notifications = true
@@ -115,11 +116,12 @@ terminal_title = ["project", "task-progress", "status"]
 
 [tui.model_availability_nux]
 "gpt-5.5" = 4
+"gpt-5.5" = 4
 # notification_method = "auto"         # auto|osc9|bel
 # show_tooltips = true
 # theme = "one-dark-pro"
 # 可选子表： [tui.model_availability_nux]
-# 例： "gpt-5.4" = 1
+# 例： "gpt-5.5" = 1
 
 # =========================
 # [tools]
@@ -323,7 +325,7 @@ prevent_idle_sleep = true
 
 [profiles.cx3]
 model = "gpt-5.5"
-model_reasoning_effort = "xhigh"
+model_reasoning_effort = "high"
 model_context_window = 1000000
 model_auto_compact_token_limit = 800000
 
@@ -353,17 +355,14 @@ enable_fanout = true
 child_agents_md = true
 
 [marketplaces.openai-bundled]
-last_updated = "2026-04-29T10:15:51Z"
+last_updated = "2026-05-08T15:49:53Z"
 source_type = "local"
 source = "/Users/bytedance/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-04-25T02:59:11Z"
+last_updated = "2026-05-08T16:25:01Z"
 source_type = "local"
 source = "/Users/bytedance/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
-
-[plugins."browser-use@openai-bundled"]
-enabled = true
 
 [plugins."documents@openai-primary-runtime"]
 enabled = false
@@ -377,5 +376,15 @@ enabled = false
 [plugins."computer-use@openai-bundled"]
 enabled = true
 
+[plugins."browser-use@openai-bundled"]
+enabled = true
+
 [notice]
 hide_rate_limit_model_nudge = true
+
+[[skills.config]]
+path = "/Users/bytedance/.codex/plugins/cache/openai-bundled/browser-use/0.1.0-alpha1/skills/browser/SKILL.md"
+enabled = false
+
+[projects."/Volumes/code/test4"]
+trust_level = "trusted"

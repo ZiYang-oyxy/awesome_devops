@@ -186,31 +186,21 @@ _cx_run() {
 alias cx="_cx_run"
 alias cx1="_cx_run --dangerously-bypass-approvals-and-sandbox -p cx1"
 alias cx2="_cx_run --dangerously-bypass-approvals-and-sandbox -p cx2"
-_cx_1m_catalog_path() {
-  printf '%s\n' "/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/ai/codex-model-catalog-1m.json"
-}
 
 unalias cx3 2>/dev/null
 unalias cx4 2>/dev/null
 
 cx3() {
-  local model_catalog
-  model_catalog="$(_cx_1m_catalog_path)"
-
   _cx_run \
     --dangerously-bypass-approvals-and-sandbox \
     -p cx3 \
-    -c "model_catalog_json=\"${model_catalog}\"" \
     "$@"
 }
 
 cx4() {
   local config_path="${CODEX_HOME:-$HOME/.codex}/config.toml"
-  local model_catalog
   local line server_name
   local -a mcp_flags=()
-
-  model_catalog="$(_cx_1m_catalog_path)"
 
   if [ -r "$config_path" ]; then
     while IFS= read -r line; do
@@ -225,18 +215,17 @@ cx4() {
     --dangerously-bypass-approvals-and-sandbox \
     --search \
     -p cx4 \
-    -c "model_catalog_json=\"${model_catalog}\"" \
     "${mcp_flags[@]}" \
     "$@"
 }
-alias cc="claude"
+alias cc="CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude"
 unalias cc1 2>/dev/null
 unalias cc2 2>/dev/null
 unalias cc3 2>/dev/null
 unalias cc4 2>/dev/null
 
 # cc1 — haiku（快速轻量，无 MCP，无 bypass）
-alias cc1="claude --model claude-haiku-4-5"
+alias cc1="CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude --model claude-haiku-4-5"
 
 _cc_mcp_config_path() {
   printf '%s\n' "${HOME}/.claude/mcp_servers.json"
@@ -244,14 +233,14 @@ _cc_mcp_config_path() {
 
 # cc2 — bypass + sonnet[1m]
 cc2() {
-  claude --dangerously-skip-permissions --model 'claude-sonnet-4.6[1m]' "$@"
+  CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude --dangerously-skip-permissions --model 'claude-sonnet-4.6[1m]' "$@"
 }
 
 # cc3 — bypass + opus[1m]（无 MCP）
 cc3() {
-  claude \
+  CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude \
     --dangerously-skip-permissions \
-    --model 'claude-opus-4.7[1m]' \
+    --model 'claude-opus-4.6[1m]' \
     "$@"
 }
 
@@ -263,9 +252,9 @@ cc4() {
 
   [ -r "$mcp_config" ] && mcp_flags+=("--mcp-config" "$mcp_config")
 
-  claude \
+  CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude \
     --dangerously-skip-permissions \
-    --model 'claude-opus-4.7[1m]' \
+    --model 'claude-opus-4.6[1m]' \
     "${mcp_flags[@]}" \
     "$@"
 }

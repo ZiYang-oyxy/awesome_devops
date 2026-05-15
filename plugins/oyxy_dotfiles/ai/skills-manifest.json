@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generatedAt": "2026-05-04T14:31:29.271Z",
-  "sourceLockFile": "/Users/ouyangxiongyi/.agents/.skill-lock.json",
+  "generatedAt": "2026-05-15T01:58:17.725Z",
+  "sourceLockFile": "/Users/bytedance/.agents/.skill-lock.json",
   "skills": [
     {
       "name": "brainstorming",
@@ -68,16 +68,20 @@
       "source": "obra/superpowers"
     },
     {
+      "name": "vercel-react-best-practices",
+      "source": "vercel-labs/agent-skills"
+    },
+    {
       "name": "verification-before-completion",
       "source": "obra/superpowers"
     },
     {
-      "name": "webapp-testing",
-      "source": "anthropics/skills"
+      "name": "web-design-guidelines",
+      "source": "vercel-labs/agent-skills"
     },
     {
-      "name": "wechat-article-to-markdown",
-      "source": "jackwener/wechat-article-to-markdown"
+      "name": "webapp-testing",
+      "source": "anthropics/skills"
     },
     {
       "name": "writing-plans",
