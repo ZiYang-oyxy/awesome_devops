@@ -184,14 +184,21 @@ _cx_run() {
 }
 
 alias cx="_cx_run"
-alias cx1="_cx_run --dangerously-bypass-approvals-and-sandbox -p cx1"
-alias cx2="_cx_run --dangerously-bypass-approvals-and-sandbox -p cx2"
+
+_cx_without_computer_mcp() {
+  _cx_run \
+    -c 'plugins."computer-use@openai-bundled".enabled=false' \
+    "$@"
+}
+
+alias cx1="_cx_without_computer_mcp --dangerously-bypass-approvals-and-sandbox -p cx1"
+alias cx2="_cx_without_computer_mcp --dangerously-bypass-approvals-and-sandbox -p cx2"
 
 unalias cx3 2>/dev/null
 unalias cx4 2>/dev/null
 
 cx3() {
-  _cx_run \
+  _cx_without_computer_mcp \
     --dangerously-bypass-approvals-and-sandbox \
     -p cx3 \
     "$@"
@@ -207,6 +214,9 @@ cx4() {
       server_name="${line#\[mcp_servers.}"
       server_name="${server_name%]}"
       [ -n "$server_name" ] || continue
+      case "$server_name" in
+      *.*) continue ;;
+      esac
       mcp_flags+=("-c" "mcp_servers.${server_name}.enabled=true")
     done < <(grep -E '^\[mcp_servers\.[^]]+\]$' "$config_path")
   fi
@@ -225,7 +235,7 @@ unalias cc3 2>/dev/null
 unalias cc4 2>/dev/null
 
 # cc1 — haiku（快速轻量，无 MCP，无 bypass）
-alias cc1="CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude --model claude-haiku-4-5"
+alias cc1="CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude --model claude-sonnet-4-6"
 
 _cc_mcp_config_path() {
   printf '%s\n' "${HOME}/.claude/mcp_servers.json"
@@ -233,18 +243,25 @@ _cc_mcp_config_path() {
 
 # cc2 — bypass + sonnet[1m]
 cc2() {
-  CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude --dangerously-skip-permissions --model 'claude-sonnet-4.6[1m]' "$@"
+  CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude --dangerously-skip-permissions --model 'claude-sonnet-4-6[1m]' "$@"
 }
 
-# cc3 — bypass + opus[1m]（无 MCP）
+# cc3 — bypass + opus[1m] + MCP（opus 4.6）
 cc3() {
+  local mcp_config
+  mcp_config="$(_cc_mcp_config_path)"
+  local -a mcp_flags=()
+
+  [ -r "$mcp_config" ] && mcp_flags+=("--mcp-config" "$mcp_config")
+
   CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude \
     --dangerously-skip-permissions \
-    --model 'claude-opus-4.6[1m]' \
+    --model 'claude-opus-4-6[1m]' \
+    "${mcp_flags[@]}" \
     "$@"
 }
 
-# cc4 — bypass + opus[1m] + MCP（最强，类比 cx4）
+# cc4 — bypass + opus[1m] + MCP（opus 4.7）
 cc4() {
   local mcp_config
   mcp_config="$(_cc_mcp_config_path)"
@@ -254,10 +271,14 @@ cc4() {
 
   CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude \
     --dangerously-skip-permissions \
-    --model 'claude-opus-4.6[1m]' \
+    --model 'claude-opus-4-7[1m]' \
     "${mcp_flags[@]}" \
     "$@"
 }
+
+alias gm="gemini"
+alias gm1="gemini --approval-mode auto_edit --skip-trust"
+alias gm2="gemini --approval-mode yolo --skip-trust"
 
 alias oc="opencode"
 

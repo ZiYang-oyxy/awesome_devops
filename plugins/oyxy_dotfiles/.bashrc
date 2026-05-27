@@ -148,3 +148,7 @@ fi
 [ -f ~/.awesome_devops/ad-completion.bash ] && . ~/.awesome_devops/ad-completion.bash
 
 export PATH="$HOME/.local/bin:$PATH"
+
+
+# Added by Antigravity CLI installer
+export PATH="/Users/bytedance/.local/bin:$PATH"

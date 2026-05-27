@@ -1,24 +1,8 @@
 {
   "version": 1,
-  "generatedAt": "2026-05-15T01:58:17.725Z",
+  "generatedAt": "2026-05-23T13:56:37.606Z",
   "sourceLockFile": "/Users/bytedance/.agents/.skill-lock.json",
   "skills": [
-    {
-      "name": "brainstorming",
-      "source": "obra/superpowers"
-    },
-    {
-      "name": "dispatching-parallel-agents",
-      "source": "obra/superpowers"
-    },
-    {
-      "name": "executing-plans",
-      "source": "obra/superpowers"
-    },
-    {
-      "name": "finishing-a-development-branch",
-      "source": "obra/superpowers"
-    },
     {
       "name": "frontend-design",
       "source": "anthropics/skills"
@@ -40,40 +24,8 @@
       "source": "microsoft/playwright-cli"
     },
     {
-      "name": "receiving-code-review",
-      "source": "obra/superpowers"
-    },
-    {
-      "name": "requesting-code-review",
-      "source": "obra/superpowers"
-    },
-    {
-      "name": "subagent-driven-development",
-      "source": "obra/superpowers"
-    },
-    {
-      "name": "systematic-debugging",
-      "source": "obra/superpowers"
-    },
-    {
-      "name": "test-driven-development",
-      "source": "obra/superpowers"
-    },
-    {
-      "name": "using-git-worktrees",
-      "source": "obra/superpowers"
-    },
-    {
-      "name": "using-superpowers",
-      "source": "obra/superpowers"
-    },
-    {
       "name": "vercel-react-best-practices",
       "source": "vercel-labs/agent-skills"
-    },
-    {
-      "name": "verification-before-completion",
-      "source": "obra/superpowers"
     },
     {
       "name": "web-design-guidelines",
@@ -82,14 +34,6 @@
     {
       "name": "webapp-testing",
       "source": "anthropics/skills"
-    },
-    {
-      "name": "writing-plans",
-      "source": "obra/superpowers"
-    },
-    {
-      "name": "writing-skills",
-      "source": "obra/superpowers"
     }
   ]
 }
