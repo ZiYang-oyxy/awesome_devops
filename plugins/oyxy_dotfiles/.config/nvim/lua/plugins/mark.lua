@@ -14,8 +14,7 @@ end
 
 return {
   {
-    dir = "/Volumes/code/nvim/vim-mark.nvim",
-    name = "vim-mark.nvim",
+    "ZiYang-oyxy/vim-mark.nvim",
     main = "mark",
     lazy = false,
     opts = {
