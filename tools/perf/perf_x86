@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Transparent wrapper for the bundled perf_x86 ELF binary.
+# The ELF needs libpython3.7m.so.1.0 and libcapstone.so.3, neither of which
+# ship with modern distros (Debian 12 has python3.11 and libcapstone4). We
+# bundle the required .so files under ./lib and load them via LD_LIBRARY_PATH
+# so the binary works across environments without polluting system libs.
+set -e
+_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_libdir="$_dir/lib"
+if [[ -d "$_libdir" ]]; then
+    export LD_LIBRARY_PATH="$_libdir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+fi
+exec "$_dir/perf_x86.bin" "$@"

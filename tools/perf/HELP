@@ -1,0 +1,20 @@
+# case1 使用补丁版perf
+ad perf perf_x86
+
+# case2.1 一键抓取性能指标
+ad perf perf_stat_x86.sh
+
+# case2.2 增删perf_stat_<arch>.sh需要抓取的event和metric
+vim ~/.awesome_devops/ext_tools/perf/metrics.sh
+vim ~/.awesome_devops/ext_tools/perf/events.sh
+
+# case2.3 查看intel pmu全集，进下面的目录
+~/.awesome_devops/ext_tools/perf/sapphirerapids
+~/.awesome_devops/ext_tools/perf/emeraldrapids
+
+# case3 持续指标监控上报
+ad perf perf_stat_exporter.py
+
+# case4 后台单例执行，避免ssh回话中断导致采集停止
+ad bg ad perf perf_stat_exporter.py
+

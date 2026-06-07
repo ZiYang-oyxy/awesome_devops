@@ -1,0 +1,11 @@
+# 定义要检查的软件包列表
+packages=("libnuma-dev" "libcapstone-dev" "libpfm4-dev" "libtraceevent-dev")
+
+# 遍历检查每个软件包
+for pkg in "${packages[@]}"; do
+    if dpkg -s "$pkg" &>/dev/null; then
+        :
+    else
+        sudo apt install -y $pkg
+    fi
+done
