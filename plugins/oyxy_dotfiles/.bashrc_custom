@@ -234,8 +234,8 @@ unalias cc2 2>/dev/null
 unalias cc3 2>/dev/null
 unalias cc4 2>/dev/null
 
-# cc1 — haiku（快速轻量，无 MCP，无 bypass）
-alias cc1="CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude --model claude-sonnet-4-6"
+# cc1 — sonnet（快速轻量，无 MCP，无 bypass）
+alias cc1="CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 ANTHROPIC_MODEL='claude-sonnet-4-6' ANTHROPIC_DEFAULT_OPUS_MODEL='claude-sonnet-4-6' ANTHROPIC_DEFAULT_SONNET_MODEL='claude-sonnet-4-6' ANTHROPIC_DEFAULT_HAIKU_MODEL='claude-sonnet-4-6' claude --model claude-sonnet-4-6"
 
 _cc_mcp_config_path() {
   printf '%s\n' "${HOME}/.claude/mcp_servers.json"
@@ -243,10 +243,15 @@ _cc_mcp_config_path() {
 
 # cc2 — bypass + sonnet[1m]
 cc2() {
-  CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude --dangerously-skip-permissions --model 'claude-sonnet-4-6[1m]' "$@"
+  CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 \
+  ANTHROPIC_MODEL='claude-sonnet-4-6' \
+  ANTHROPIC_DEFAULT_OPUS_MODEL='claude-sonnet-4-6' \
+  ANTHROPIC_DEFAULT_SONNET_MODEL='claude-sonnet-4-6' \
+  ANTHROPIC_DEFAULT_HAIKU_MODEL='claude-sonnet-4-6' \
+  claude --dangerously-skip-permissions --model 'claude-sonnet-4-6[1m]' "$@"
 }
 
-# cc3 — bypass + opus[1m] + MCP（opus 4.6）
+# cc3 — bypass + opus[1m] + MCP（opus 4.7）
 cc3() {
   local mcp_config
   mcp_config="$(_cc_mcp_config_path)"
@@ -254,14 +259,20 @@ cc3() {
 
   [ -r "$mcp_config" ] && mcp_flags+=("--mcp-config" "$mcp_config")
 
-  CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude \
+  # 档位映射对齐 4.7（覆盖外部注入的旧值）
+  CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 \
+  ANTHROPIC_MODEL='claude-opus-4-7' \
+  ANTHROPIC_DEFAULT_OPUS_MODEL='claude-opus-4-7' \
+  ANTHROPIC_DEFAULT_SONNET_MODEL='claude-sonnet-4-6' \
+  ANTHROPIC_DEFAULT_HAIKU_MODEL='claude-sonnet-4-6' \
+  claude \
     --dangerously-skip-permissions \
-    --model 'claude-opus-4-6[1m]' \
+    --model 'claude-opus-4-7[1m]' \
     "${mcp_flags[@]}" \
     "$@"
 }
 
-# cc4 — bypass + opus[1m] + MCP（opus 4.7）
+# cc4 — bypass + opus[1m] + MCP（opus 4.8）
 cc4() {
   local mcp_config
   mcp_config="$(_cc_mcp_config_path)"
@@ -269,9 +280,16 @@ cc4() {
 
   [ -r "$mcp_config" ] && mcp_flags+=("--mcp-config" "$mcp_config")
 
-  CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude \
+  # 强制对齐档位映射到 4.8：覆盖外部注入的旧值（如 opus-4-7 / sonnet-4-6）
+  # 影响子 agent、工作流 agent、上下文压缩等按“档位”取模型的内部调用
+  CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 \
+  ANTHROPIC_MODEL='claude-opus-4-8' \
+  ANTHROPIC_DEFAULT_OPUS_MODEL='claude-opus-4-8' \
+  ANTHROPIC_DEFAULT_SONNET_MODEL='claude-sonnet-4-6' \
+  ANTHROPIC_DEFAULT_HAIKU_MODEL='claude-sonnet-4-6' \
+  claude \
     --dangerously-skip-permissions \
-    --model 'claude-opus-4-7[1m]' \
+    --model 'claude-opus-4-8[1m]' \
     "${mcp_flags[@]}" \
     "$@"
 }

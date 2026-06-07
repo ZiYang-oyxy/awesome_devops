@@ -1,0 +1,9 @@
+model = "gpt-5.5"
+model_reasoning_effort = "medium"
+
+[features]
+multi_agent = true
+terminal_resize_reflow = true
+memories = false
+external_migration = false
+prevent_idle_sleep = true
