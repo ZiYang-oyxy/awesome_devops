@@ -1,8 +1,2 @@
 model = "gpt-5.5"
-model_reasoning_effort = "high"
-
-[features]
-multi_agent = true
-multi_agent_v2 = false
-enable_fanout = false
-child_agents_md = false
+model_reasoning_effort = "xhigh"

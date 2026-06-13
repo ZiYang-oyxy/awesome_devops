@@ -1,300 +1,156 @@
-# Codex 配置（按 schema 整理版）
-# 参考：
-# - 最新schema: https://developers.openai.com/codex/config-schema.json （已按 2026-03-27 拉取核对）
-# - 官方文档: https://developers.openai.com/codex/config-reference
+#:schema https://developers.openai.com/codex/config-schema.json
+# Codex portable config
 #
-# 使用约定：
-# - 顶层键必须全部放在第一个实际 table 之前。
-# - 每个真实分区只保留一份，避免“前面已生效，后面又写一套示例”的重复。
-# - 动态分区（如 [mcp_servers.<name>] / [projects."<absolute_path>"]）只保留简洁说明，
-#   不再重复放整段可取消注释模板，避免 TOML 作用域误伤。
+# Latest schema pulled on 2026-06-13:
+# - ~/.codex/config.schema.json
+# - https://developers.openai.com/codex/config-schema.json
+#
+# Keep this file free of machine-local paths, per-host credentials, and
+# project-specific trust entries. Put those in ~/.codex/local.config.toml and
+# start Codex with: codex --profile local
 
-# =========================
-# 顶层：提示词 / 模型 / 提供方
-# =========================
-# instructions = "System instructions"
-# compact_prompt = "Compact prompt text"
-
+# -------------------------
+# Model / provider
+# -------------------------
 model = "gpt-5.5"
-model_provider = "openai-http"
-#model_provider = "openai-ws"
-model_reasoning_effort = "medium"      # none|minimal|low|medium|high|xhigh
-plan_mode_reasoning_effort = "high"     # none|minimal|low|medium|high|xhigh
-model_reasoning_summary = "auto"       # auto|concise|detailed|none
-model_verbosity = "medium"             # low|medium|high
-web_search = "live"                    # disabled|cached|live
-personality = "pragmatic"              # none|friendly|pragmatic
-
-# review_model = "gpt-5"
 review_model = "gpt-5.5"
-# model_provider = "openai"            # 对应 [model_providers.<name>] 的 key
-# oss_provider = "ollama"
-# model_context_window = 200000
-# model_auto_compact_token_limit = 120000
-# GPT-5.4 可实验性尝试 1M 上下文；默认保持注释，按需手动打开。
-# 注意：超过标准 272K 的部分通常会按更高额度/成本计入，且长上下文会增加延迟。
-# model_context_window = 1000000
-# model_auto_compact_token_limit = 800000
-# model_supports_reasoning_summaries = true
-# model_instructions_file = "/abs/path/instructions.md"
-# model_catalog_json = "/abs/path/model-catalog.json"
-# openai_base_url = "https://api.openai.com/v1" # 仅覆盖内建 openai provider 的 base URL
+model_provider = "openai-http"
+disable_response_storage = true
 
-# =========================
-# 顶层：认证 / 执行策略 / 通知
-# =========================
+model_reasoning_effort = "medium"
+plan_mode_reasoning_effort = "high"
+model_reasoning_summary = "auto"
+model_verbosity = "medium"
+web_search = "live"
+personality = "pragmatic"
+
+# -------------------------
+# Startup / auth / execution
+# -------------------------
 check_for_update_on_startup = true
 hide_agent_reasoning = false
 show_raw_agent_reasoning = false
 suppress_unstable_features_warning = true
 
-# forced_login_method = "chatgpt"      # chatgpt|api
-# forced_chatgpt_workspace_id = "workspace_xxx"
-# cli_auth_credentials_store = "auto"  # file|keyring|auto|ephemeral
-# mcp_oauth_credentials_store = "auto" # auto|file|keyring
-# mcp_oauth_callback_port = 1455
-# mcp_oauth_callback_url = "http://127.0.0.1:1455/callback"
-
-# approval_policy = "on-request"       # untrusted|on-request|never
-# approval_policy = { granular = { mcp_elicitations = true, rules = false, sandbox_approval = false, request_permissions = false, skill_approval = false } }
-# approvals_reviewer = "user"          # user|guardian_subagent
-# sandbox_mode = "workspace-write"     # read-only|workspace-write|danger-full-access
-# sandbox_workspace_write = { network_access = true, writable_roots = ["/abs/path"] }
-# allow_login_shell = true
-# background_terminal_max_timeout = 300000
+# Common optional knobs:
+# approval_policy = "on-request"
+# approvals_reviewer = "user"
+# sandbox_mode = "workspace-write"
 # default_permissions = "default"
-# file_opener = "vscode"               # vscode|vscode-insiders|windsurf|cursor|none
+# cli_auth_credentials_store = "auto"
+# mcp_oauth_credentials_store = "auto"
+# file_opener = "vscode"
 
-# commit_attribution = "Co-authored-by: Your Name <you@example.com>"
-# disable_paste_burst = false
-# experimental_use_freeform_apply_patch = true
-# experimental_use_unified_exec_tool = true
-# experimental_compact_prompt_file = "/abs/path/compact-prompt.md"
-# experimental_realtime_start_instructions = "..."
-# experimental_realtime_ws_backend_prompt = "..."
-# experimental_realtime_ws_base_url = "wss://..."
-# experimental_realtime_ws_model = "..."
-# experimental_realtime_ws_startup_context = "..."
-
-# [shell_environment_policy]
-# inherit = "all"                      # all|core|none
-# include_only = ["^PATH$", "^HOME$", "^SSH_AUTH_SOCK$"]
-# exclude = ["^AWS_", "^GITHUB_TOKEN$"]
-# ignore_default_excludes = false
-# experimental_use_profile = false
-# [shell_environment_policy.set]
-# EDITOR = "vim"
-
-# =========================
-# 顶层：路径 / 文档 / 预算
-# =========================
-# log_dir = "/abs/path/logs"
-# sqlite_home = "/abs/path/codex-state"
-# project_doc_fallback_filenames = ["AGENTS.md", "README.md"]
-# project_doc_max_bytes = 65536
-# project_root_markers = [".git", ".hg"]
-# profile = "default"
-# tool_output_token_limit = 12000
-# chatgpt_base_url = "https://chatgpt.com"
-# js_repl_node_path = "/abs/path/node"
-# js_repl_node_module_dirs = ["/abs/path/node_modules"]
-# zsh_path = "/abs/path/zsh"
-# windows_wsl_setup_acknowledged = true
-
-# =========================
-# [tui]
-# =========================
-notify = ["/Users/bytedance/.codex/plugins/cache/openai-bundled/computer-use/1.0.758/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended", "--previous-notify", "[\"sh\",\"-c\",\"exec tmux-statusctl notify-done \\\"$@\\\"\",\"notify\",\"notify-done\"]"]
+# -------------------------
+# UI
+# -------------------------
+notify = ["/Users/bytedance/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 
 [tui]
-status_line = ["model-with-reasoning", "context-used", "five-hour-limit", "weekly-limit", "used-tokens", "context-window-size", "current-dir", "thread-title", "task-progress"]
+status_line = [
+  "model-with-reasoning",
+  "context-used",
+  "five-hour-limit",
+  "weekly-limit",
+  "used-tokens",
+  "context-window-size",
+  "current-dir",
+  "task-progress",
+]
 notifications = true
-#alternate_screen = "never"             # auto|always|never
-alternate_screen = "auto"             # auto|always|never
+alternate_screen = "auto"
 animations = true
-terminal_title = ["project", "task-progress", "status"]
+terminal_title = ["activity", "project-name", "task-progress", "run-state"]
+status_line_use_colors = true
 
 [tui.model_availability_nux]
 "gpt-5.5" = 4
-"gpt-5.5" = 4
-# notification_method = "auto"         # auto|osc9|bel
-# show_tooltips = true
-# theme = "one-dark-pro"
-# 可选子表： [tui.model_availability_nux]
-# 例： "gpt-5.5" = 1
 
-# =========================
-# [tools]
-# =========================
+# -------------------------
+# Tools
+# -------------------------
 [tools]
 view_image = true
+
 [tools.web_search]
-context_size = "medium"           # low|medium|high
+context_size = "medium"
+
 [tools.web_search.location]
 city = "Shanghai"
 region = "Shanghai"
 country = "CN"
 timezone = "Asia/Shanghai"
 
-# =========================
-# [mcp_servers.<name>]
-# =========================
-# 新增 server 时，请完整新增一个 [mcp_servers.<name>] 区块。
-# 常用键：command/url、args、cwd、enabled、required、startup_timeout_ms|sec、
-# tool_timeout_sec、env_vars、scopes、enabled_tools、disabled_tools、
-# bearer_token(_env_var)、oauth_resource，以及
-# [mcp_servers.<name>.env] / [mcp_servers.<name>.http_headers] /
-# [mcp_servers.<name>.env_http_headers]。
-
-[mcp_servers.github]
-url = "https://api.githubcopilot.com/mcp/"
-bearer_token_env_var = "GITHUB_PAT_TOKEN"
-enabled = false
-required = false
-startup_timeout_sec = 10.0
-
-# =========================
-# [otel]
-# =========================
+# -------------------------
+# Telemetry / history
+# -------------------------
 [otel]
 environment = "dev"
-exporter = "none"                      # none|statsig
-metrics_exporter = "none"              # none|statsig
-trace_exporter = "none"                # none|statsig
+exporter = "none"
+metrics_exporter = "none"
+trace_exporter = "none"
 log_user_prompt = false
 
-# =========================
-# history
-# =========================
 [history]
-persistence = "save-all"             # save-all|none
+persistence = "save-all"
 max_bytes = 104857600
 
-# =========================
-# [analytics] / [feedback]
-# =========================
-# [analytics]
-# enabled = true
-#
-# [feedback]
-# enabled = true
+[notice]
+hide_rate_limit_model_nudge = true
 
-# =========================
-# [agents]
-# =========================
+# -------------------------
+# Agents
+# -------------------------
 [agents]
-# multi_agent_v2 profiles cannot be combined with an explicit agents.max_threads.
-# Leave this unset so cx3/cx4 can load and non-v2 profiles use Codex's default.
 max_depth = 4
 job_max_runtime_seconds = 1800
 
-[agents.default]
-description = "通用型子代理，承接未显式指定 agent_type 的默认委派任务。"
-config_file = "/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/ai/default.toml"
+# Role config files are intentionally not listed here because they are
+# machine-local in the current setup. Add them in local.config.toml.
 
-[agents.explorer]
-description = "探索型子代理，适合代码库定位、查找、归纳和并行调研。"
-config_file = "/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/ai/explorer.toml"
-
-[agents.worker]
-description = "执行型子代理，适合代码修改、修复、实现和明确 ownership 的子任务。"
-config_file = "/Volumes/code/awesome_devops/plugins/oyxy_dotfiles/ai/worker.toml"
-
-# =========================
-# [apps] / [skills] / [audio] / [realtime]
-# =========================
-# [apps._default]
-# enabled = true
-# destructive_enabled = false
-# open_world_enabled = false
-#
-# [skills.bundled]
-# enabled = true
-#
-# [[skills.config]]
-# path = "/abs/path/to/SKILL.md"
-# enabled = true
-#
-# [audio]
-# microphone = "MacBook Pro Microphone"
-# speaker = "MacBook Pro Speakers"
-#
-# [realtime]
-# version = "v2"
-# type = "conversational"
-#
-# [ghost_snapshot]
-# disable_warnings = false
-# ignore_large_untracked_dirs = 2000
-# ignore_large_untracked_files = 10485760
-#
-# [windows]
-# sandbox = "unelevated"              # elevated|unelevated
-# sandbox_private_desktop = true
-
-# =========================
-# [features]
-# =========================
+# -------------------------
+# Feature flags
+# -------------------------
 [features]
+hooks = true
 multi_agent = true
 apply_patch_freeform = true
 apps = true
 child_agents_md = false
 code_mode = true
-# code_mode_only = false
-# codex_git_commit = false
-# codex_hooks = false
 default_mode_request_user_input = true
-# elevated_windows_sandbox = false
-# enable_experimental_windows_sandbox = false
 enable_fanout = false
 enable_request_compression = true
-# exec_permission_approvals = false
-# experimental_windows_sandbox = false
 fast_mode = true
-# guardian_approval = false
-# image_detail_original = false
-# image_generation = false
-js_repl = true
-# js_repl_tools_only = false
 memories = false
 multi_agent_v2 = false
 personality = true
 plugins = true
 prevent_idle_sleep = true
 realtime_conversation = true
-# request_permissions = false
-# request_permissions_tool = false
 runtime_metrics = true
 shell_snapshot = true
 shell_tool = true
-# shell_zsh_fork = false
-# skill_env_var_dependency_prompt = false
 skill_mcp_dependency_install = true
-# tool_call_mcp_elicitation = false
 tool_search = true
 tool_suggest = true
-tui_app_server = true
-undo = true
 unified_exec = true
-# use_legacy_landlock = false
-# use_linux_sandbox_bwrap = false
-responses_websockets_v2 = true
+js_repl = false
 
-# =========================
-# 动态分区
-# =========================
-# - [projects."<absolute_path>"]：trust_level = "trusted"|"untrusted"
-# - [model_providers.<name>]：自定义 provider
-# - [profiles.<name>]：命名配置组合
-# - [plugins."<name>"]：插件启停
-# - [permissions.<name>]：命名权限配置
-# - [apps._default] / [apps."<app_id>"] / [apps."<app_id>".tools."<tool_name>"]
-# - [skills.bundled] / [[skills.config]]
+# -------------------------
+# Model providers
+# -------------------------
+[model_providers.openai-cch]
+name = "CCH OpenAI Compatible HTTP"
+base_url = "https://oyxy.top:9443/v1"
+env_key = "OPENAI_API_KEY"
+wire_api = "responses"
+supports_websockets = false
+requires_openai_auth = false
 
 [model_providers.openai-http]
 name = "OpenAI Compatible HTTP"
-base_url = "https://oyxy.top:9443/v1"
+base_url = "https://oyxy.top:999"
 env_key = "OPENAI_API_KEY"
 wire_api = "responses"
 supports_websockets = false
@@ -308,83 +164,94 @@ wire_api = "responses"
 supports_websockets = true
 requires_openai_auth = true
 
-[profiles.cx1]
-model = "gpt-5.4-mini"
-model_reasoning_effort = "medium"
+# -------------------------
+# Portable plugin preferences
+# -------------------------
+[plugins."superpowers@openai-curated"]
+enabled = true
 
-[profiles.cx2]
-model = "gpt-5.5"
-model_reasoning_effort = "medium"
-
-[profiles.cx2.features]
-multi_agent = true
-terminal_resize_reflow = true
-memories = false
-external_migration = false
-prevent_idle_sleep = true
-
-[profiles.cx3]
-model = "gpt-5.5"
-model_reasoning_effort = "high"
-model_context_window = 1000000
-model_auto_compact_token_limit = 800000
-
-[profiles.cx3.features]
-multi_agent = true
-multi_agent_v2 = true
-enable_fanout = false
-child_agents_md = true
-
-[profiles.cx4]
-model = "gpt-5.5"
-model_reasoning_effort = "xhigh"
-model_context_window = 1000000
-model_auto_compact_token_limit = 800000
-developer_instructions = """
-When the deep-research skill is active, or when the user explicitly asks for deep research, comprehensive analysis, comparisons, trend analysis, sub-agents, delegation, or parallel work, treat that as authorization to use native multi-agent tools.
-Prefer Codex-native coordination primitives: `spawn_agent`, `assign_task`, `send_message`, `wait_agent`, `list_agents`, and `close_agent`.
-For independent research subtasks, prefer spawning 2-4 subagents in parallel with disjoint scopes and explicit output contracts.
-Do not spawn subagents for simple lookups, tightly coupled blocking steps, or redundant work.
-When subagents are running, continue non-overlapping synthesis locally and use `wait_agent` sparingly.
-"""
-
-[profiles.cx4.features]
-multi_agent = true
-multi_agent_v2 = true
-enable_fanout = true
-child_agents_md = true
-
-[marketplaces.openai-bundled]
-last_updated = "2026-05-08T15:49:53Z"
-source_type = "local"
-source = "/Users/bytedance/.codex/.tmp/bundled-marketplaces/openai-bundled"
-
-[marketplaces.openai-primary-runtime]
-last_updated = "2026-05-08T16:25:01Z"
-source_type = "local"
-source = "/Users/bytedance/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
-
-[plugins."documents@openai-primary-runtime"]
-enabled = false
-
-[plugins."spreadsheets@openai-primary-runtime"]
-enabled = false
-
-[plugins."presentations@openai-primary-runtime"]
-enabled = false
+[plugins."chrome@openai-bundled"]
+enabled = true
 
 [plugins."computer-use@openai-bundled"]
 enabled = true
 
-[plugins."browser-use@openai-bundled"]
+[plugins."build-web-apps@openai-curated"]
 enabled = true
 
-[notice]
-hide_rate_limit_model_nudge = true
+[plugins."build-web-data-visualization@openai-curated"]
+enabled = true
 
-[[skills.config]]
-path = "/Users/bytedance/.codex/plugins/cache/openai-bundled/browser-use/0.1.0-alpha1/skills/browser/SKILL.md"
-enabled = false
+[plugins."browser@openai-bundled"]
+enabled = true
 
 [projects."/Volumes/code/test4"]
 trust_level = "trusted"
+
+[marketplaces.openai-bundled]
+last_updated = "2026-06-13T09:49:45Z"
+source_type = "local"
+source = "/Users/bytedance/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[mcp_servers.node_repl]
+args = []
+command = "/Applications/Codex.app/Contents/Resources/cua_node/bin/node_repl"
+startup_timeout_sec = 120
+
+[mcp_servers.node_repl.env]
+NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
+NODE_REPL_NODE_MODULE_DIRS = "/Applications/Codex.app/Contents/Resources/cua_node/lib/node_modules"
+NODE_REPL_NODE_PATH = "/Applications/Codex.app/Contents/Resources/cua_node/bin/node"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/bytedance/.codex"
+CODEX_HOME = "/Users/bytedance/.codex"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "27dca86fd6b571c49414a4b78e46b57bcf683a46cd1319799c11fbb6cfae3110"
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
+NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
+BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
+BROWSER_USE_CODEX_APP_VERSION = "26.609.41114"
+CODEX_CLI_PATH = "/Applications/Codex.app/Contents/Resources/codex"
+
+[hooks.state]
+
+[hooks.state."/Users/bytedance/.codex/hooks.json:pre_tool_use:0:0"]
+trusted_hash = "sha256:c7510aa0d8be0a0801ff95f5d4a6f586b41d5b935f929212e8ba5425ed8972af"
+
+[hooks.state."/Users/bytedance/.codex/hooks.json:pre_tool_use:1:0"]
+trusted_hash = "sha256:f1dcf27061ec8faebab082a978040194972336420c0a6bbf36b03e813a81af58"
+
+[hooks.state."/Users/bytedance/.codex/hooks.json:permission_request:0:0"]
+trusted_hash = "sha256:e5720d3ec93c00a90b3bc56fc651f57b0a0781f404f863affe8a84cd689a6417"
+
+[hooks.state."/Users/bytedance/.codex/hooks.json:permission_request:1:0"]
+trusted_hash = "sha256:3d90c47940e81e742b623d3a1148b52f69f679b4dea9e9eba5a9a31948282d3c"
+
+[hooks.state."/Users/bytedance/.codex/hooks.json:post_tool_use:0:0"]
+trusted_hash = "sha256:a97751e2c16264b08b47f6dc3f63d632ae7f321f397f6db7d7372cf3e4372a90"
+
+[hooks.state."/Users/bytedance/.codex/hooks.json:post_tool_use:1:0"]
+trusted_hash = "sha256:03c31c3b069b45d99807934af877c79a156dc67891352677bccc2edf1a784c80"
+
+[hooks.state."/Users/bytedance/.codex/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:687d9decc47d03f8cdb216e87137fe8b7ff0092165623863b90ee5852cd5a2ae"
+
+[hooks.state."/Users/bytedance/.codex/hooks.json:session_start:1:0"]
+trusted_hash = "sha256:610f3a5c66d5ab11c07cc7a979ed6da568f14b26ac6c1afd2ac94071be3fba83"
+
+[hooks.state."/Users/bytedance/.codex/hooks.json:user_prompt_submit:0:0"]
+trusted_hash = "sha256:5b46dd6baf7ab2a09fdae86bb2c27588584644c6381076fb25550188a2053d57"
+
+[hooks.state."/Users/bytedance/.codex/hooks.json:user_prompt_submit:1:0"]
+trusted_hash = "sha256:6b31a5bd240a914e4744bb047bfc75e7f55641d19bf258db6b9d6de223f589ca"
+
+[hooks.state."/Users/bytedance/.codex/hooks.json:stop:0:0"]
+trusted_hash = "sha256:3440af4e546f31e5e1793dee5c85ae7e26126046e05a00d58226dac64779556a"
+
+[hooks.state."/Users/bytedance/.codex/hooks.json:stop:1:0"]
+trusted_hash = "sha256:e7a999d6c1b67e7723dd278dd42555afc70b95e5ad5654aaafa05ec569bb5765"
+
+# Dynamic sections to keep out of this file when they contain local paths:
+# - [mcp_servers.<name>]
+# - [marketplaces.<name>]
+# - [projects."<absolute_path>"]
+# - [agents.<role>]

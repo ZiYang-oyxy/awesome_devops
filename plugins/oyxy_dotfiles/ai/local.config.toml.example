@@ -1,0 +1,47 @@
+# Local Codex config layer for one machine.
+#
+# The installer copies this to ~/.codex/local.config.toml only when that file
+# does not already exist. Keep real secrets and host-specific paths out of git.
+# Load it with: codex --profile local
+
+# notify = [
+#   "/path/to/SkyComputerUseClient",
+#   "turn-ended",
+#   "--previous-notify",
+#   "[\"sh\",\"-c\",\"exec tmux-statusctl notify-done \\\"$@\\\"\",\"notify\",\"notify-done\"]",
+# ]
+
+# [mcp_servers.grafana]
+# command = "/path/to/mcp-grafana"
+# args = ["-t", "stdio"]
+#
+# [mcp_servers.grafana.env]
+# GRAFANA_ORG_ID = "1"
+# GRAFANA_PASSWORD = "${GRAFANA_PASSWORD}"
+# GRAFANA_URL = "${GRAFANA_URL}"
+# GRAFANA_USERNAME = "${GRAFANA_USERNAME}"
+
+# [mcp_servers.node_repl]
+# command = "/Applications/Codex.app/Contents/Resources/cua_node/bin/node_repl"
+# args = []
+# startup_timeout_sec = 120
+
+# [agents.default]
+# description = "通用型子代理，承接未显式指定 agent_type 的默认委派任务。"
+# config_file = "/absolute/path/to/default.toml"
+#
+# [agents.explorer]
+# description = "探索型子代理，适合代码库定位、查找、归纳和并行调研。"
+# config_file = "/absolute/path/to/explorer.toml"
+#
+# [agents.worker]
+# description = "执行型子代理，适合代码修改、修复、实现和明确 ownership 的子任务。"
+# config_file = "/absolute/path/to/worker.toml"
+
+# [marketplaces.openai-bundled]
+# last_updated = "2026-06-13T08:34:55Z"
+# source_type = "local"
+# source = "/absolute/path/to/openai-bundled"
+
+# [projects."/absolute/path/to/project"]
+# trust_level = "trusted"

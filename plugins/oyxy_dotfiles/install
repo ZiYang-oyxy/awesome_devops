@@ -170,10 +170,28 @@ install_config() {
 }
 
 install_ai() {
+    local profile_src
+
     log_info "Configure codex ..."
     mkdir -p "$HOME/.codex"
     _ln "$curdir/ai/config.toml" "$HOME/.codex/config.toml"
     _ln "$curdir/ai/AGENTS.md" "$HOME/.codex/AGENTS.md"
+
+    if [[ ! -e "$HOME/.codex/local.config.toml" && -e "$curdir/ai/local.config.toml.example" ]]; then
+        log_info "Initialize ~/.codex/local.config.toml from template ..."
+        cp -f "$curdir/ai/local.config.toml.example" "$HOME/.codex/local.config.toml"
+        chmod 600 "$HOME/.codex/local.config.toml"
+    else
+        log_info "Keep existing ~/.codex/local.config.toml"
+    fi
+
+    # Legacy named profile files are still linked for manual `codex -p cxN`
+    # use, but shell `cxN` commands load the local profile and apply their
+    # model/feature differences via `-c` so both layers can coexist.
+    for profile_src in "$curdir"/ai/cx*.config.toml; do
+        [[ -e "$profile_src" ]] || continue
+        _ln "$profile_src" "$HOME/.codex/$(basename "$profile_src")"
+    done
 
     log_info "Configure claude ..."
     mkdir -p "$HOME/.claude"

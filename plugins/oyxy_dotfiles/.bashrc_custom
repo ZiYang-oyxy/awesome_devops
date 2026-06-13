@@ -47,6 +47,13 @@ if [ "$_is_macos" -eq 1 ]; then
   prepend_path "/opt/homebrew/opt/gnu-tar/libexec/gnubin"
 fi
 
+if [ "$_is_linux" -eq 1 ]; then
+  # 兜底：很多发行版默认 PATH 不含 /usr/local/{bin,sbin}，
+  # 导致 npm 全局软链（codex/claude 等）在子 shell / 非 login 场景找不到。
+  prepend_path "/usr/local/sbin"
+  prepend_path "/usr/local/bin"
+fi
+
 export PATH
 
 #TERM=xterm
@@ -138,12 +145,26 @@ _ensure_gh_auth_token() {
 _cx_run() {
   _ensure_gh_auth_token
 
+  if ! command -v codex >/dev/null 2>&1; then
+    echo "codex not found in PATH ($PATH)" >&2
+    echo "  install: npm i -g @openai/codex   (or check /usr/local/bin)" >&2
+    return 127
+  fi
+
   local trust_root
   local trust_root_escaped
   local provider_base_url
   local provider_base_url_escaped
+  local codex_home
+  local cx_profile
   local -a cx_flags=()
   local -a cx_env=()
+
+  codex_home="${CODEX_HOME:-$HOME/.codex}"
+  cx_profile="${CODEX_CX_PROFILE:-local}"
+  if [ -n "$cx_profile" ] && [ -r "$codex_home/${cx_profile}.config.toml" ]; then
+    cx_flags+=("-p" "$cx_profile")
+  fi
 
   if command -v git >/dev/null 2>&1; then
     trust_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
@@ -183,7 +204,15 @@ _cx_run() {
   env -u OPENAI_BASE_URL "${cx_env[@]}" codex "${cx_flags[@]}" "$@"
 }
 
-alias cx="_cx_run"
+unalias cx 2>/dev/null
+unalias cx1 2>/dev/null
+unalias cx2 2>/dev/null
+unalias cx3 2>/dev/null
+unalias cx4 2>/dev/null
+
+cx() {
+  _cx_run "$@"
+}
 
 _cx_without_computer_mcp() {
   _cx_run \
@@ -191,41 +220,87 @@ _cx_without_computer_mcp() {
     "$@"
 }
 
-alias cx1="_cx_without_computer_mcp --dangerously-bypass-approvals-and-sandbox -p cx1"
-alias cx2="_cx_without_computer_mcp --dangerously-bypass-approvals-and-sandbox -p cx2"
+_cx_configured_table_flags() {
+  local table="$1"
+  local enabled="$2"
+  local codex_home="${CODEX_HOME:-$HOME/.codex}"
+  local config_path line entry
 
-unalias cx3 2>/dev/null
-unalias cx4 2>/dev/null
+  for config_path in "$codex_home/config.toml" "$codex_home/local.config.toml"; do
+    [ -r "$config_path" ] || continue
+    while IFS= read -r line; do
+      entry="${line#\[${table}.}"
+      entry="${entry%]}"
+      [ -n "$entry" ] || continue
+      case "$entry" in
+      *.*) continue ;;
+      esac
+      printf '%s\n' "-c"
+      printf '%s\n' "${table}.${entry}.enabled=${enabled}"
+    done < <(grep -E "^\\[${table}\\.[^]]+\\]$" "$config_path")
+  done
+}
+
+_cx_configured_mcp_flags() {
+  _cx_configured_table_flags mcp_servers "$1"
+}
+
+_cx_configured_plugin_flags() {
+  _cx_configured_table_flags plugins "$1"
+}
+
+_cx_without_plugins_and_mcp() {
+  local flag
+  local -a override_flags=()
+  while IFS= read -r flag; do
+    override_flags+=("$flag")
+  done < <(_cx_configured_plugin_flags false)
+  while IFS= read -r flag; do
+    override_flags+=("$flag")
+  done < <(_cx_configured_mcp_flags false)
+  _cx_run "${override_flags[@]}" "$@"
+}
+
+cx1() {
+  _cx_without_plugins_and_mcp \
+    --dangerously-bypass-approvals-and-sandbox \
+    -c 'model="gpt-5.3-codex-spark"' \
+    -c 'model_reasoning_effort="medium"' \
+    "$@"
+}
+
+cx2() {
+  _cx_without_plugins_and_mcp \
+    --dangerously-bypass-approvals-and-sandbox \
+    -c 'model="gpt-5.5"' \
+    -c 'model_reasoning_effort="medium"' \
+    "$@"
+}
 
 cx3() {
-  _cx_without_computer_mcp \
+  _cx_without_plugins_and_mcp \
     --dangerously-bypass-approvals-and-sandbox \
-    -p cx3 \
+    -c 'model="gpt-5.5"' \
+    -c 'model_reasoning_effort="high"' \
     "$@"
 }
 
 cx4() {
-  local config_path="${CODEX_HOME:-$HOME/.codex}/config.toml"
-  local line server_name
-  local -a mcp_flags=()
-
-  if [ -r "$config_path" ]; then
-    while IFS= read -r line; do
-      server_name="${line#\[mcp_servers.}"
-      server_name="${server_name%]}"
-      [ -n "$server_name" ] || continue
-      case "$server_name" in
-      *.*) continue ;;
-      esac
-      mcp_flags+=("-c" "mcp_servers.${server_name}.enabled=true")
-    done < <(grep -E '^\[mcp_servers\.[^]]+\]$' "$config_path")
-  fi
+  local flag
+  local -a override_flags=()
+  while IFS= read -r flag; do
+    override_flags+=("$flag")
+  done < <(_cx_configured_plugin_flags true)
+  while IFS= read -r flag; do
+    override_flags+=("$flag")
+  done < <(_cx_configured_mcp_flags true)
 
   _cx_run \
     --dangerously-bypass-approvals-and-sandbox \
     --search \
-    -p cx4 \
-    "${mcp_flags[@]}" \
+    -c 'model="gpt-5.5"' \
+    -c 'model_reasoning_effort="xhigh"' \
+    "${override_flags[@]}" \
     "$@"
 }
 alias cc="CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 claude"
@@ -294,6 +369,28 @@ cc4() {
     "$@"
 }
 
+# cc5 — bypass + claude-fable-5[1m] + MCP
+cc5() {
+  local mcp_config
+  mcp_config="$(_cc_mcp_config_path)"
+  local -a mcp_flags=()
+
+  [ -r "$mcp_config" ] && mcp_flags+=("--mcp-config" "$mcp_config")
+
+  # 强制对齐档位映射到 4.8：覆盖外部注入的旧值（如 opus-4-7 / sonnet-4-6）
+  # 影响子 agent、工作流 agent、上下文压缩等按“档位”取模型的内部调用
+  CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1 \
+  ANTHROPIC_MODEL='claude-fable-5[1m]' \
+  ANTHROPIC_DEFAULT_OPUS_MODEL='claude-fable-5[1m]' \
+  ANTHROPIC_DEFAULT_SONNET_MODEL='claude-sonnet-4-6' \
+  ANTHROPIC_DEFAULT_HAIKU_MODEL='claude-sonnet-4-6' \
+  claude \
+    --dangerously-skip-permissions \
+    --model 'claude-fable-5[1m]' \
+    "${mcp_flags[@]}" \
+    "$@"
+}
+
 alias gm="gemini"
 alias gm1="gemini --approval-mode auto_edit --skip-trust"
 alias gm2="gemini --approval-mode yolo --skip-trust"
@@ -311,8 +408,9 @@ fi
 [ -e ~/.bashrc_ignored ] && . ~/.bashrc_ignored
 [ -e ~/.config/.env ] && . ~/.config/.env
 
-_vps="-p 33333 root@8.220.207.192"
-_vps2="-p 33333 root@8.222.225.241"
+#_vps="-p 33333 root@8.220.207.192"
+_vps="-p 33333 root@47.80.15.150"
+_vps2="-p 33333 root@47.251.254.87"
 _nas="-6 -p 33333 hh123okbb@zaozaoxixi.synology.me"
 _nas2="-6 -p 33333 hh123okbb@zaozaoxixi.top"
 _nas2r="-6 -p 33333 root@zaozaoxixi.top"

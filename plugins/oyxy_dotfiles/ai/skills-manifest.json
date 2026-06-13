@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-05-23T13:56:37.606Z",
+  "generatedAt": "2026-06-13T09:48:00.407Z",
   "sourceLockFile": "/Users/bytedance/.agents/.skill-lock.json",
   "skills": [
     {
@@ -16,16 +16,8 @@
       "source": "ZiYang-oyxy/agent-skills"
     },
     {
-      "name": "pdf",
-      "source": "anthropics/skills"
-    },
-    {
       "name": "playwright-cli",
       "source": "microsoft/playwright-cli"
-    },
-    {
-      "name": "vercel-react-best-practices",
-      "source": "vercel-labs/agent-skills"
     },
     {
       "name": "web-design-guidelines",
