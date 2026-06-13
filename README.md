@@ -30,7 +30,13 @@ ad get <file>
 
 ## oyxy_dotfiles 模块化安装
 
-`plugins/oyxy_dotfiles/install` 现在支持按模块安装，默认仍然是全量安装。
+`oyxy_dotfiles` 已从主仓拆出为私有插件仓库。使用前先把私有仓库 clone 到主仓相同路径，`ad` 会继续按 `plugins/<name>/install` 动态发现插件。
+
+```bash
+gh repo clone ZiYang-oyxy/oyxy_dotfiles plugins/oyxy_dotfiles
+```
+
+`plugins/oyxy_dotfiles/install` 支持按模块安装，默认仍然是全量安装。
 
 ```bash
 # 全量安装
